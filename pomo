@@ -55,11 +55,21 @@ get_icon() {
 }
 
 get_bar_filled() {
-    case "$THEME" in default) echo "█" ;; energetic) echo "▓" ;; minimal) echo "■" ;; *) echo "█" ;; esac
+    case "$THEME" in
+        default)   echo "█" ;;    # U+2588 full block - classic & bold
+        energetic) echo "█" ;;    # or "▓" if you prefer slightly lighter
+        minimal)   echo "█" ;;
+        *)         echo "█" ;;
+    esac
 }
 
 get_bar_empty() {
-    case "$THEME" in default) echo "░" ;; energetic) echo "▒" ;; minimal) echo "□" ;; *) echo "░" ;; esac
+    case "$THEME" in
+        default)   echo "░" ;;    # U+2591 light shade - very common & clean
+        energetic) echo "░" ;;
+        minimal)   echo "□" ;;    # U+25A1 white square (more minimal feeling)
+        *)         echo "░" ;;
+    esac
 }
 
 get_phase_color() {
@@ -180,6 +190,13 @@ cmd_start() {
     ) >/dev/null 2>&1 &
 }
 
+# Define once at the top
+repeat_char() {
+    local ch="$1" count="$2"
+    printf "%${count}s" "" | sed "s/ /${ch}/g"
+    # or even:  awk -v ch="$ch" -v n="$count" 'BEGIN{printf "%*s",n,"" } 1' | tr ' ' "$ch"
+}
+
 cmd_status() {
     local wf=$(get_pomo_file work "$STORAGE_MODE")
     local bf=$(get_pomo_file break "$STORAGE_MODE")
@@ -201,9 +218,15 @@ cmd_status() {
 
     local p=$((e * 100 / total)); [ "$p" -gt 100 ] && p=100
 
-    local w=30 f=$((p * w / 100))
-    local bar=$(printf "%${f}s" "" | tr ' ' "$(get_bar_filled)")
-    local emp=$(printf "%$((w-f))s" "" | tr ' ' "$(get_bar_empty)")
+    local w=30
+    local f=$(( (e * w + (total / 2)) / total ))
+    [ "$f" -gt "$w" ] && f="$w"   # safety cap
+    # Then in cmd_status:
+    local filled_char=$(get_bar_filled)
+    local empty_char=$(get_bar_empty)
+
+    local bar=$(repeat_char "$filled_char" "$f")
+    local emp=$(repeat_char "$empty_char" "$((w-f))")
 
     local c=$(get_phase_color)
 

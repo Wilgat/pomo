@@ -12,25 +12,27 @@ Focus-friendly with colors, themes, progress bars, terminal bell and persistent 
 - Persistent theme & daily stats (~/.cache/pomo/)
 - Nice unicode icons & colored progress bar
 - Terminal bell on phase end
+- **Live watch mode** — continuously refreshing status every second
 - Zero dependencies — works with dash/sh/ash
 - Very similar UX to `timer` (start/status/stop/kill/list/…)
 
 ### Main commands overview
 
-| Command                          | Description                                          | Example                              |
-|----------------------------------|------------------------------------------------------|--------------------------------------|
-| `start [minutes]`                | Start new pomodoro (default 25 min)                  | `pomo start 40 --persist`            |
-| `status`                         | Show remaining time + nice progress bar              | `pomo status`                        |
-| `skip`                           | Jump to next phase (work → break or reverse)         | `pomo skip`                          |
-| `stop [--force]`                 | Stop & count pomodoro (or discard)                   | `pomo stop`                          |
-| `kill`                           | Alias for `stop --force`                             | `pomo kill`                          |
-| `list [--persist]`               | Show currently running pomodoros                     | `pomo list`                          |
-| `stats [today]`                  | Show completed pomodoros today                       | `pomo stats`                         |
-| `theme list`                     | Show available themes + current                      | `pomo theme list`                    |
-| `theme set <name>`               | Change visual theme                                  | `pomo theme set energetic`           |
-| `theme next` / `theme prev`      | Cycle between themes                                 | `pomo theme next`                    |
-| `version`                        | Show version                                         | `pomo version`                       |
-| `help`                           | Show this help                                       | `pomo help`                          |
+| Command                          | Description                                                  | Example                              |
+|----------------------------------|--------------------------------------------------------------|--------------------------------------|
+| `start [minutes]`                | Start new pomodoro (default 25 min)                          | `pomo start 40 --persist`            |
+| `watch [--persist]`              | Live view - refreshes status every second (Ctrl+C to exit)   | `pomo watch`                         |
+| `status`                         | Show remaining time + nice progress bar                      | `pomo status`                        |
+| `skip`                           | Jump to next phase (work → break or reverse)                 | `pomo skip`                          |
+| `stop [--force]`                 | Stop & count pomodoro (or discard)                           | `pomo stop`                          |
+| `kill`                           | Alias for `stop --force`                                     | `pomo kill`                          |
+| `list [--persist]`               | Show currently running pomodoros                             | `pomo list`                          |
+| `stats [today]`                  | Show completed pomodoros today                               | `pomo stats`                         |
+| `theme list`                     | Show available themes + current                              | `pomo theme list`                    |
+| `theme set <name>`               | Change visual theme                                          | `pomo theme set energetic`           |
+| `theme next` / `theme prev`      | Cycle between themes                                         | `pomo theme next`                    |
+| `version`                        | Show version                                                 | `pomo version`                       |
+| `help`                           | Show this help                                               | `pomo help`                          |
 
 **Default durations**: 25 min work • 5 min break
 
@@ -50,10 +52,17 @@ sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo s
 # Classic pomodoro
 pomo start
 
-# 50 min deep work + 10 min break
+# Watch progress live (updates every second, Ctrl+C to quit)
+pomo watch
+
+# Start persistent session and watch it
+pomo start 50 --persist
+pomo watch --persist
+
+# Custom duration + break
 pomo start 50 --break 10 --persist
 
-# Check progress
+# Check progress (single view)
 pomo status
 
 # Finish early or switch phase

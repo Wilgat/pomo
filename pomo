@@ -1,36 +1,33 @@
 #!/bin/sh
 # pomo - Simple & Beautiful Pomodoro Timer
-# Version: 1.0.1
+# Version: 1.0.2
 # GitHub:  https://github.com/Wilgat/pomo
 
-VERSION="1.0.1"
+VERSION="1.0.2"
 INSTALL_PATH="/usr/local/bin/pomo"
-
-# ─── Username ──────────────────────────────────────────────────────────────
-USERNAME=$(id -un 2>/dev/null || echo "unknown")
 
 # ─── Colors ────────────────────────────────────────────────────────────────
 if [ -t 1 ]; then
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    BLUE='\033[0;34m'
-    CYAN='\033[0;36m'
-    NC='\033[0m'
+    RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m'
+    BLUE='\033[0;34m' CYAN='\033[0;36m' NC='\033[0m'
 else
     RED='' GREEN='' YELLOW='' BLUE='' CYAN='' NC=''
 fi
 
-# ─── Directories & Theme persistence ───────────────────────────────────────
+# ─── Global variables ──────────────────────────────────────────────────────
+USERNAME=$(id -un 2>/dev/null || echo "unknown")
 VOLATILE_DIR="/dev/shm"
 PERSISTENT_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/pomo"
 THEME_FILE="$PERSISTENT_DIR/theme"
 
-mkdir -p "$PERSISTENT_DIR" 2>/dev/null
-
-# ─── Default durations ─────────────────────────────────────────────────────
 DEFAULT_WORK=1500       # 25 min
 DEFAULT_BREAK=300       # 5 min
+
+PERSIST=false
+FORCE=false
+COMMAND=""
+SUBCOMMAND=""
+SUBARG=""
 
 # ─── Load theme ────────────────────────────────────────────────────────────
 THEME="default"
@@ -41,21 +38,18 @@ THEME="default"
     esac
 }
 
-# ─── Theme definitions ─────────────────────────────────────────────────────
+# ─── Theme helpers ─────────────────────────────────────────────────────────
 get_icon() {
     case "$THEME,$1" in
         default,work)     echo "🍅" ;;    default,break)    echo "☕" ;;
         default,done)     echo "✅" ;;    default,skip)     echo "⏭️" ;;
         default,stats)    echo "📊" ;;    default,running)  echo "⏳" ;;
-
         energetic,work)   echo "⚡" ;;    energetic,break)  echo "🌿" ;;
         energetic,done)   echo "🏆" ;;    energetic,skip)   echo "⛔" ;;
         energetic,stats)  echo "⭐" ;;    energetic,running) echo "🔥" ;;
-
         minimal,work)     echo "⏳" ;;    minimal,break)    echo "🧘" ;;
         minimal,done)     echo "✨" ;;    minimal,skip)     echo "×" ;;
         minimal,stats)    echo "·" ;;    minimal,running)  echo "⋯" ;;
-
         *) echo "" ;;
     esac
 }
@@ -72,11 +66,10 @@ get_phase_color() {
     case "$THEME" in default) echo "$GREEN" ;; energetic) echo "$CYAN" ;; minimal) echo "$BLUE" ;; *) echo "$GREEN" ;; esac
 }
 
-# ─── File helpers ──────────────────────────────────────────────────────────
+# ─── Utility functions ─────────────────────────────────────────────────────
 get_pomo_file() {
     local name="$1" mode="$2"
-    local dir
-    [ "$mode" = "persistent" ] && dir="$PERSISTENT_DIR" || dir="$VOLATILE_DIR"
+    local dir; [ "$mode" = "persistent" ] && dir="$PERSISTENT_DIR" || dir="$VOLATILE_DIR"
     echo "${dir}/pomo_${USERNAME}_${name}"
 }
 
@@ -88,15 +81,18 @@ get_stats_file() {
     echo "$PERSISTENT_DIR/stats_$(get_today)"
 }
 
-# ─── Installation suggestion (exactly like timer v1.2.6) ───────────────────
+die() {
+    echo "${RED}Error:${NC} $*" >&2
+    exit 1
+}
+
+# ─── Installation suggestion ───────────────────────────────────────────────
 is_installed() {
     [ -f "$INSTALL_PATH" ] && [ -x "$INSTALL_PATH" ]
 }
 
 show_install_suggestion() {
-    if is_installed; then
-        return
-    fi
+    is_installed && return
 
     echo ""
     echo "${YELLOW}⚠️  Note: This script is not installed in $INSTALL_PATH${NC}"
@@ -108,191 +104,287 @@ show_install_suggestion() {
     if [ -t 0 ] && [ -t 1 ]; then
         printf "     Would you like to install it now? (y/N): "
         read -r answer </dev/tty 2>/dev/null || read -r answer
-        case "$answer" in
-            [Yy]*)
-                echo "Installing (interactive confirmation)..."
-                ;;
-            *)
-                echo "Continuing without installation..."
-                return
-                ;;
-        esac
+        case "$answer" in [Yy]*) echo "Installing..." ;; *) return ;; esac
     else
-        echo "Non-interactive mode detected → performing automatic installation..."
-        echo ""
+        echo "Non-interactive mode → auto-installing..."
     fi
 
-    TMP_SCRIPT="/tmp/pomo_install_$$"
-    if ! curl -fsSL "https://raw.githubusercontent.com/Wilgat/pomo/main/pomo" -o "$TMP_SCRIPT"; then
-        echo "${RED}Failed to download latest version${NC}" >&2
-        rm -f "$TMP_SCRIPT" 2>/dev/null
-        return 1
-    fi
+    local tmp="/tmp/pomo_install_$$"
+    curl -fsSL "https://raw.githubusercontent.com/Wilgat/pomo/main/pomo" -o "$tmp" || { rm -f "$tmp"; die "Download failed"; }
+    chmod 755 "$tmp" || { rm -f "$tmp"; die "chmod failed"; }
 
-    if ! chmod 755 "$TMP_SCRIPT"; then
-        echo "${RED}Failed to make script executable${NC}" >&2
-        rm -f "$TMP_SCRIPT"
-        return 1
-    fi
-
-    if cp "$TMP_SCRIPT" "$INSTALL_PATH" 2>/dev/null; then
+    cp "$tmp" "$INSTALL_PATH" 2>/dev/null && {
         echo "${GREEN}Installation successful!${NC}"
-        echo "You can now use 'pomo' from anywhere."
-        rm -f "$TMP_SCRIPT"
+        rm -f "$tmp"
         exit 0
-    else
-        echo "${RED}Failed to copy to $INSTALL_PATH${NC}" >&2
-        echo "You may need to run with sudo:"
-        echo "  sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh"
-        rm -f "$TMP_SCRIPT"
-        return 1
-    fi
+    }
+
+    echo "${RED}Failed to install${NC}" >&2
+    echo "Try: sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh"
+    rm -f "$tmp"
 }
 
 # ─── Help ──────────────────────────────────────────────────────────────────
 show_help() {
     cat << 'EOF'
-pomo - Simple & Beautiful Pomodoro Timer (v1.0.0)
+pomo 1.0.0 - Simple Pomodoro Timer with themes
 
 Usage:
-  pomo start [minutes] [--persist] [--break N]    Start pomodoro
-  pomo status                                     Show remaining time + progress
-  pomo skip                                       Jump to next phase
-  pomo stop [--force]                             Stop & count (or discard)
-  pomo kill                                       Alias for stop --force
-  pomo list [--persist]                           Show running sessions
-  pomo stats [today]                              Show today's statistics
-  pomo theme list                                 Show available themes
-  pomo theme set <name>                           Change theme
-  pomo theme next / prev                          Cycle themes
-  pomo version                                    Show version
-  pomo help                                       This help
-
-Options:
-  --persist        Use persistent storage (~/.cache/pomo)
-  --break N        Custom break length in minutes (default 5)
-  --force          Discard without counting
+  pomo start [minutes] [--persist] [--break N]
+  pomo status
+  pomo skip
+  pomo stop [--force]
+  pomo kill
+  pomo list [--persist]
+  pomo stats
+  pomo theme list
+  pomo theme set <name>
+  pomo theme next
+  pomo theme prev
+  pomo version
+  pomo help
 
 Themes: default • energetic • minimal
-
-Examples:
-  pomo start 40 --persist
-  pomo start 50 --break 10
-  pomo status
-  pomo theme set energetic
-
-https://github.com/Wilgat/pomo
 EOF
 }
 
-# ─── Argument parsing ──────────────────────────────────────────────────────
-PERSIST=false
-FORCE=false
-COMMAND=""
-WORK_MIN=""
-BREAK_MIN=""
+# ─── Command implementations ───────────────────────────────────────────────
 
+cmd_start() {
+    local wf=$(get_pomo_file work "$STORAGE_MODE")
+    [ -f "$wf" ] && die "Pomodoro already running. Use 'pomo status'"
+
+    local ws=$DEFAULT_WORK
+    [ -n "$WORK_MIN" ] && [ "$WORK_MIN" -eq "$WORK_MIN" ] && ws=$((WORK_MIN * 60))
+
+    local bs=$DEFAULT_BREAK
+    [ -n "$BREAK_MIN" ] && [ "$BREAK_MIN" -eq "$BREAK_MIN" ] && bs=$((BREAK_MIN * 60))
+
+    date +%s > "$wf" || die "Cannot start timer"
+    local work_min=$((ws / 60))
+    echo "${GREEN}$(get_icon work) Pomodoro started${NC} ${work_min} min"
+    [ "$PERSIST" = true ] && echo "  (persistent)"
+
+    (
+        sleep "$ws" && {
+            printf '\a'
+            echo "\n${GREEN}$(get_icon done) Work done!${NC} Break: $(get_icon break)"
+            rm -f "$wf"
+            date +%s > "$(get_pomo_file break "$STORAGE_MODE")"
+            sleep "$bs" && {
+                printf '\a'
+                echo "${GREEN}$(get_icon done) Break over${NC}"
+                rm -f "$(get_pomo_file break "$STORAGE_MODE")"
+            }
+        }
+    ) >/dev/null 2>&1 &
+}
+
+cmd_status() {
+    local wf=$(get_pomo_file work "$STORAGE_MODE")
+    local bf=$(get_pomo_file break "$STORAGE_MODE")
+    local file phase total icon
+
+    if [ -f "$wf" ]; then
+        file="$wf"; phase="Work"; total=$DEFAULT_WORK; icon=$(get_icon work)
+    elif [ -f "$bf" ]; then
+        file="$bf"; phase="Break"; total=$DEFAULT_BREAK; icon=$(get_icon break)
+    else
+        echo "${YELLOW}No active pomodoro${NC}"
+        return 0
+    fi
+
+    local s=$(cat "$file" 2>/dev/null || echo 0)
+    local n=$(date +%s 2>/dev/null || echo 0)
+    local e=$((n - s))
+    local r=$((total - e)); [ "$r" -lt 0 ] && r=0
+
+    local p=$((e * 100 / total)); [ "$p" -gt 100 ] && p=100
+
+    local w=30 f=$((p * w / 100))
+    local bar=$(printf "%${f}s" "" | tr ' ' "$(get_bar_filled)")
+    local emp=$(printf "%$((w-f))s" "" | tr ' ' "$(get_bar_empty)")
+
+    local c=$(get_phase_color)
+
+    printf "\n${c}%s %s${NC}  %02d:%02d left\n" "$icon" "$phase" "$((r/60))" "$((r%60))"
+    printf "  %s%s  %3d%%\n\n" "$bar" "$emp" "$p"
+    [ "$PERSIST" = true ] && echo "  (persistent)"
+}
+
+cmd_skip() {
+    rm -f "$(get_pomo_file work "$STORAGE_MODE")" "$(get_pomo_file break "$STORAGE_MODE")" 2>/dev/null
+    [ $? -eq 0 ] && echo "${YELLOW}Skipped current phase${NC}" || echo "Nothing to skip"
+}
+
+cmd_stop() {
+    local wf=$(get_pomo_file work "$STORAGE_MODE")
+    [ -f "$wf" ] || { echo "${YELLOW}No active work pomodoro${NC}"; return 1; }
+
+    local s=$(cat "$wf" 2>/dev/null || echo 0)
+    local n=$(date +%s 2>/dev/null || echo 0)
+    local e=$((n - s))
+    local m=$((e / 60))
+
+    rm -f "$wf"
+
+    if [ "$FORCE" = true ] || [ "$COMMAND" = "kill" ]; then
+        echo "${YELLOW}Discarded${NC}"
+        return 0
+    fi
+
+    local sf=$(get_stats_file)
+    local p=0 t=0
+    [ -f "$sf" ] && read p t < "$sf" 2>/dev/null
+
+    p=$((p + 1))
+    t=$((t + m))
+    echo "$p $t" > "$sf"
+
+    echo "${GREEN}Completed${NC} - $m min"
+    echo "Today: $p pomodoros • $t min"
+}
+
+cmd_list() {
+    local m=$( [ "$PERSIST" = true ] && echo persistent || echo volatile )
+    echo "Running pomodoros ($m):"
+    local f=0
+
+    for d in "$VOLATILE_DIR" "$PERSISTENT_DIR"; do
+        for file in "$d"/pomo_"${USERNAME}"_*; do
+            [ -f "$file" ] || continue
+            f=1
+            local n="${file##*pomo_${USERNAME}_}"
+            local s=$(cat "$file" 2>/dev/null) || continue
+            local now=$(date +%s) || continue
+            local e=$((now - s))
+            printf "  %s %-18s %02d:%02d\n" \
+                "$(get_icon running)" "$n" "$((e/60))" "$((e%60))"
+        done
+    done
+
+    [ "$f" -eq 0 ] && echo "  (none)"
+}
+
+cmd_stats() {
+    local sf=$(get_stats_file)
+    if [ -f "$sf" ]; then
+        local p t
+        read p t < "$sf" 2>/dev/null || { p=0; t=0; }
+        echo "${GREEN}Today:${NC} $p pomodoros • $t min"
+    else
+        echo "No completed pomodoros today"
+    fi
+}
+
+cmd_version() {
+    echo "pomo $VERSION"
+}
+
+cmd_help() {
+    show_help
+}
+
+# ─── Theme command ─────────────────────────────────────────────────────────
+cmd_theme() {
+    local sub="$1" arg="$2"
+
+    [ -z "$sub" ] && die "Subcommand required. Try: list, set <name>, next, prev"
+
+    case "$sub" in
+        list)
+            echo "Available themes:"
+            echo "  default    - classic tomato $(get_icon work)"
+            echo "  energetic  - dynamic & motivating $(get_icon work)"
+            echo "  minimal    - zen & clean $(get_icon work)"
+            echo ""
+            echo "Current: ${GREEN}${THEME}${NC}"
+            ;;
+        set)
+            [ -z "$arg" ] && die "Theme name required. Example: pomo theme set energetic"
+
+            case "$arg" in
+                default|energetic|minimal)
+                    echo "$arg" > "$THEME_FILE"
+                    echo "Theme changed to: ${GREEN}$arg $(get_icon work)${NC}"
+                    ;;
+                *) die "Invalid theme '$arg'. Use: default, energetic, minimal" ;;
+            esac
+            ;;
+        next)
+            local new
+            case "$THEME" in
+                default)   new="energetic" ;;
+                energetic) new="minimal"   ;;
+                minimal)   new="default"   ;;
+                *)         new="default"   ;;
+            esac
+            echo "$new" > "$THEME_FILE"
+            echo "Switched to: ${GREEN}$new $(get_icon work)${NC}"
+            ;;
+        prev)
+            local new
+            case "$THEME" in
+                default)   new="minimal"   ;;
+                energetic) new="default"   ;;
+                minimal)   new="energetic" ;;
+                *)         new="default"   ;;
+            esac
+            echo "$new" > "$THEME_FILE"
+            echo "Switched to: ${GREEN}$new $(get_icon work)${NC}"
+            ;;
+        *) die "Unknown subcommand '$sub'. Try: list, set <name>, next, prev" ;;
+    esac
+}
+
+# ─── Dispatcher ────────────────────────────────────────────────────────────
+run_command() {
+    case "$COMMAND" in
+        start)    cmd_start    ;;
+        status)   cmd_status   ;;
+        skip)     cmd_skip     ;;
+        stop)     cmd_stop     ;;
+        kill)     cmd_stop     ;;
+        list)     cmd_list     ;;
+        stats)    cmd_stats    ;;
+        version)  cmd_version  ;;
+        help)     cmd_help     ;;
+        theme)    cmd_theme "$1" "$2" ;;
+        *)        die "Unknown command '$COMMAND'" ;;
+    esac
+}
+
+# ─── Argument parsing ──────────────────────────────────────────────────────
 while [ $# -gt 0 ]; do
     case "$1" in
         --persist)  PERSIST=true; shift ;;
         --force)    FORCE=true; shift ;;
-        --break)    BREAK_MIN="$2"; shift 2 ;;
+        --break)    BREAK_MIN="$2"; shift 2 || die "--break needs value" ;;
         start|stop|status|skip|list|kill|stats|version|help|theme)
-                    COMMAND="$1"; shift ;;
-        *)          WORK_MIN="$1"; shift ;;
+            COMMAND="$1"
+            shift
+            break   # ← stop parsing flags, remaining are subcommand + args
+            ;;
+        *)
+            die "Unknown option/command: $1"
+            ;;
     esac
 done
 
-# Show install suggestion (very important UX like in timer)
-show_install_suggestion
+# Remaining arguments are for the command (e.g. theme list → $1=list)
+# or start 25 → $1=25
+
+# Show install suggestion only when no command at all
+if ! is_installed && [ -z "$COMMAND" ]; then
+    show_install_suggestion
+fi
 
 [ -z "$COMMAND" ] && {
-    echo "Usage: pomo start|status|skip|stop|kill|list|stats|theme|version|help [options]" >&2
+    echo "No command given. Use: pomo help" >&2
     exit 1
 }
 
 STORAGE_MODE=$([ "$PERSIST" = true ] && echo "persistent" || echo "volatile")
 
-# ─── Command handling ──────────────────────────────────────────────────────
-case "$COMMAND" in
-
-    theme)
-        # (theme handling function - kept from previous version)
-        handle_theme() {
-            local cmd="$1" arg="$2"
-            case "$cmd" in
-                list)
-                    echo "Available themes:"
-                    echo "  default    - classic tomato style $(get_icon work)"
-                    echo "  energetic  - dynamic & motivating  $(get_icon work)"
-                    echo "  minimal    - zen & clean           $(get_icon work)"
-                    echo ""
-                    echo "Current theme: ${GREEN}${THEME}${NC}"
-                    ;;
-                set)
-                    case "$arg" in
-                        default|energetic|minimal)
-                            echo "$arg" > "$THEME_FILE"
-                            echo "Theme changed to: ${GREEN}${arg} $(get_icon work)${NC}"
-                            ;;
-                        *)
-                            echo "${RED}Unknown theme${NC}. Available: default, energetic, minimal"
-                            ;;
-                    esac
-                    ;;
-                next)
-                    case "$THEME" in default) new="energetic";; energetic) new="minimal";; minimal) new="default";; *) new="default";; esac
-                    echo "$new" > "$THEME_FILE"
-                    echo "Switched to: ${GREEN}${new} $(get_icon work)${NC}"
-                    ;;
-                prev)
-                    case "$THEME" in default) new="minimal";; energetic) new="default";; minimal) new="energetic";; *) new="default";; esac
-                    echo "$new" > "$THEME_FILE"
-                    echo "Switched to: ${GREEN}${new} $(get_icon work)${NC}"
-                    ;;
-                *) echo "Usage: pomo theme list|set <name>|next|prev" ;;
-            esac
-        }
-        handle_theme "$WORK_MIN" "$BREAK_MIN"
-        ;;
-
-    start)
-        work_file=$(get_pomo_file "work" "$STORAGE_MODE")
-        if [ -f "$work_file" ]; then
-            echo "${YELLOW}A pomodoro is already running.${NC}" >&2
-            echo "  Use ${GREEN}pomo status${NC} to check progress"
-            exit 1
-        fi
-
-        work_sec=$DEFAULT_WORK
-        [ -n "$WORK_MIN" ] && [ "$WORK_MIN" -eq "$WORK_MIN" ] 2>/dev/null && work_sec=$((WORK_MIN * 60))
-
-        break_sec=$DEFAULT_BREAK
-        [ -n "$BREAK_MIN" ] && [ "$BREAK_MIN" -eq "$BREAK_MIN" ] 2>/dev/null && break_sec=$((BREAK_MIN * 60))
-
-        date +%s > "$work_file" || exit 1
-        echo "${GREEN}$(get_icon work) Pomodoro started${NC} (${work_sec/60} min work)"
-        [ "$PERSIST" = true ] && echo "  (persistent mode)"
-
-        (
-            sleep "$work_sec"
-            printf '\a' 2>/dev/null
-            echo "\n${GREEN}$(get_icon done) Work done!${NC} Take a break $(get_icon break)"
-            rm -f "$work_file" 2>/dev/null
-            date +%s > "$(get_pomo_file "break" "$STORAGE_MODE")"
-            sleep "$break_sec"
-            printf '\a' 2>/dev/null
-            echo "${GREEN}$(get_icon done) Break finished${NC}"
-            rm -f "$(get_pomo_file "break" "$STORAGE_MODE")" 2>/dev/null
-        ) >/dev/null 2>&1 &
-        ;;
-
-    # ... rest of commands (status, skip, stop, kill, list, stats, version, help) remain the same ...
-    # You can copy them from previous full version if needed
-
-    *)
-        echo "${RED}Unknown command: $COMMAND${NC}" >&2
-        echo "Use: pomo help" >&2
-        exit 1
-        ;;
-esac
+# Execute
+run_command "$@"

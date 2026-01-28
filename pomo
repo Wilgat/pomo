@@ -1,9 +1,9 @@
 #!/bin/sh
 # pomo - Simple & Beautiful Pomodoro Timer
-# Version: 1.2.0
+# Version: 1.2.1
 # GitHub:  https://github.com/Wilgat/pomo
 
-VERSION="1.2.0"
+VERSION="1.2.1"
 INSTALL_PATH="/usr/local/bin/pomo"
 
 # ─── Colors ────────────────────────────────────────────────────────────────
@@ -29,18 +29,28 @@ COMMAND=""
 SUBCOMMAND=""
 SUBARG=""
 
-# ─── Load theme ────────────────────────────────────────────────────────────
-THEME="default"
-[ -f "$THEME_FILE" ] && {
-    read -r saved < "$THEME_FILE" 2>/dev/null
-    case "$saved" in
-        default|energetic|minimal) THEME="$saved" ;;
-    esac
+reload_theme() {
+    if [ -f "$THEME_FILE" ]; then
+        read -r saved < "$THEME_FILE" 2>/dev/null
+        case "$saved" in
+            default|energetic|minimal)
+                THEME="$saved"
+                ;;
+        esac
+    fi
 }
 
+# ─── Load theme ────────────────────────────────────────────────────────────
+THEME="default"
+reload_theme
 # ─── Theme helpers ─────────────────────────────────────────────────────────
 get_icon() {
-    case "$THEME,$1" in
+    if [ ! -z $2 ]; then
+        TMP_THEME=$2;
+    else
+        TMP_THEME=$THEME
+    fi
+    case "$TMP_THEME,$1" in
         default,work)     echo "🍅" ;;    default,break)    echo "☕" ;;
         default,done)     echo "✅" ;;    default,skip)     echo "⏭️" ;;
         default,stats)    echo "📊" ;;    default,running)  echo "⏳" ;;
@@ -162,7 +172,7 @@ EOF
 
 cmd_start() {
     local wf=$(get_pomo_file work "$STORAGE_MODE")
-    [ -f "$wf" ] && die "Pomodoro already running. Use 'pomo status'"
+    [ -f "$wf" ] && return
 
     local ws=$DEFAULT_WORK
     [ -n "$WORK_MIN" ] && [ "$WORK_MIN" -eq "$WORK_MIN" ] && ws=$((WORK_MIN * 60))
@@ -195,6 +205,13 @@ repeat_char() {
     local ch="$1" count="$2"
     printf "%${count}s" "" | sed "s/ /${ch}/g"
     # or even:  awk -v ch="$ch" -v n="$count" 'BEGIN{printf "%*s",n,"" } 1' | tr ' ' "$ch"
+}
+
+is_active() {
+    local wf=$(get_pomo_file work "$STORAGE_MODE")
+    local bf=$(get_pomo_file break "$STORAGE_MODE")
+
+    [ -f "$wf" ] || [ -f "$bf" ]   # ← this is the test
 }
 
 cmd_status() {
@@ -310,12 +327,17 @@ cmd_help() {
 
 # ─── New command: watch ────────────────────────────────────────────────────
 cmd_watch() {
+    cmd_start
     echo "Watching pomodoro status... (Ctrl+C to exit)"
     echo ""
+    while is_active; do
+        reload_theme          # ← this line makes it live-update
 
-    while true; do
-        clear
+        clear 2>/dev/null || tput clear 2>/dev/null || printf '\033[2J\033[H'
         cmd_status
+
+        # Optional live indicator + current theme name
+        printf "\r  ${CYAN}↻${NC}  %s   theme: %-10s" "$(date +%H:%M:%S)" "$THEME"
         sleep 1
     done
 }
@@ -329,9 +351,9 @@ cmd_theme() {
     case "$sub" in
         list)
             echo "Available themes:"
-            echo "  default    - classic tomato $(get_icon work)"
-            echo "  energetic  - dynamic & motivating $(get_icon work)"
-            echo "  minimal    - zen & clean $(get_icon work)"
+            echo "  default    - classic tomato $(get_icon work default) $(get_icon break default) $(get_icon done default)"
+            echo "  energetic  - dynamic & motivating $(get_icon work energetic) $(get_icon break energetic) $(get_icon done energetic)"
+            echo "  minimal    - zen & clean $(get_icon work minimal) $(get_icon break minimal) $(get_icon done minimal)"
             echo ""
             echo "Current: ${GREEN}${THEME}${NC}"
             ;;
@@ -340,8 +362,9 @@ cmd_theme() {
 
             case "$arg" in
                 default|energetic|minimal)
+                    mkdir -p "$PERSISTENT_DIR"
                     echo "$arg" > "$THEME_FILE"
-                    echo "Theme changed to: ${GREEN}$arg $(get_icon work)${NC}"
+                    echo "Theme changed to: ${GREEN}$arg $(get_icon work $arg)${NC}"
                     ;;
                 *) die "Invalid theme '$arg'. Use: default, energetic, minimal" ;;
             esac
@@ -355,7 +378,7 @@ cmd_theme() {
                 *)         new="default"   ;;
             esac
             echo "$new" > "$THEME_FILE"
-            echo "Switched to: ${GREEN}$new $(get_icon work)${NC}"
+            echo "Switched to: ${GREEN}$new $(get_icon work $new)${NC}"
             ;;
         prev)
             local new
@@ -375,7 +398,7 @@ cmd_theme() {
 # ─── Dispatcher ────────────────────────────────────────────────────────────
 run_command() {
     case "$COMMAND" in
-        start)    cmd_start    ;;
+        start)    cmd_watch    ;;
         status)   cmd_status   ;;
         skip)     cmd_skip     ;;
         stop)     cmd_stop     ;;
@@ -383,7 +406,6 @@ run_command() {
         list)     cmd_list     ;;
         stats)    cmd_stats    ;;
         version)  cmd_version  ;;
-        watch)    cmd_watch    ;;
         help)     cmd_help     ;;
         theme)    cmd_theme "$1" "$2" ;;
         *)        die "Unknown command '$COMMAND'" ;;

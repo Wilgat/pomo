@@ -1,21 +1,8 @@
 #!/bin/sh
 
 # pomo — Simple & Beautiful Pomodoro Timer 🌿
-# Version: 1.3.2 (MIT License)
+# Version: 1.3.3 (MIT License)
 # GitHub: https://github.com/Wilgat/pomo
-#
-# Why? Dead-simple Pomodoro (25min work + 5min break) with themes, stats, watch.
-# No deps. Portable. Unicode-safe.
-#
-# Usage examples:
-#   pomo start [minutes] [--break N] [--persist]
-#   pomo status
-#   pomo watch
-#   pomo skip / stop / stats / theme set energetic
-#
-# Install (pick one):
-#   curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
-#   sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
 
 # ─────── Colors (TTY-safe) ──────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -27,14 +14,14 @@ fi
 
 # ─────── Constants ───────────────────────────────────────────────────────────────
 APP_NAME="pomo"
-APP_VER="1.3.2"
+APP_VER="1.3.3"
 REPO_BASE_URL="https://raw.githubusercontent.com/Wilgat/pomo/main"
 SCRIPT_URL="${REPO_BASE_URL}/${APP_NAME}"
 GLOBAL_BIN="/usr/local/bin"
 USER_BIN="${HOME}/.local/bin"
 
 USERNAME="$(id -un 2>/dev/null || echo unknown)"
-VOLATILE_DIR="/tmp"  # Portable /dev/shm replacement (clears less often, but timers short)
+VOLATILE_DIR="/tmp"
 PERSISTENT_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/pomo"
 THEME_FILE="${PERSISTENT_DIR}/theme"
 
@@ -102,6 +89,7 @@ get_phase_color() {
     case "$THEME" in default) echo "$GREEN" ;; energetic) echo "$CYAN" ;; minimal) echo "$BLUE" ;; *) echo "$GREEN" ;; esac
 }
 
+# it is important to not modify, the following function works properly for utf-8 character
 repeat_char() {
     printf '%*s' "$2" '' | tr ' ' "$1"
 }
@@ -174,20 +162,27 @@ perform_self_install() {
 
 maybe_install() {
     if is_installed; then return 0; fi
-    reload_theme  # Early for icons
+    reload_theme
+
+    # In non-interactive mode (curl | sh), be silent or minimal
+    if [ ! -t 0 ] || [ ! -t 1 ]; then
+        perform_self_install >/dev/null 2>&1 || exit 1
+        return 0
+    fi
 
     printf "\n${YELLOW}⚠️  %s not found.${NC}\n" "$APP_NAME"
-    if [ -t 0 ] && [ -t 1 ]; then
-        printf "Install to %s? (y/N): " "$INSTALL_PATH"
-        read -r ans; case "$ans" in [Yy]*) ;; *) return 0; esac
-    fi
+    printf "Install to %s? (y/N): " "$INSTALL_PATH"
+    read -r ans
+    case "$ans" in [Yy]*) ;; *) return 0; esac
+
     printf "${YELLOW}Installing...${NC}\n"
     perform_self_install || exit 1
+
     if [ "$IS_ROOT" -eq 0 ] && ! in_path; then
         add_to_bashrc
-        printf "\n${YELLOW}Important:${NC} Run ${GREEN}. ~/.bashrc${NC} to use ${GREEN}%s${NC}.\n" "$APP_NAME"
+        printf "\n${YELLOW}Important:${NC} Run ${GREEN}source ~/.bashrc${NC} or open new terminal.\n"
     else
-        printf "${GREEN}Ready! Run %s.${NC}\n" "$APP_NAME"
+        printf "${GREEN}Ready!${NC}\n"
     fi
 }
 
@@ -208,7 +203,6 @@ cmd_start() {
     printf "${GREEN}%s Pomodoro started (%s min work + %s min break)${NC}\n" \
         "$(get_icon work)" "$WORK_MIN" "$BREAK_MIN"
     [ "$PERSIST" = true ] && printf "  (persistent)\n"
-    # Background cycle
     ( sleep "$ws" && {
         printf '\a'; printf "\n${GREEN}%s Work done! %s Break.${NC}\n" "$(get_icon done)" "$(get_icon break)"
         rm -f "$wf"; date +%s > "$(get_pomo_file break)"; sleep "$bs" && {
@@ -320,7 +314,7 @@ cmd_version() { printf "%s %s\n" "$APP_NAME" "$APP_VER"; }
 cmd_help() { show_help; }
 
 # ─────── Parse & dispatch ─────────────────────────────────────────────────────────
-# ─────── Parse ONLY (no dispatch/die) ────────────────────────────────────────────
+# ─────── Parse ONLY (no dispatch/die on missing command) ────────────────────────
 parse_args() {
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -357,7 +351,7 @@ run_command() {
 main() {
     reload_theme
     parse_args "$@"
-    maybe_install  # Always check/install first (auto/prompt per tty [[1]][doc_1][[6]][doc_6])
+    maybe_install  # Always check/install first
     run_command "$@"  # Dispatch (defaults to status if no cmd)
 }
 

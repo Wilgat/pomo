@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # pomo — Simple & Beautiful Pomodoro Timer 🌿
-# Version: 1.3.7 (MIT License)
+# Version: 1.3.8 (MIT License)
 # GitHub: https://github.com/Wilgat/pomo
 #
 # Why? Dead-simple Pomodoro (25min work + 5min break) with themes, stats, watch.
@@ -27,7 +27,7 @@ fi
 
 # ─────── Constants ───────────────────────────────────────────────────────────────
 APP_NAME="pomo"
-APP_VER="1.3.7"
+APP_VER="1.3.8"
 REPO_BASE_URL="https://raw.githubusercontent.com/Wilgat/pomo/main"
 SCRIPT_URL="${REPO_BASE_URL}/${APP_NAME}"
 GLOBAL_BIN="/usr/local/bin"

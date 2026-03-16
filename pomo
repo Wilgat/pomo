@@ -320,46 +320,45 @@ cmd_version() { printf "%s %s\n" "$APP_NAME" "$APP_VER"; }
 cmd_help() { show_help; }
 
 # ─────── Parse & dispatch ─────────────────────────────────────────────────────────
+# ─────── Parse ONLY (no dispatch/die) ────────────────────────────────────────────
 parse_args() {
     while [ $# -gt 0 ]; do
         case "$1" in
             --persist) PERSIST=true; shift ;;
             --force) FORCE=true; shift ;;
-            --break) BREAK_MIN="$2"; shift 2 || die "--break <N>" ;;
+            --break) [ $# -ge 2 ] && BREAK_MIN="$2" && shift 2 || die "--break needs <N>" ;;
             start|status|skip|stop|kill|list|stats|watch|theme|version|help)
-                COMMAND="$1"; shift; break ;;
-            *) die "Unknown: $1 (pomo help)" ;;
+                COMMAND="$1"; shift; break ;;  # Stop flags, pass rest as args
+            -h|--help) COMMAND="help"; shift ;;
+            *) die "Unknown option: $1 (try pomo help)" ;;  # Only invalid flags
         esac
     done
     STORAGE_MODE="$([ "$PERSIST" = true ] && echo persistent || echo volatile)"
+}
+
+# ─────── Dispatch (post-parse/install) ──────────────────────────────────────────
+run_command() {
     case "$COMMAND" in
-        start|watch) WORK_MIN="$1" ;;  # Positional minutes for start/watch
-        theme) cmd_theme "$1" "$2" ;;
-        version) cmd_version ;;
-        help) cmd_help ;;
+        start) cmd_start "$1" ;;  # $1=minutes
+        watch) cmd_watch "$1" ;;
         status) cmd_status ;;
         skip) cmd_skip ;;
         stop|kill) cmd_stop ;;
         list) cmd_list ;;
         stats) cmd_stats ;;
+        theme) cmd_theme "$1" "$2" ;;
+        version) cmd_version ;;
+        help) cmd_help ;;
+        '') cmd_status ;;  # Default: status (post-install friendly)
         *) die "Unknown command '$COMMAND'" ;;
-    esac
-}
-
-run_command() {
-    case "$COMMAND" in
-        start) cmd_start "$1" "$@" ;;  # Pass args
-        watch) cmd_watch "$1" "$@" ;;
-        *) ;;  # Handled above
     esac
 }
 
 main() {
     reload_theme
     parse_args "$@"
-    if [ -z "$COMMAND" ]; then maybe_install; cmd_help; exit 0; fi
-    maybe_install
-    run_command "$@"
+    maybe_install  # Always check/install first (auto/prompt per tty [[1]][doc_1][[6]][doc_6])
+    run_command "$@"  # Dispatch (defaults to status if no cmd)
 }
 
 main "$@"

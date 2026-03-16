@@ -360,8 +360,6 @@ parse_args() {
         esac
     done
     STORAGE_MODE="$([ "$PERSIST" = true ] && echo persistent || echo volatile)"
-    if [ "$should_install" = true ]; then
-    else
     case "$COMMAND" in
         start|watch) WORK_MIN="$1" ;;  # Positional minutes for start/watch
         theme) cmd_theme "$1" "$2" ;;

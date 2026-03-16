@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Version-1.3.7-blue?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Version 1.3.7">   
+<img src="https://img.shields.io/badge/Version-1.3.8-blue?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Version 1.3.8">   
 <img src="https://img.shields.io/badge/sh-POSIX-green?style=for-the-badge&logo=gnubash&logoColor=white" alt="POSIX sh">  
 <img src="https://img.shields.io/badge/License-MIT-brightgreen?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License MIT"> 
 
@@ -51,7 +51,7 @@ This section covers key design decisions for portability, safety, and usability 
 - **Shell**: `#!/bin/sh` (POSIX/dash/ash compatible). No bashisms/SDKMAN needed (unlike Java tools ); runs on Linux/macOS/BSD/Alpine/busybox.
 - **User privileges**: Auto-detect root vs normal (install: `/usr/local/bin` root, `~/.local/bin` user-local) .
 - **Installability**: Curl|sh one-liner friendly (non-interactive auto-install); sudo variant; atomic temp→mv; auto-add `~/.local/bin` to `~/.bashrc` (idempotent, w/ reload guidance) .
-- **Key variables**: Hard-coded `APP_NAME="pomo"`, `APP_VER="1.3.7"`, GitHub `SCRIPT_URL`; `VOLATILE_DIR="/tmp"` (portable timer files), `PERSISTENT_DIR="~/.cache/pomo"` (XDG-safe stats/theme) .
+- **Key variables**: Hard-coded `APP_NAME="pomo"`, `APP_VER="1.3.8"`, GitHub `SCRIPT_URL`; `VOLATILE_DIR="/tmp"` (portable timer files), `PERSISTENT_DIR="~/.cache/pomo"` (XDG-safe stats/theme) .
 - **File safety**: mkdir -p dirs; temp downloads mv atomic; per-user files (`pomo_${USER}_work/break`) .
 - **Installation check**: Smart — root: global only; user: global OR local (exist+x) .
 - **Other**: Unicode icons (UTF-8 safe); tty-safe clear/colors; background sleep (no subshells leak); explicit errors (no `set -e`); main() modularity .

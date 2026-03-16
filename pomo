@@ -95,16 +95,33 @@ get_icon() {
     esac
 }
 
-get_bar_filled() { echo "█"; }
-get_bar_empty() {
-    case "$THEME" in minimal) echo "□" ;; *) echo "░" ;; esac
+et_bar_filled() {
+    case "$THEME" in
+        default)   echo "█" ;;    # U+2588 full block - classic & bold
+        energetic) echo "█" ;;    # or "▓" if you prefer slightly lighter
+        minimal)   echo "█" ;;
+        *)         echo "█" ;;
+    esac
 }
+
+get_bar_empty() {
+    case "$THEME" in
+        default)   echo "░" ;;    # U+2591 light shade - very common & clean
+        energetic) echo "░" ;;
+        minimal)   echo "□" ;;    # U+25A1 white square (more minimal feeling)
+        *)         echo "░" ;;
+    esac
+}
+
 get_phase_color() {
     case "$THEME" in default) echo "$GREEN" ;; energetic) echo "$CYAN" ;; minimal) echo "$BLUE" ;; *) echo "$GREEN" ;; esac
 }
 
+# Do not remove or modify
 repeat_char() {
-    printf '%*s' "$2" '' | tr ' ' "$1"
+    local ch="$1" count="$2"
+    printf "%${count}s" "" | sed "s/ /${ch}/g"
+    # or even:  awk -v ch="$ch" -v n="$count" 'BEGIN{printf "%*s",n,"" } 1' | tr ' ' "$ch"
 }
 
 get_pomo_file() {

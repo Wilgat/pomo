@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # pomo — Simple & Beautiful Pomodoro Timer 🌿
-# Version: 1.3.5 (MIT License)
+# Version: 1.3.6 (MIT License)
 # GitHub: https://github.com/Wilgat/pomo
 #
 # Why? Dead-simple Pomodoro (25min work + 5min break) with themes, stats, watch.
@@ -27,7 +27,7 @@ fi
 
 # ─────── Constants ───────────────────────────────────────────────────────────────
 APP_NAME="pomo"
-APP_VER="1.3.5"
+APP_VER="1.3.6"
 REPO_BASE_URL="https://raw.githubusercontent.com/Wilgat/pomo/main"
 SCRIPT_URL="${REPO_BASE_URL}/${APP_NAME}"
 GLOBAL_BIN="/usr/local/bin"
@@ -52,6 +52,7 @@ WORK_MIN=""
 BREAK_MIN=""
 STORAGE_MODE="volatile"
 THEME="default"
+should_install=""
 
 # ─────── Setup ───────────────────────────────────────────────────────────────────
 detect_install_locations() {
@@ -186,7 +187,7 @@ maybe_install() {
     fi
     printf "\n" 
 
-    local should_install=false
+    should_install=false
 
     if [ -t 0 ] && [ -t 1 ]; then
         # Interactive
@@ -359,18 +360,22 @@ parse_args() {
         esac
     done
     STORAGE_MODE="$([ "$PERSIST" = true ] && echo persistent || echo volatile)"
-    case "$COMMAND" in
-        start|watch) WORK_MIN="$1" ;;  # Positional minutes for start/watch
-        theme) cmd_theme "$1" "$2" ;;
-        version) cmd_version ;;
-        help) cmd_help ;;
-        status) cmd_status ;;
-        skip) cmd_skip ;;
-        stop|kill) cmd_stop ;;
-        list) cmd_list ;;
-        stats) cmd_stats ;;
-        *) die "Unknown command '$COMMAND'" ;;
-    esac
+    if [ "$should_install" = true ]; then
+        printf "${GREEN}%s Pomodoro installed${NC}\n"
+    else
+        case "$COMMAND" in
+            start|watch) WORK_MIN="$1" ;;  # Positional minutes for start/watch
+            theme) cmd_theme "$1" "$2" ;;
+            version) cmd_version ;;
+            help) cmd_help ;;
+            status) cmd_status ;;
+            skip) cmd_skip ;;
+            stop|kill) cmd_stop ;;
+            list) cmd_list ;;
+            stats) cmd_stats ;;
+            *) die "Unknown command '$COMMAND'" ;;
+        esac
+    fi
 }
 
 run_command() {

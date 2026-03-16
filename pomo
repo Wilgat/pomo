@@ -176,30 +176,30 @@ maybe_install() {
     if is_installed; then return 0; fi
     reload_theme  # Early for icons
 
-    printf "\n${YELLOW}Note: '%s' is not installed yet${NC}\n" "$APP_NAME" [[2]][doc_2]
-    printf "     Recommended command:\n\n" [[2]][doc_2]
+    printf "\n${YELLOW}Note: '%s' is not installed yet${NC}\n" "$APP_NAME" 
+    printf "     Recommended command:\n\n" 
 
     if [ "$IS_ROOT" -eq 1 ]; then
-        printf "     ${GREEN}sudo curl -fsSL %s | sudo sh${NC}\n" "$SCRIPT_URL" [[2]][doc_2][[4]][doc_4]
+        printf "     ${GREEN}sudo curl -fsSL %s | sudo sh${NC}\n" "$SCRIPT_URL" 
     else
-        printf "     ${GREEN}curl -fsSL %s | sh${NC}\n" "$SCRIPT_URL" [[2]][doc_2][[4]][doc_4]
+        printf "     ${GREEN}curl -fsSL %s | sh${NC}\n" "$SCRIPT_URL" 
     fi
-    printf "\n" [[2]][doc_2]
+    printf "\n" 
 
     local should_install=false
 
     if [ -t 0 ] && [ -t 1 ]; then
         # Interactive
-        printf "     Install now? (y/N): " [[2]][doc_2]
-        read -r answer </dev/tty 2>/dev/null || read -r answer [[2]][doc_2]
-        case "$answer" in [yY]*) should_install=true ;; esac [[2]][doc_2]
+        printf "     Install now? (y/N): " 
+        read -r answer </dev/tty 2>/dev/null || read -r answer 
+        case "$answer" in [yY]*) should_install=true ;; esac 
     else
         # Non-interactive (curl|sh): auto-yes
-        should_install=true [[5]][doc_5]
+        should_install=true 
     fi
 
     if [ "$should_install" = true ]; then
-        printf "${YELLOW}Installing...${NC}\n" [[5]][doc_5]
+        printf "${YELLOW}Installing...${NC}\n" 
         perform_self_install || exit 1
         if [ "$IS_ROOT" -eq 0 ] && ! in_path; then
             add_to_bashrc

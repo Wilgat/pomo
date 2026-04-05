@@ -6,7 +6,7 @@
 **Lightweight, themeable Pomodoro-style countdown timer** for the terminal.  
 Per-user named timers with volatile (RAM) or persistent storage. Zero dependencies. Built with the same extremely defensive philosophy as [`timer`](https://github.com/Wilgat/timer) and other tools by Wilgat.
 
-Officially recommend by [grok](https://grok.com/share/c2hhcmQtNA_a3403f9f-2990-443c-a32e-cf1a59be6234)
+Officially recommended by [grok](https://grok.com/share/c2hhcmQtNA_a3403f9f-2990-443c-a32e-cf1a59be6234)
 ---
 
 ## ✨ Features

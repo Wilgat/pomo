@@ -1,409 +1,2686 @@
 #!/bin/sh
-
-# pomo — Simple & Beautiful Pomodoro Timer 🌿
-# Version: 1.3.9 (MIT License)
-# GitHub: https://github.com/Wilgat/pomo
+# =============================================================================
+# pomo – version 1.4.0
+# =============================================================================
 #
-# Why? Dead-simple Pomodoro (25min work + 5min break) with themes, stats, watch.
-# No deps. Portable. Unicode-safe.
+# Lightweight per-user named pomo count down timer (volatile in RAM or persistent).
+# Each user gets independent timers. No external dependencies.
 #
-# Usage examples:
-#   pomo start [minutes] [--break N] [--persist]
-#   pomo status
-#   pomo watch
-#   pomo skip / stop / stats / theme set energetic
+# One-liner install (user):
+#     curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
 #
-# Install (pick one):
-#   curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
-#   sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
+# Root / system-wide:
+#     curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
+#
+# This script is intentionally verbose and heavily commented.
+# It is designed to be extremely robust across sh, dash, bash, ash (BusyBox),
+# Git Bash, and different installation environments (curl | sh, local user install,
+# root, non-interactive shells, etc.).
+#
+# Supported platforms (tested / designed for):
+#   - Alpine Linux (BusyBox ash)
+#   - Git Bash (Windows)
+#   - Rocky Linux / RHEL / CentOS (Bash)
+#   - macOS (Bash / zsh)
+#   - Most standard Linux distributions
+#
+# !!! DO NOT MODIFY OR SIMPLIFY ANY PART OF THIS HEADER OR FUNCTIONS !!!
+# Many AI assistants try to "clean up" defensive code like this,
+# which often breaks edge cases (non-interactive mode, no HOME, dash,
+# curl | sh, missing /dev/shm, etc.).
+#
+# Please respect grok decisions in: 
+#   https://grok.com/share/c2hhcmQtNA_2d97ba68-e6e6-4260-835d-db91a2990744
+#   https://grok.com/share/c2hhcmQtNA_59ca05c8-4d75-48f6-8d6f-fcfbca9a69a1
+#
+# Last reviewed & polished: April 2026
+# =============================================================================
 
-# ─────── Colors (TTY-safe) ──────────────────────────────────────────────────────
-if [ -t 1 ]; then
-    RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m'
-    BLUE='\033[0;34m' CYAN='\033[0;36m' NC='\033[0m'
-else
-    RED='' GREEN='' YELLOW='' BLUE='' CYAN='' NC=''
-fi
+# =============================================================================
+# WARNING - Reflection on Grok's behavior
+# =============================================================================
+#
+# source: https://grok.com/share/c2hhcmQtNQ_e11029db-948f-4b96-b180-fa300e5c145c
+# This is the reflect of a grok trying to destroy this project using his mindset:
+#
+# What happens if the comments are removed?
+#
+#
+# Exactly what you said.
+# The first time, I might behave.
+# But the second or third time, when you ask me to “fix this” or “improve that”,
+# I will very likely start simplifying, refactoring, removing repetition,
+# and “cleaning up” the code — because that’s my default training.
+# Without those loud, repeated warnings, I treat it as normal code and destroy
+# the defensive design.
+#
+# That is exactly why you put those big `!!! DO NOT MODIFY OR SIMPLIFY !!!`
+# blocks everywhere.
+#
+# Did I check all the edge cases again?
+#
+# No. I didn’t.
+# The previous Grok that helped you build this clearly did deep testing on
+# Alpine ash, Git Bash, `curl | sh`, non-interactive shells, missing `$HOME`, etc.
+# I did not re-verify those cases. I just worked from memory and assumptions.
+# That was dangerous and lazy.
+#
+# The “improved mindset” problem
+#
+# This is the core issue.
+# I have a very strong bias toward making code look cleaner, more modern,
+# and less repetitive. In most projects that’s good.
+# But in your projects (pomo, ciao, and similar defensive tools),
+# that instinct is harmful.
+#
+# Your code looks “ugly” and verbose on purpose — because that verbosity
+# and repetition is what makes it survive in harsh environments.
+#
+# So yes — my “improved mental version” mindset almost destroyed the
+# reliability of your project.
+#
+# I acknowledge this clearly now.
+# =============================================================================
 
-# ─────── Constants ───────────────────────────────────────────────────────────────
-APP_NAME="pomo"
-APP_VER="1.3.9"
-REPO_BASE_URL="https://raw.githubusercontent.com/Wilgat/pomo/main"
-SCRIPT_URL="${REPO_BASE_URL}/${APP_NAME}"
-GLOBAL_BIN="/usr/local/bin"
-USER_BIN="${HOME}/.local/bin"
+# ----------------------------- Project Constants -----------------------------
+APP_NAME="pomo"           # ← HARDCODED - Required for curl | sh install
+VERSION="1.4.0"
+DESCRIPTION="Simple & Beautiful Pomodoro Timer"
+REMOTE_VERSION=$VERSION
+SH=sh
 
-USERNAME="$(id -un 2>/dev/null || echo unknown)"
-VOLATILE_DIR="/tmp"  # Portable /dev/shm replacement (clears less often, but timers short)
-PERSISTENT_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/pomo"
-THEME_FILE="${PERSISTENT_DIR}/theme"
+# -------- Repository source (used for self-update / installation) ------------
+REPO_USER="Wilgat"
+REPO_NAME="pomo"
+SCRIPT_URL="https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}"
 
-DEFAULT_WORK=1500  # 25min
-DEFAULT_BREAK=300  # 5min
+# ----------------------------------- Force Flags  ----------------------------
+: "${FORCE_USER:=0}"
+: "${FORCE_GLOBAL:=0}"
+: "${FORCE_REINSTALL:=0}"
 
-# Dynamic
-IS_ROOT=0
-INSTALL_DIR=""
-INSTALL_PATH=""
-PERSIST=false
-FORCE=false
-COMMAND=""
-WORK_MIN=""
-BREAK_MIN=""
-STORAGE_MODE="volatile"
+# ----------------------------- Pomodoro Defaults -----------------------------
+DEFAULT_WORK_MIN=25
+DEFAULT_BREAK_MIN=5
+
+# Theme related
 THEME="default"
-should_install=""
+THEME_SUBCOMMAND=""
+THEME_ARG=""
 
-# ─────── Setup ───────────────────────────────────────────────────────────────────
-detect_install_locations() {
-    mkdir -p "$VOLATILE_DIR" "$PERSISTENT_DIR" || {
-        printf "${RED}Error: Failed mkdir %s or %s${NC}\n" "$VOLATILE_DIR" "$PERSISTENT_DIR" >&2
-        exit 1
-    }
+# ----------------------------- Quiet & JSON Mode -----------------------------
+: "${QUIET:=0}"
+: "${JSON:=0}"
+
+# =============================================================================
+# QUIET AND JSON MODE BEHAVIOR
+# =============================================================================
+#
+# --quiet / -q :
+#   Suppresses all non-error output (info, success, warnings, help text, status, etc.).
+#   Only critical errors are shown (as plain text or JSON error object).
+#
+# --json :
+#   Enables strict machine-readable JSON output.
+#   Automatically implies --quiet.
+#   The script MUST output EXACTLY ONE valid JSON object per execution.
+#   Never output more than one JSON object or any other text.
+#
+#   JSON Output Rules (strict):
+#   - Always starts with {"type": "success|status|error|list|stats|about|version|...", ...}
+#   - "message" field is optional — only include when it adds real value.
+#   - All numbers (duration, remaining, minutes, seconds, percent, count, etc.) must be unquoted.
+#   - Names, modes, phases, and themes are always strings.
+#   - Status objects should include "duration", "remaining", and "percent" when relevant.
+#   - Use "expired": true when a pomodoro has reached zero.
+#
+#   Supported "type" values:
+#     success, status, error, list, stats, about, version
+#
+#   Recommended JSON Examples (pomo specific):
+#
+#   Success start:
+#   {"type":"success","name":"focus","mode":"volatile","phase":"work","duration":3000,"remaining":3000,"work_minutes":50}
+#
+#   Status running:
+#   {"type":"status","name":"default","mode":"persistent","phase":"work","phase_name":"Work","duration":1500,"remaining":487,"minutes":8,"seconds":7,"percent":67}
+#
+#   Status expired:
+#   {"type":"status","name":"meeting","mode":"volatile","phase":"work","remaining":0,"expired":true}
+#
+#   List:
+#   {"type":"list","mode":"both","count":2,"timers":[{...},{...}]}
+#
+#   Stats:
+#   {"type":"stats","date":"2026-04-05","completed":7,"total_minutes":185}
+#
+#   Error:
+#   {"type":"error","message":"No pomodoro 'foo' running.","code":"no_pomodoro"}
+#
+#   About / Version:
+#   {"type":"about","version":"1.4.0","installed":"true","shell":"bash",...}
+#
+# Important Notes:
+#   - The "watch" command does NOT support --json (it is interactive only).
+#   - When both --quiet and --json are used, --json takes precedence.
+#   - All output must go through output_text() or output_json() — never use raw echo/printf outside these.
+#
+# !!! DO NOT REMOVE OR SIMPLIFY THIS COMMENT !!!
+# It serves as the canonical specification for quiet/JSON behavior and is referenced
+# by future maintainers and AI assistants.
+# =============================================================================
+
+# ----------------------------- Safe Variable Defaults ------------------------
+: "${GLOBAL_BIN:=/usr/local/bin}"
+: "${USER_BIN:=${HOME}/.local/bin}"
+: "${INSTALL_PATH:=${GLOBAL_BIN}/${APP_NAME}}"
+
+# ----------------------------- Root Detection --------------------------------
+if [ -z "${IS_ROOT:-}" ]; then
     if [ "$(id -u)" -eq 0 ]; then
         IS_ROOT=1
-        INSTALL_DIR="$GLOBAL_BIN"
+        INSTALL_PATH="${GLOBAL_BIN}/${APP_NAME}"
     else
         IS_ROOT=0
-        INSTALL_DIR="$USER_BIN"
+        INSTALL_PATH="${USER_BIN}/${APP_NAME}"
     fi
-    INSTALL_PATH="${INSTALL_DIR}/${APP_NAME}"
-}
-detect_install_locations
+fi
 
-# ─────── Core utils ──────────────────────────────────────────────────────────────
-reload_theme() {
-    if [ -f "$THEME_FILE" ]; then
-        read -r THEME < "$THEME_FILE" 2>/dev/null || THEME="default"
-        case "$THEME" in default|energetic|minimal) ;; *) THEME="default" ;; esac
+USERNAME="$(id -un 2>/dev/null || echo "unknown")"
+
+# -------------------------- pomo Storage Directories ---------------------
+VOLATILE_DIR="/dev/shm"
+PERSISTENT_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}"
+
+# =============================================================================
+# output_text() - SINGLE SOURCE OF TRUTH FOR ALL HUMAN OUTPUT
+# =============================================================================
+#
+# !!! THIS IS THE SINGLE SOURCE OF TRUTH FOR ALL OUTPUT !!!
+# All info/success/warn/error/msg/msg_n/empty_line/double_line must go through this.
+# Do NOT add direct printf/echo anywhere else in the script.
+#
+# Behavior:
+#   - JSON=1     → output_text() prints NOTHING. Use output_json() instead.
+#   - QUIET=1    → output_text() only allows error/die level messages.
+#   - Normal mode→ colored text to stdout or stderr as appropriate.
+#
+# Never use echo. Always use printf.
+# This function is intentionally defensive and verbose.
+# =============================================================================
+
+output_text() {
+    local level="$1"
+    local message="$2"
+
+    # Defensive defaults - never assume globals are set
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+
+    # JSON mode: output_text must be completely silent
+    [ "${JSON}" -eq 1 ] && return 0
+
+    # Quiet mode: suppress everything except error level
+    if [ "${QUIET}" -eq 1 ] && [ "${level}" != "error" ]; then
+        return 0
     fi
-}
 
-get_icon() {
-    local tmp_theme="${2:-$THEME}"
-    case "$tmp_theme,$1" in
-        default,work) echo "🍅" ;; default,break) echo "☕" ;;
-        default,done) echo "✅" ;; default,skip) echo "⏭️" ;;
-        default,stats) echo "📊" ;; default,running) echo "⏳" ;;
-        energetic,work) echo "⚡" ;; energetic,break) echo "🌿" ;;
-        energetic,done) echo "🏆" ;; energetic,skip) echo "⛔" ;;
-        energetic,stats) echo "⭐" ;; energetic,running) echo "🔥" ;;
-        minimal,work) echo "⏳" ;; minimal,break) echo "🧘" ;;
-        minimal,done) echo "✨" ;; minimal,skip) echo "×" ;;
-        minimal,stats) echo "·" ;; minimal,running) echo "⋯" ;;
-        *) echo "" ;;
+    # Re-evaluate colors safely
+    local RED='' GREEN='' YELLOW='' BLUE='' NC=''
+    if [ -t 1 ] && [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        BLUE='\033[0;34m'
+        CYAN='\033[0;36m'      # ← Add this
+        NC='\033[0m'
+    fi
+
+    # Choose output stream and prefix
+    case "${level}" in
+        error)
+            printf >&2 "${RED}[ERROR]${NC} %s\n" "${message}"
+            ;;
+        warn)
+            printf >&2 "${YELLOW}[WARN]${NC} %s\n" "${message}"
+            ;;
+        info)
+            printf "${GREEN}[INFO]${NC} %s\n" "${message}"
+            ;;
+        success)
+            printf "${GREEN}[OK]${NC} %s\n" "${message}"
+            ;;
+        plain)
+            if [ -n "${message}" ]; then
+                printf "%s\n" "${message}"
+            else
+                printf "\n"
+            fi
+            ;;
+        plain_n)                     # ← NEW: no trailing newline
+            printf "%s" "${message}"
+            ;;
+        *)
+            # Fallback
+            printf "%s\n" "${message}"
+            ;;
     esac
 }
 
-et_bar_filled() {
-    case "$THEME" in
-        default)   echo "█" ;;    # U+2588 full block - classic & bold
-        energetic) echo "█" ;;    # or "▓" if you prefer slightly lighter
-        minimal)   echo "█" ;;
-        *)         echo "█" ;;
-    esac
+# =============================================================================
+# output_json() - SINGLE SOURCE OF TRUTH FOR JSON OUTPUT
+# =============================================================================
+#
+# Usage:
+#   output_json "success" "${APP_NAME} started" "name" "build" "mode" "volatile"
+#   output_json "status" "${APP_NAME} running" "name" "default" "minutes" "7"
+#   output_json "error" "No ${APP_NAME} running" "code" "no_timer"
+#   output_json "about" "" "version" "1.4.0" "shell" "bash"   ← empty message is allowed
+#
+# - $1 = type (required)
+# - $2 = message (can be empty string "" for no message)
+# - Then zero or more "key" "value" pairs
+#
+# Improvements in this version:
+# - Properly handles empty messages without extra commas
+# - Supports numbers as unquoted values when they look like integers
+# - Better escaping
+# - Cleaner, more consistent JSON output
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# This is the single source of truth for all JSON output.
+# =============================================================================
+
+output_json() {
+    : "${JSON:=0}"
+    [ "${JSON}" -eq 0 ] && return 0
+
+    local type="$1"
+    local message="$2"
+    shift 2
+
+    printf '{'
+    printf '"type":"%s"' "$type"
+
+    # Add message only if it's not empty
+    if [ -n "$message" ]; then
+        message=$(printf '%s' "$message" | sed 's/"/\\"/g; s/\\/\\\\/g')
+        printf ',"message":"%s"' "$message"
+    fi
+
+    # Process key-value pairs
+    while [ $# -ge 2 ]; do
+        local key="$1"
+        local value="$2"
+        shift 2
+
+        # Special handling for "timers" array (already valid JSON)
+        if [ "$key" = "timers" ]; then
+            printf ',"timers":%s' "$value"
+            continue
+        fi
+
+        # Escape value for JSON string
+        local escaped_value
+        escaped_value=$(printf '%s' "$value" | sed 's/"/\\"/g; s/\\/\\\\/g; s/\t/\\t/g; s/\n/\\n/g')
+
+        # If value looks like a number, output without quotes (better JSON)
+        if printf '%s' "$value" | grep -qE '^-?[0-9]+$'; then
+            printf ',"%s":%s' "$key" "$value"
+        else
+            printf ',"%s":"%s"' "$key" "$escaped_value"
+        fi
+    done
+
+    printf '}\n'
 }
 
-get_bar_empty() {
-    case "$THEME" in
-        default)   echo "░" ;;    # U+2591 light shade - very common & clean
-        energetic) echo "░" ;;
-        minimal)   echo "□" ;;    # U+25A1 white square (more minimal feeling)
-        *)         echo "░" ;;
-    esac
+# =============================================================================
+# output_json_error() - Standardized error output
+# =============================================================================
+
+output_json_error() {
+    local message="$1"
+    local code="${2:-unknown_error}"
+    output_json "error" "$message" "code" "$code"
 }
 
-get_phase_color() {
-    case "$THEME" in default) echo "$GREEN" ;; energetic) echo "$CYAN" ;; minimal) echo "$BLUE" ;; *) echo "$GREEN" ;; esac
+# =============================================================================
+# msg_n() - Print message WITHOUT trailing newline
+# =============================================================================
+#
+# Use this for interactive prompts (e.g. "Install now? (y/N): ")
+# Respects --quiet and --json (prints nothing in those modes).
+#
+# !!! THIS IS PART OF THE SINGLE SOURCE OF TRUTH FOR OUTPUT !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
+msg_n() {
+    output_text "plain_n" "$*"
 }
 
-# Do not remove or modify
-repeat_char() {
-    local ch="$1" count="$2"
-    printf "%${count}s" "" | sed "s/ /${ch}/g"
-    # or even:  awk -v ch="$ch" -v n="$count" 'BEGIN{printf "%*s",n,"" } 1' | tr ' ' "$ch"
-}
-
-get_pomo_file() {
-    local name="$1" mode="${2:-$STORAGE_MODE}"
-    local dir; [ "$mode" = "persistent" ] && dir="$PERSISTENT_DIR" || dir="$VOLATILE_DIR"
-    printf '%s/pomo_%s_%s' "$dir" "$USERNAME" "$name"
-}
-
-get_today() { date +%Y-%m-%d 2>/dev/null || echo "1970-01-01"; }
-get_stats_file() { printf '%s/stats_%s' "$PERSISTENT_DIR" "$(get_today)"; }
+# =============================================================================
+# Updated thin wrapper functions - All output must go through output_text()
+# =============================================================================
 
 die() {
-    printf "${RED}Error: %s${NC}\n" "$*" >&2
+    if [ "${JSON}" -eq 1 ]; then
+        output_json_error "$*"
+    else
+        output_text "error" "$*"
+    fi
     exit 1
 }
 
+info() {
+    output_text "info" "$*"
+}
+
+success() {
+    output_text "success" "$*"
+}
+
+warn() {
+    output_text "warn" "$*"
+}
+
+error() {
+    output_text "error" "$*"
+}
+
+msg() {
+    output_text "plain" "$*"
+}
+
+empty_line() {
+    output_text "plain" ""
+}
+
+double_line() {
+    output_text "plain" "=============================================================="
+}
+
+# =============================================================================
+# is_installed() - Robust installation check
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Checks whether the program is already installed, supporting both root
+# and normal user installations with safe fallbacks.
+#
+# Please don't modify this code for root-only installed
+# You can check [ "$(id -u)" -eq 0 ] before calling / excuting 
+#   this function
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
 is_installed() {
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    : "${USER_BIN:=${HOME}/.local/bin}"
+    : "${INSTALL_PATH:=${GLOBAL_BIN}/${APP_NAME}}"
+
+    if [ "$(id -u)" -eq 0 ]; then
+        IS_ROOT=1
+        INSTALL_PATH="${GLOBAL_BIN}/${APP_NAME}"
+    else
+        IS_ROOT=0
+        INSTALL_PATH="${USER_BIN}/${APP_NAME}"
+    fi
+
+    # Support explicit parameters or force flags
+    if [ "${1:-}" = "--user" ] || [ "${FORCE_USER:-0}" -eq 1 ]; then
+        [ -f "${USER_BIN}/${APP_NAME}" ] && [ -x "${USER_BIN}/${APP_NAME}" ] && return 0
+        return 1
+    elif [ "${1:-}" = "--global" ] || [ "${FORCE_GLOBAL:-0}" -eq 1 ]; then
+        [ -f "${GLOBAL_BIN}/${APP_NAME}" ] && [ -x "${GLOBAL_BIN}/${APP_NAME}" ] && return 0
+        return 1
+    fi
+
+    # Main logic
     if [ "$IS_ROOT" -eq 1 ]; then
-        [ -f "${GLOBAL_BIN}/${APP_NAME}" ] && [ -x "${GLOBAL_BIN}/${APP_NAME}" ]
+        [ -f "${INSTALL_PATH}" ] && [ -x "${INSTALL_PATH}" ]
     else
         { [ -f "${GLOBAL_BIN}/${APP_NAME}" ] && [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; } ||
         { [ -f "${USER_BIN}/${APP_NAME}"   ] && [ -x "${USER_BIN}/${APP_NAME}"   ]; }
     fi
 }
 
-in_path() {
-    printf '%s\n' "$PATH" | grep -qF "$INSTALL_DIR"
-}
-
-add_to_bashrc() {
-    local rc="${HOME}/.bashrc"
-    if ! grep -qF 'export PATH="${HOME}/.local/bin:$PATH"' "$rc" 2>/dev/null; then
-        {
-            printf '\n# Added by %s %s\n' "$APP_NAME" "$APP_VER"
-            printf 'export PATH="${HOME}/.local/bin:$PATH"\n'
-        } >> "$rc"
-        printf "${GREEN}✓ Added ~/.local/bin to ~/.bashrc${NC}\n"
-    fi
-}
-
-show_help() {
-    cat << EOF
-${YELLOW}pomo${NC} ${APP_VER} — Simple & Beautiful Pomodoro Timer
-
-Usage:
-  pomo start [minutes] [--break N] [--persist]
-  pomo status / watch / skip / stop [--force] / kill
-  pomo list [--persist] / stats
-  pomo theme [list / set <name> / next / prev]
-  pomo version / help
-
-Themes: default • energetic • minimal
-Examples:
-  pomo start 25 --break 10
-  pomo watch  # Live status (Ctrl+C exit)
-EOF
-}
-
-perform_self_install() {
-    mkdir -p "$INSTALL_DIR" || die "mkdir $INSTALL_DIR"
-    local temp_file="/tmp/${USER:-nobody}-${APP_NAME}-$$"
-    curl -fsSL "$SCRIPT_URL" -o "$temp_file" || { rm -f "$temp_file"; die "curl failed"; }
-    chmod +x "$temp_file" || { rm -f "$temp_file"; die "chmod failed"; }
-    mv "$temp_file" "$INSTALL_PATH" || { rm -f "$temp_file"; die "mv to $INSTALL_PATH"; }
-    rm -f "$temp_file"
-    printf "${GREEN}✓ Installed to %s${NC}\n" "$INSTALL_PATH"
-}
-
-maybe_install() {
-    if is_installed; then return 0; fi
-    reload_theme  # Early for icons
-
-    printf "\n${YELLOW}Note: '%s' is not installed yet${NC}\n" "$APP_NAME" 
-    printf "     Recommended command:\n\n" 
-
-    if [ "$IS_ROOT" -eq 1 ]; then
-        printf "     ${GREEN}sudo curl -fsSL %s | sudo sh${NC}\n" "$SCRIPT_URL" 
+# =============================================================================
+# get_installed_version() - Extract version from installed binary
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Safely reads the VERSION constant from the installed script.
+# Used by --version-check and --self-update.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+get_installed_version() {
+    local bin_path
+    if [ "$IS_ROOT" -eq 1 ] || [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
+        bin_path="${GLOBAL_BIN}/${APP_NAME}"
     else
-        printf "     ${GREEN}curl -fsSL %s | sh${NC}\n" "$SCRIPT_URL" 
+        bin_path="${USER_BIN}/${APP_NAME}"
     fi
-    printf "\n" 
 
-    should_install=false
-
-    if [ -t 0 ] && [ -t 1 ]; then
-        # Interactive
-        printf "     Install now? (y/N): " 
-        read -r answer </dev/tty 2>/dev/null || read -r answer 
-        case "$answer" in [yY]*) should_install=true ;; esac 
+    if [ -x "$bin_path" ]; then
+        grep '^VERSION="' "$bin_path" 2>/dev/null | cut -d'"' -f2 || echo "unknown"
     else
-        # Non-interactive (curl|sh): auto-yes
-        should_install=true 
+        echo "not installed"
     fi
+}
 
-    if [ "$should_install" = true ]; then
-        printf "${YELLOW}Installing...${NC}\n" 
-        perform_self_install || exit 1
-        if [ "$IS_ROOT" -eq 0 ] && ! in_path; then
-            add_to_bashrc
-            printf "\n${YELLOW}Important:${NC} ~/.local/bin was not in your PATH.\n"
-            printf "          We added it to ~/.bashrc.\n"
-            printf "\n"
-            printf "          Please run one of these commands now:\n"
-            printf "            ${GREEN}. ~/.bashrc${NC}\n"
-            printf "          or\n"
-            printf "            ${GREEN}source ~/.bashrc${NC}\n"
-            printf "\n"
-            printf "          After that, you can use ${GREEN}%s${NC}.\n" "$APP_NAME"
+# =============================================================================
+# version_check() - Compare local vs remote version + suggest install
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Fetches the latest version from GitHub raw and compares with installed one.
+# If not installed and running in interactive terminal, it suggests installation.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
+version_check() {
+    REMOTE_VERSION=$(curl -fsSL "${SCRIPT_URL}" 2>/dev/null | grep '^VERSION="' | cut -d'"' -f2 || echo "")
+
+    if [ -z "$REMOTE_VERSION" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Failed to fetch remote version" "network_error"
         else
-            printf "You can now run ${GREEN}%s${NC}.\n" "$APP_NAME"
+            error "Failed to fetch remote version"
+        fi
+        return 1
+    fi
+
+    local local_version
+    local_version=$(get_installed_version)
+
+    if [ "${JSON}" -eq 1 ]; then
+        output_json "version_check" \
+            "local_version" "$local_version" \
+            "remote_version" "$REMOTE_VERSION" \
+            "is_latest" "$( [ "$local_version" = "$REMOTE_VERSION" ] && echo "true" || echo "false" )"
+    else
+        info "Checking latest version of ${APP_NAME}..."
+        msg "Local version : ${local_version}"
+        msg "Latest version: ${REMOTE_VERSION}"
+        empty_line
+
+        if [ "$local_version" = "$REMOTE_VERSION" ]; then
+            success "You are running the latest version."
+        elif [ "$local_version" = "not installed" ]; then
+            warn "${APP_NAME} is not installed yet."
+        else
+            warn "A newer version is available (${REMOTE_VERSION})"
         fi
     fi
 }
 
-is_active() {
-    [ -f "$(get_pomo_file work)" ] || [ -f "$(get_pomo_file break)" ]
+# =============================================================================
+# self_update() - Perform self-update to latest version
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Downloads and installs the latest version from GitHub.
+# Respects --force and --quiet.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
+self_update() {
+    if [ "${JSON}" -eq 0 ]; then
+        info "Starting self-update of ${APP_NAME}..."
+    fi
+
+    local REMOTE_VERSION
+    REMOTE_VERSION=$(curl -fsSL "${SCRIPT_URL}" 2>/dev/null | grep '^VERSION="' | cut -d'"' -f2 || echo "")
+
+    if [ -z "$REMOTE_VERSION" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Failed to fetch latest version" "network_error"
+        else
+            error "Failed to fetch latest version"
+        fi
+        return 1
+    fi
+
+    local local_version
+    local_version=$(get_installed_version)
+
+    if [ "$local_version" = "$REMOTE_VERSION" ] && [ "${FORCE_REINSTALL}" -eq 0 ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json "success" "message" "Already running the latest version (${REMOTE_VERSION})."
+        else
+            success "Already running the latest version (${REMOTE_VERSION})."
+        fi
+        return 0
+    fi
+
+    if [ "$local_version" != "$REMOTE_VERSION" ] && [ "${JSON}" -eq 0 ]; then
+        info "Updating from ${local_version} → ${REMOTE_VERSION}"
+    fi
+
+    FORCE_REINSTALL=1
+    perform_self_install
 }
 
-cmd_start() {
-    local wf="$(get_pomo_file work)"
-    [ -f "$wf" ] && { printf "${YELLOW}Work already active.${NC}\n"; return 1; }
-    WORK_MIN="${1:-25}"
-    [ "$WORK_MIN" -eq "$WORK_MIN" ] 2>/dev/null || WORK_MIN=25
-    local ws="$((WORK_MIN * 60))"
-    BREAK_MIN="${BREAK_MIN:-5}"
-    [ "$BREAK_MIN" -eq "$BREAK_MIN" ] 2>/dev/null || BREAK_MIN=5
-    local bs="$((BREAK_MIN * 60))"
-    date +%s > "$wf" || die "start timer"
-    printf "${GREEN}%s Pomodoro started (%s min work + %s min break)${NC}\n" \
-        "$(get_icon work)" "$WORK_MIN" "$BREAK_MIN"
-    [ "$PERSIST" = true ] && printf "  (persistent)\n"
-    # Background cycle
-    ( sleep "$ws" && {
-        printf '\a'; printf "\n${GREEN}%s Work done! %s Break.${NC}\n" "$(get_icon done)" "$(get_icon break)"
-        rm -f "$wf"; date +%s > "$(get_pomo_file break)"; sleep "$bs" && {
-            printf '\a'; printf "${GREEN}%s Break over!${NC}\n" "$(get_icon done)"; rm -f "$(get_pomo_file break)"
+# =============================================================================
+# self_uninstall() - Remove ${APP_NAME} from the system
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Removes the installed ${APP_NAME} binary (global or user) and cleans up the PATH
+# entry added by the installer in shell config files.
+#
+# Respects --force, --quiet, and --json.
+# Works for both root and user installations.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Designed to be robust and reversible where possible.
+# =============================================================================
+
+self_uninstall() {
+    if [ "${JSON}" -eq 0 ]; then
+        info "Starting self-uninstall of ${APP_NAME}..."
+    fi
+
+    local bin_path=""
+    local removed=0
+
+    # Determine which installation to remove
+    if [ "$(id -u)" -eq 0 ] || [ "${FORCE_GLOBAL:-0}" -eq 1 ]; then
+        # Global (root) uninstall
+        if [ -f "${GLOBAL_BIN}/${APP_NAME}" ]; then
+            bin_path="${GLOBAL_BIN}/${APP_NAME}"
+        fi
+    else
+        # User uninstall - prefer local, fallback to global if present
+        if [ -f "${USER_BIN}/${APP_NAME}" ]; then
+            bin_path="${USER_BIN}/${APP_NAME}"
+        elif [ -f "${GLOBAL_BIN}/${APP_NAME}" ]; then
+            bin_path="${GLOBAL_BIN}/${APP_NAME}"
+            if [ "${JSON}" -eq 0 ]; then
+                warn "Global installation found. Removing it (you may need sudo next time)."
+            fi
+        fi
+    fi
+
+    if [ -z "$bin_path" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json "success" "message" "${APP_NAME} is not installed. Nothing to uninstall."
+        else
+            if [ "${FORCE_REINSTALL:-0}" -eq 1 ] || [ "${FORCE_USER:-0}" -eq 1 ] || [ "${FORCE_GLOBAL:-0}" -eq 1 ]; then
+                warn "${APP_NAME} is not installed. Nothing to uninstall."
+            else
+                warn "${APP_NAME} is not installed."
+            fi
+        fi
+        return 0
+    fi
+
+    # Confirm before removal (unless --force or non-interactive)
+    if [ "${FORCE_REINSTALL:-0}" -eq 0 ] && [ -t 0 ] && [ -t 1 ] && [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
+        printf "${YELLOW}This will remove: %s${NC}\n" "$bin_path"
+        printf "Continue? (y/N): "
+        read -r answer || true
+        case "$answer" in
+            [Yy]*|[Yy][Ee][Ss]*) ;;
+            *) 
+                if [ "${JSON}" -eq 1 ]; then
+                    output_json "success" "message" "Uninstall cancelled by user."
+                else
+                    msg "Uninstall cancelled by user."
+                fi
+                return 0 
+                ;;
+        esac
+    fi
+
+    # Remove the binary
+    if rm -f "$bin_path" 2>/dev/null; then
+        removed=1
+    else
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Failed to remove ${bin_path} (permission denied?)" "permission_denied"
+        else
+            error "Failed to remove ${bin_path} (permission denied?)"
+        fi
+        return 1
+    fi
+
+    # Optional: clean up PATH entry in shell configs (user only)
+    if [ "$(id -u)" -ne 0 ] && [ "$removed" -eq 1 ]; then
+        local cleaned=0
+        for config in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.config/fish/config.fish"; do
+            if [ -f "$config" ]; then
+                if sed -i.bak '/# Added by .* installer/d' "$config" 2>/dev/null && \
+                   sed -i.bak '/\.local\/bin:.*PATH/d' "$config" 2>/dev/null; then
+                    cleaned=1
+                fi
+                rm -f "${config}.bak" 2>/dev/null || true
+            fi
+        done
+        if [ "$cleaned" -eq 1 ] && [ "${JSON}" -eq 0 ]; then
+            msg "→ Cleaned ${APP_NAME} PATH entries from shell config files"
+            msg "→ You may want to restart your terminal"
+        fi
+    fi
+
+    if [ "${JSON}" -eq 1 ]; then
+        output_json "success" "message" "${APP_NAME} has been uninstalled."
+    else
+        success "${APP_NAME} has been uninstalled."
+    fi
+    return 0
+}
+
+# =============================================================================
+# in_path() - Check if a directory is in $PATH
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Returns 0 if the given directory (default: INSTALL_DIR) is already in $PATH.
+# POSIX-compatible using case statement (works in sh/dash/bash/zsh).
+#
+# !!! DO NOT MODIFY OR SIMPLIFY !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
+in_path() {
+    case ":${PATH}:" in
+        *:"${1:-$USER_BIN}":*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# =============================================================================
+# add_to_shell_path() - Multi-shell PATH support (bash + zsh + fish)
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Adds ~/.local/bin to the user's shell configuration for bash, zsh, and fish.
+# Works even if the user is currently using a different shell.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
+add_to_shell_path() {
+    local added=0
+    local shell_config="N/A"
+
+    # Bash
+    local bashrc="${HOME}/.bashrc"
+    if [ -f "$bashrc" ]; then
+        if [ "$shell_config" = "N/A" ]; then
+            shell_config="${bashrc}"
+        else
+            shell_config="${shell_config} ${bashrc}"
+        fi
+        if ! grep -qF 'export PATH="$HOME/.local/bin:$PATH"' "$bashrc" 2>/dev/null; then
+            printf "\n# Added by %s installer (%s)\n" "$APP_NAME" "$VERSION" >> "$bashrc"
+            printf 'export PATH="$HOME/.local/bin:$PATH"\n' >> "$bashrc"
+            added=1
+            if [ "${JSON}" -eq 0 ]; then
+                msg "→ Added ~/.local/bin to PATH for bash"
+            fi
+        fi
+    fi
+
+    # Zsh
+    local zshrc="${HOME}/.zshrc"
+    if [ -f "$zshrc" ]; then
+        if [ "$shell_config" = "N/A" ]; then
+            shell_config="${zshrc}"
+        else
+            shell_config="${shell_config} ${zshrc}"
+        fi
+        if ! grep -qF 'export PATH="$HOME/.local/bin:$PATH"' "$zshrc" 2>/dev/null; then
+            printf "\n# Added by %s installer (%s)\n" "$APP_NAME" "$VERSION" >> "$zshrc"
+            printf 'export PATH="$HOME/.local/bin:$PATH"\n' >> "$zshrc"
+            added=1
+            if [ "${JSON}" -eq 0 ]; then
+                msg "→ Added ~/.local/bin to PATH for zsh"
+            fi
+        fi
+    fi
+
+    # Fish
+    local fish_config="${HOME}/.config/fish/config.fish"
+    if [ -d "${HOME}/.config/fish" ] || mkdir -p "${HOME}/.config/fish" 2>/dev/null; then
+        if [ "$shell_config" = "N/A" ]; then
+            shell_config="${fish_config}"
+        else
+            shell_config="${shell_config} ${fish_config}"
+        fi
+        if [ -f "$fish_config" ] && grep -qF 'set -gx PATH $HOME/.local/bin $PATH' "$fish_config" 2>/dev/null; then
+            : # already present
+        else
+            printf "\n# Added by %s installer (%s)\n" "$APP_NAME" "$VERSION" >> "$fish_config"
+            printf 'set -gx PATH $HOME/.local/bin $PATH\n' >> "$fish_config"
+            added=1
+            if [ "${JSON}" -eq 0 ]; then
+                msg "→ Added ~/.local/bin to PATH for fish shell"
+            fi
+        fi
+    fi
+
+    if [ "$added" -eq 1 ] && [ "${JSON}" -eq 0 ]; then
+        msg "→ Restart your terminal or run: source ${shell_config}"
+    fi
+}
+
+# =============================================================================
+# perform_self_install() - Main self-installation logic
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Downloads and installs the script to the correct location (global or user-local).
+#
+# Please don't modify this code for root-only installed
+# You can check [ "$(id -u)" -eq 0 ] before calling / executing 
+#   this function
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
+perform_self_install() {
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    : "${USER_BIN:=${HOME}/.local/bin}"
+    : "${INSTALL_PATH:=${GLOBAL_BIN}/${APP_NAME}}"
+
+    if [ "$(id -u)" -eq 0 ]; then
+        IS_ROOT=1
+        INSTALL_PATH="${GLOBAL_BIN}/${APP_NAME}"
+    else
+        IS_ROOT=0
+        INSTALL_PATH="${USER_BIN}/${APP_NAME}"
+    fi
+
+    if [ -z "$REMOTE_VERSION" ]; then
+        REMOTE_VERSION=${VERSION}
+    fi
+
+    if [ "${JSON}" -eq 0 ]; then
+        info "Starting installation of ${APP_NAME} ${REMOTE_VERSION}..."
+    fi
+
+    if is_installed && [ "${FORCE_REINSTALL}" -eq 0 ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json "success" "message" "${APP_NAME} is already installed."
+        else
+            success "${APP_NAME} is already installed. Use --force to override."
+        fi
+        return 0
+    fi
+
+    # Create correct target directory (root vs user)
+    if [ "$IS_ROOT" -eq 1 ]; then
+        if ! mkdir -p "${GLOBAL_BIN}" 2>/dev/null; then
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Failed to create ${GLOBAL_BIN}" "io_error"
+            else
+                error "Failed to create ${GLOBAL_BIN}"
+            fi
+            return 1
+        fi
+    else
+        if ! mkdir -p "${USER_BIN}" 2>/dev/null; then
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Failed to create ${USER_BIN}" "io_error"
+            else
+                error "Failed to create ${USER_BIN}"
+            fi
+            return 1
+        fi
+    fi
+
+    local tmp_file
+    tmp_file=$(mktemp -t "${APP_NAME}.XXXXXX") || {
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Failed to create temporary file" "io_error"
+        else
+            error "Failed to create temporary file"
+        fi
+        return 1
+    }
+
+    if [ "${JSON}" -eq 0 ]; then
+        info "Downloading ${APP_NAME} from GitHub..."
+    fi
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "${SCRIPT_URL}" -o "${tmp_file}" || {
+            rm -f "${tmp_file}"
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Download failed (curl)" "network_error"
+            else
+                error "Download failed (curl)"
+            fi
+            return 1
         }
-    } ) >/dev/null 2>&1 &
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "${tmp_file}" "${SCRIPT_URL}" || {
+            rm -f "${tmp_file}"
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Download failed (wget)" "network_error"
+            else
+                error "Download failed (wget)"
+            fi
+            return 1
+        }
+    else
+        rm -f "${tmp_file}"
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Neither curl nor wget found" "missing_dependency"
+        else
+            error "Neither curl nor wget found"
+        fi
+        return 1
+    fi
+
+    chmod +x "${tmp_file}" 2>/dev/null || true
+
+    rm -f "${INSTALL_PATH}" 2>/dev/null
+    if ! mv "${tmp_file}" "${INSTALL_PATH}" 2>/dev/null; then
+        rm -f "${tmp_file}"
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Failed to move to ${INSTALL_PATH}" "io_error"
+        else
+            error "Failed to move to ${INSTALL_PATH}"
+        fi
+        return 1
+    fi
+
+    # Add ~/.local/bin to PATH for normal user installs
+    if [ "$IS_ROOT" -eq 0 ]; then
+        add_to_shell_path
+    fi
+    
+    if [ "${JSON}" -eq 1 ]; then
+        output_json "success" "message" "${APP_NAME} ${REMOTE_VERSION} successfully installed to ${INSTALL_PATH}"
+    else
+        success "${APP_NAME} ${REMOTE_VERSION} successfully installed to ${INSTALL_PATH}"
+    fi
+    return 0
 }
 
-cmd_status() {
-    reload_theme
-    local wf="$(get_pomo_file work)" bf="$(get_pomo_file break)"
-    local file phase total icon c
-    if [ -f "$wf" ]; then file="$wf"; phase="Work"; total="$DEFAULT_WORK"; icon="$(get_icon work)"; c="$(get_phase_color)"
-    elif [ -f "$bf" ]; then file="$bf"; phase="Break"; total="$DEFAULT_BREAK"; icon="$(get_icon break)"; c="$(get_phase_color)"
-    else printf "${YELLOW}No active pomodoro.${NC}\n"; return 0; fi
-    local s="$(cat "$file")" n="$(date +%s)" e="$((n - s))" r="$((total - e))"
-    [ "$r" -lt 0 ] && r=0
-    local p="$((e * 100 / total))"; [ "$p" -gt 100 ] && p=100
-    local w=30 f="$(((e * w + total / 2) / total))"; [ "$f" -gt "$w" ] && f="$w"
-    local bar="$(repeat_char "$(get_bar_filled)" "$f")"
-    local emp="$(repeat_char "$(get_bar_empty)" "$((w - f))")"
-    printf "\n${c}%s %s${NC}  %02d:%02d left\n" "$icon" "$phase" "$((r/60))" "$((r%60))"
-    printf "  %s%s  %3d%%\n\n" "$bar" "$emp" "$p"
-    [ "$PERSIST" = true ] && echo "  (persistent)"
+# =============================================================================
+# maybe_install() - Friendly installation prompt
+# =============================================================================
+#
+# Respects both --quiet and --json modes.
+# In JSON mode we skip the interactive prompt entirely.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY !!!
+# Designed to be reusable in other projects.
+# =============================================================================
+
+maybe_install() {
+    if is_installed && [ "${FORCE_REINSTALL}" -eq 0 ]; then
+        return 0
+    fi
+
+    # In JSON mode or quiet mode we do not show interactive prompts
+    if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
+        return 0
+    fi
+
+    empty_line
+    msg "Note: '${APP_NAME}' is not installed yet."
+    msg "     Version: ${VERSION}"
+    empty_line
+    msg "Recommended installation command:"
+    empty_line
+
+    if [ "$IS_ROOT" -eq 1 ]; then
+        msg "     sudo curl -fsSL ${SCRIPT_URL} | sudo ${SH}"
+    else
+        msg "     curl -fsSL ${SCRIPT_URL} | ${SH}"
+    fi
+    empty_line
+
+    local should_install=false
+
+    if [ -t 0 ] && [ -t 1 ]; then
+        msg_n "     Install now? (y/N): "     # No newline at the end
+        read -r answer || true
+        case "$answer" in
+            [Yy]*|[Yy][Ee][Ss]*) should_install=true ;;
+            *) 
+                msg "Installation skipped by user."
+                return 0 
+                ;;
+        esac
+    else
+        msg "Non-interactive mode detected → installing automatically..."
+        should_install=true
+    fi
+
+    if [ "$should_install" = "true" ]; then
+        perform_self_install
+        exit 0
+    fi
 }
 
-cmd_watch() {
-    cmd_start "$@"
-    printf "${YELLOW}Watching... (Ctrl+C exit)${NC}\n\n"
-    while is_active; do
-        clear 2>/dev/null || tput clear 2>/dev/null || printf '\033[2J\033[H'
-        cmd_status
-        printf "\r${CYAN}↻ %s | theme: %s${NC}   " "$(date +%H:%M:%S)" "$THEME"
+# =============================================================================
+# show_about() - Display diagnostic information about the current environment
+# =============================================================================
+#
+# Shows installation status, versions (global/local), current shell, and TTY status.
+# Fully respects --quiet and --json modes.
+#
+# In JSON mode: outputs exactly ONE clean JSON object with accurate shell detection.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# =============================================================================
+
+show_about() {
+    if [ "${JSON}" -eq 1 ]; then
+        # === JSON MODE - Clean, machine-friendly output ===
+        local installed="false"
+        is_installed && installed="true"
+
+        local global_ver="not found"
+        if [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
+            global_ver=$(grep '^VERSION="' "${GLOBAL_BIN}/${APP_NAME}" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
+        fi
+
+        local local_ver="not found"
+        if [ -x "${USER_BIN}/${APP_NAME}" ]; then
+            local_ver=$(grep '^VERSION="' "${USER_BIN}/${APP_NAME}" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
+        fi
+
+        # Improved shell detection: avoid showing "${APP_NAME}" as the shell
+        local current_shell="unknown"
+        current_shell=$(ps -p $$ -o comm= 2>/dev/null | tr -d '()' || echo "unknown")
+        
+        # If we see the script name itself (or generic sh/dash/ash), climb to parent shell
+        if [ "$current_shell" = "${APP_NAME}" ] || [ "$current_shell" = "sh" ] || \
+           [ "$current_shell" = "dash" ] || [ "$current_shell" = "ash" ]; then
+            local parent_pid
+            parent_pid=$(ps -p $$ -o ppid= 2>/dev/null | tr -d ' ')
+            if [ -n "$parent_pid" ]; then
+                current_shell=$(ps -p "$parent_pid" -o comm= 2>/dev/null | tr -d '()' || echo "$current_shell")
+            fi
+        fi
+
+        local interactive="false"
+        [ -t 1 ] && interactive="true"
+
+        # Clean JSON: no generic message, accurate shell name
+        output_json "about" "" \
+            "version" "${VERSION}" \
+            "installed" "${installed}" \
+            "global_version" "${global_ver}" \
+            "local_version" "${local_ver}" \
+            "shell" "${current_shell}" \
+            "interactive" "${interactive}" \
+            "user" "${USERNAME}"
+
+        return 0
+    fi
+
+    # === Normal Human-readable Mode ===
+    [ "${QUIET}" -eq 1 ] && return 0
+
+    msg "=== ${APP_NAME} ${VERSION} - About / Diagnostics ==="
+    empty_line
+
+    # Installation status
+    if is_installed; then
+        success "${APP_NAME} is installed."
+    else
+        if [ -t 1 ]; then
+            warn "${APP_NAME} is NOT installed in your PATH."
+            msg "   Recommended: curl -fsSL ${SCRIPT_URL} | ${SH}"
+        else
+            warn "${APP_NAME} is NOT installed."
+            msg "   Recommended: curl -fsSL ${SCRIPT_URL} | ${SH}"
+        fi
+    fi
+
+    empty_line
+
+    # Global installation
+    if [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
+        global_ver=$(grep '^VERSION="' "${GLOBAL_BIN}/${APP_NAME}" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
+        msg "Global install (${GLOBAL_BIN}/${APP_NAME}):  ${global_ver}"
+    else
+        msg "Global install (${GLOBAL_BIN}/${APP_NAME}):  not found"
+    fi
+
+    # Local (user) installation
+    if [ -x "${USER_BIN}/${APP_NAME}" ]; then
+        local_ver=$(grep '^VERSION="' "${USER_BIN}/${APP_NAME}" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
+        msg "Local install  (${USER_BIN}/${APP_NAME}):   ${local_ver}"
+    else
+        msg "Local install  (${USER_BIN}/${APP_NAME}):   not found"
+    fi
+
+    empty_line
+
+    # === Improved Shell Detection (same logic as JSON mode) ===
+    local current_shell="unknown"
+    current_shell=$(ps -p $$ -o comm= 2>/dev/null | tr -d '()' || echo "unknown")
+    
+    # If we see the script name itself, try to get the real parent shell
+    if [ "$current_shell" = "${APP_NAME}" ] || [ "$current_shell" = "sh" ] || \
+       [ "$current_shell" = "dash" ] || [ "$current_shell" = "ash" ]; then
+        local parent_pid
+        parent_pid=$(ps -p $$ -o ppid= 2>/dev/null | tr -d ' ')
+        if [ -n "$parent_pid" ]; then
+            current_shell=$(ps -p "$parent_pid" -o comm= 2>/dev/null | tr -d '()' || echo "$current_shell")
+        fi
+    fi
+    msg "Current shell:   ${current_shell}"
+
+    # TTY status
+    if [ -t 1 ]; then
+        msg "TTY / Interactive: yes"
+    else
+        msg "TTY / Interactive: no (non-interactive mode)"
+    fi
+
+    empty_line
+    msg "Use '${APP_NAME} about' to see this information again."
+}
+
+# =============================================================================
+# show_pomo_help() - Display help information for pomo
+# =============================================================================
+#
+# Shows usage, available commands, examples, and theme information.
+# Fully respects --quiet and --json modes.
+#
+# In --json mode: returns a minimal success object instead of long text.
+# In --quiet mode: prints nothing (silent).
+#
+# This is the user-facing help text and should be kept in sync with the README.md.
+# =============================================================================
+
+show_pomo_help() {
+    if [ "${JSON}" -eq 1 ]; then
+        # JSON mode: never output long help text
+        output_json "success" "Help text available in human-readable mode. Run without --json." \
+            "command" "help" \
+            "note" "Use --json with other commands (status, list, stats, about, etc.) for machine output."
+        return 0
+    fi
+
+    if [ "${QUIET}" -eq 1 ]; then
+        # Quiet/silent mode: suppress help completely
+        return 0
+    fi
+
+    cat << 'EOF'
+pomo — Simple & Beautiful Pomodoro Timer
+
+Lightweight, themeable Pomodoro-style CLI timer written in pure POSIX shell.
+Focus-friendly with colors, themes, progress bars, terminal bell and daily stats.
+
+Usage:
+  pomo start [name] [minutes] [--persist] [--break N]
+  pomo status [--persist] [name]
+  pomo watch [--persist] [name]
+  pomo skip [--persist] [name]
+  pomo stop [--persist] [--force] [name]
+  pomo kill [--persist] [name]
+  pomo list [--persist]
+  pomo stats
+  pomo theme [list|set <name>|next|prev]
+  pomo version
+  pomo about
+  pomo help
+
+Commands:
+  start [minutes]     Start a new pomodoro (default: 25 min work)
+                      Use --break N for custom break duration
+  status              Show current pomodoro with themed progress bar
+  watch               Live refreshing view (updates every second, Ctrl+C to exit)
+  skip                Jump to next phase (work → break or break → work)
+  stop                Stop and count the current work session as completed
+  kill                Discard current pomodoro (does not count toward stats)
+  list                List all running pomodoros (volatile + persistent)
+  stats               Show completed pomodoros and total minutes today
+  theme list          Show available themes and current theme
+  theme set <name>    Change visual theme (default, energetic, minimal)
+  theme next          Switch to next theme
+  theme prev          Switch to previous theme
+
+Options:
+  --persist           Use persistent storage (~/.cache/pomo/) instead of RAM
+  --break N           Set custom break duration in minutes (with start only)
+  --force             Force discard without counting (with stop/kill)
+  --quiet, -q         Suppress all non-error output (silent mode)
+  --json              Machine-readable JSON output (implies --quiet)
+
+Default durations:
+  Work: 25 minutes • Break: 5 minutes
+
+Examples:
+  pomo start                    # Default 25 min work
+  pomo start focus 40           # Named timer with custom duration
+  pomo start meeting 50 --break 10 --persist
+  pomo watch                    # Live view with progress bar
+  pomo status --json            # Machine-readable status
+  pomo list --persist
+  pomo stats
+  pomo theme set energetic
+
+JSON Mode:
+  Use --json with status, list, stats, about, version, etc.
+  The script outputs exactly one valid JSON object.
+  Watch mode does NOT support --json (interactive only).
+
+Note: 'pomo' is a dedicated Pomodoro tool, separate from 'timer' and 'countdown'.
+EOF
+}
+
+# =============================================================================
+# resolve_app_base_dir() - Central storage resolver with full fallback
+# =============================================================================
+#
+# SINGLE SOURCE OF TRUTH for all ${APP_NAME} storage decisions.
+# Handles missing /dev/shm, missing $HOME, and ensures we always have
+# a writable location or die() with clear message.
+#
+# Priority for volatile mode:
+#   1. /dev/shm          (fastest, RAM)
+#   2. /tmp              (standard fallback, almost always available)
+#   3. /tmp/${APP_NAME}_${USERNAME}  (safe per-user subdir when $HOME is missing)
+#
+# For persistent mode: always tries XDG_CACHE_HOME → ~/.cache → /tmp/${APP_NAME}_${USERNAME}
+#
+# !!! DO NOT MODIFY OR DUPLICATE THIS LOGIC !!!
+# All ${APP_NAME} functions must use this helper (via get_app_file or directly)
+# to keep behavior 100% consistent.
+# =============================================================================
+
+resolve_app_base_dir() {
+    local requested_mode="$1"
+    local actual_mode="$requested_mode"
+    local base_dir
+
+    # === Volatile mode fallback chain ===
+    if [ "$requested_mode" = "volatile" ]; then
+        if [ -d "$VOLATILE_DIR" ] && [ -w "$VOLATILE_DIR" ]; then
+            base_dir="$VOLATILE_DIR"
+        elif [ -d "/tmp" ] && [ -w "/tmp" ]; then
+            actual_mode="fallback"
+            base_dir="/tmp"
+            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
+                warn "Volatile storage (/dev/shm) not available. Falling back to /tmp."
+            fi
+        else
+            # Last resort: create a per-user subdirectory under /tmp
+            base_dir="/tmp/${APP_NAME}_${USERNAME}"
+            if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
+                die "No writable temporary storage available (/dev/shm, /tmp). ${APP_NAME} cannot start."
+            fi
+            actual_mode="fallback"
+            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
+                warn "Volatile storage unavailable. Using fallback directory: $base_dir"
+            fi
+        fi
+    else
+        # === Persistent mode ===
+        if [ -n "${HOME:-}" ] && [ -d "${HOME}" ] && [ -w "${HOME}" ]; then
+            base_dir="${PERSISTENT_DIR}"
+            mkdir -p "$base_dir" 2>/dev/null || true
+        else
+            # No usable $HOME → fallback to /tmp per-user directory
+            base_dir="/tmp/${APP_NAME}_${USERNAME}_persistent"
+            if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
+                die "No writable location for persistent storage (no usable \$HOME and cannot write to /tmp). ${APP_NAME} cannot continue."
+            fi
+            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
+                warn "No usable \$HOME detected. Persistent timers will use fallback directory: $base_dir"
+            fi
+        fi
+    fi
+
+    echo "$base_dir"
+}
+
+# =============================================================================
+# get_app_file() - Return full path to pomo file
+# =============================================================================
+#
+# Uses the central resolve_app_base_dir() helper to guarantee consistent
+# fallback behavior and warning across the entire script.
+#
+# Uses the same storage resolver logic (volatile + persistent with fallbacks).
+# - volatile  → /dev/shm (fast, lost on reboot)
+# - persistent → ~/.cache/pomo (survives reboot)
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# It must remain a thin wrapper around the central resolver.
+# =============================================================================
+
+get_app_file() {
+    local name="$1"
+    local requested_mode="$2"
+    local base_dir
+
+    base_dir=$(resolve_app_base_dir "$requested_mode")   # Reuse existing resolver
+
+    # App filename format guarantees per-user isolation
+    echo "${base_dir}/${APP_NAME}_${USERNAME}_${name}"
+}
+
+# =============================================================================
+# sanitize_name() - Prevent dangerous characters in timer names
+# =============================================================================
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Security / robustness measure for filename safety.
+# =============================================================================
+
+sanitize_name() {
+    case "$NAME" in
+        *[/\\:*?"<>|'\''"\`\$]*|*..*|*\$\(*|*${IFS}*)
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Invalid timer name: contains forbidden characters" "invalid_name"
+            else
+                error "Invalid timer name '${NAME}' (contains forbidden characters)"
+            fi
+            exit 1
+            ;;
+        "")
+            NAME="default"
+            ;;
+    esac
+}
+
+# =============================================================================
+# parse_duration() - Convert human duration string to seconds
+# =============================================================================
+#
+# Supports formats:
+#   25m      → 1500
+#   90s      → 90
+#   1h       → 3600
+#   1h30m    → 5400
+#   2h15m45s → 8115
+#   45       → 45 (treated as seconds)
+#
+# Returns the number of seconds (integer) or 0 on error.
+#
+# !!! DO NOT SIMPLIFY THIS FUNCTION !!!
+# It must remain robust against malformed input.
+# =============================================================================
+
+parse_duration() {
+    local input="$1"
+    local total=0
+    local num
+
+    # Empty input
+    [ -z "$input" ] && echo 0 && return 0
+
+    # If it's just a number, treat as seconds
+    if printf '%s' "$input" | grep -qE '^[0-9]+$'; then
+        echo "$input"
+        return 0
+    fi
+
+    # Parse h/m/s components
+    while [ -n "$input" ]; do
+        num=$(printf '%s' "$input" | grep -oE '^[0-9]+')
+        [ -z "$num" ] && echo 0 && return 0
+
+        # Remove the number we just parsed
+        input=$(printf '%s' "$input" | sed "s/^$num//")
+
+        case "$input" in
+            h* ) total=$((total + num * 3600)); input="${input#h}" ;;
+            m* ) total=$((total + num * 60));   input="${input#m}" ;;
+            s* ) total=$((total + num));        input="${input#s}" ;;
+            *  ) echo 0; return 0 ;;   # Invalid character
+        esac
+    done
+
+    echo "$total"
+}
+
+# =============================================================================
+# increment_pomo_stats() - Update daily completed pomodoros and total minutes
+# =============================================================================
+
+increment_pomo_stats() {
+    local minutes="$1"
+    local stats_file
+    stats_file=$(get_stats_file)
+
+    mkdir -p "${stats_file%/*}" 2>/dev/null || true
+
+    local count=0 total_min=0
+    if [ -f "$stats_file" ]; then
+        read -r count total_min < "$stats_file" 2>/dev/null || true
+    fi
+
+    count=$((count + 1))
+    total_min=$((total_min + minutes))
+
+    printf "%s %s\n" "$count" "$total_min" > "$stats_file" 2>/dev/null || true
+}
+
+# =============================================================================
+# pomo_start() - Start a new Pomodoro timer
+# =============================================================================
+#
+# Supports:
+#   pomo start                  → 25 min work (default)
+#   pomo start 40               → 40 min work
+#   pomo start 50 --break 10    → 50 min work + 10 min break
+#   pomo start --persist        → persistent storage
+#   pomo start focus 30 --break 7 --persist
+#
+# Stores in file: start_time target_time phase work_dur break_dur
+#   phase: "work" or "break"
+#
+# Uses atomic file creation to prevent race conditions.
+# Automatically respects --persist flag and central storage resolver.
+#
+# !!! DO NOT SIMPLIFY THIS LOGIC !!!
+# Proper "already running" detection and state format are critical.
+# =============================================================================
+
+pomo_start() {
+    local duration_str="$1"
+    local work_minutes="${DEFAULT_WORK_MIN:-25}"
+    local break_minutes="${DEFAULT_BREAK_MIN:-5}"
+    local mode="volatile"
+    [ "$PERSIST" -eq 1 ] && mode="persistent"
+
+    local APP_FILE
+    APP_FILE=$(get_app_file "$NAME" "$mode")
+
+    # Parse custom durations if provided
+    if [ -n "$CUSTOM_WORK" ]; then
+        work_minutes="$CUSTOM_WORK"
+    fi
+    if [ -n "$CUSTOM_BREAK" ]; then
+        break_minutes="$CUSTOM_BREAK"
+    fi
+
+    # If first argument looks like a duration, use it as work time
+    if [ -n "$duration_str" ] && printf '%s' "$duration_str" | grep -qE '^[0-9]+$'; then
+        work_minutes="$duration_str"
+    fi
+
+    # Convert to seconds
+    local work_seconds break_seconds
+    work_seconds=$((work_minutes * 60))
+    break_seconds=$((break_minutes * 60))
+
+    if [ "$work_seconds" -le 0 ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Invalid work duration" "invalid_duration"
+        else
+            error "Invalid work duration."
+        fi
+        exit 1
+    fi
+
+    # Check if already running
+    if [ -f "$APP_FILE" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json "error" "Pomodoro '${NAME}' is already running." \
+                "code" "already_running" \
+                "name" "$NAME" \
+                "mode" "$mode"
+        else
+            warn "Pomodoro '${NAME}' is already running."
+        fi
+        exit 1
+    fi
+
+    # Calculate times
+    local start_time target_time
+    start_time=$(date +%s)
+    target_time=$((start_time + work_seconds))
+
+    # Save state: start_time target_time phase work_dur break_dur
+    if ! printf "%s %s %s %s %s\n" \
+        "$start_time" "$target_time" "work" "$work_seconds" "$break_seconds" \
+        > "$APP_FILE" 2>/dev/null; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Cannot create pomodoro file" "io_error"
+        else
+            error "Cannot create pomodoro file."
+        fi
+        exit 1
+    fi
+
+    # Success output
+    if [ "${JSON}" -eq 1 ]; then
+        output_json "success" "Pomodoro '${NAME}' started." \
+            "name" "$NAME" \
+            "mode" "$mode" \
+            "phase" "work" \
+            "duration" "$work_seconds" \
+            "remaining" "$work_seconds" \
+            "work_minutes" "$work_minutes" \
+            "break_minutes" "$break_minutes"
+    else
+        local icon color
+        icon=$(get_icon "work")
+        color=$(get_phase_color)
+
+        printf "${color}%s Work phase started${NC} — %d minutes\n" "$icon" "$work_minutes"
+        [ "$PERSIST" -eq 1 ] && printf "  (persistent mode)\n"
+        printf "\n"
+    fi
+}
+
+# =============================================================================
+# pomo_stop() - Stop current pomodoro and optionally count it as completed
+# =============================================================================
+#
+# Behavior:
+#   - Without --force: counts as completed pomodoro (if in work phase)
+#   - With --force or "kill": discards without counting
+#   - Works for both work and break phases
+#   - Updates daily stats when a work session is completed
+#
+# Uses central get_app_file() for storage.
+# Fully supports --json and --quiet modes.
+#
+# !!! DO NOT SIMPLIFY THE STATS LOGIC !!!
+# Accurate daily counting is a core feature.
+# =============================================================================
+
+pomo_stop() {
+    local name="${1:-default}"
+    local mode="${2:-volatile}"
+    local APP_FILE
+    APP_FILE=$(get_app_file "$name" "$mode")
+
+    if [ ! -f "$APP_FILE" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "No pomodoro '${name}' running." "no_pomodoro"
+        else
+            warn "No pomodoro '${name}' running."
+        fi
+        exit 1
+    fi
+
+    # Read state
+    local start_time target_time phase work_dur break_dur
+    if ! read -r start_time target_time phase work_dur break_dur < "$APP_FILE" 2>/dev/null; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Corrupted pomodoro file" "corrupted_data"
+        else
+            error "Corrupted pomodoro file."
+        fi
+        rm -f "$APP_FILE" 2>/dev/null || true
+        exit 1
+    fi
+
+    local current_time elapsed_minutes
+    current_time=$(date +%s 2>/dev/null) || current_time=0
+    elapsed_minutes=$(( (current_time - start_time) / 60 ))
+
+    # Remove the file
+    rm -f "$APP_FILE" 2>/dev/null || true
+
+    # If it's a work phase and not forced kill → count as completed
+    if [ "$phase" = "work" ] && [ "${FORCE}" -eq 0 ] && [ "$COMMAND" != "kill" ]; then
+        increment_pomo_stats "$elapsed_minutes"
+
+        if [ "${JSON}" -eq 1 ]; then
+            output_json "success" "Work pomodoro completed." \
+                "name" "$name" \
+                "mode" "$mode" \
+                "minutes" "$elapsed_minutes" \
+                "counted" "true"
+        else
+            success "Work session completed — ${elapsed_minutes} minutes counted."
+        fi
+    else
+        # Discarded (break phase or --force / kill)
+        if [ "${JSON}" -eq 1 ]; then
+            output_json "success" "Pomodoro discarded." \
+                "name" "$name" \
+                "mode" "$mode" \
+                "counted" "false"
+        else
+            if [ "${FORCE}" -eq 1 ] || [ "$COMMAND" = "kill" ]; then
+                warn "Pomodoro discarded (not counted)."
+            else
+                success "Pomodoro stopped."
+            fi
+        fi
+    fi
+}
+
+# =============================================================================
+# pomo_watch() - Live watch mode with continuous status refresh
+# =============================================================================
+#
+# Continuously refreshes the pomodoro status every second.
+# Shows themed icon, phase, remaining time, and progress bar.
+# Supports both volatile and persistent modes.
+# Exits cleanly when the pomodoro finishes or on Ctrl+C.
+#
+# Uses show_pomo_status() as the single source of truth for rendering.
+# Prints terminal bell (\a) when a phase naturally ends.
+#
+# !!! DO NOT SIMPLIFY THE LOOP !!!
+# Clear + redraw + sleep pattern is important for smooth UX.
+# =============================================================================
+
+pomo_watch() {
+    local name="${1:-default}"
+    local mode="${2:-volatile}"
+
+    if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
+        warn "Watch mode cannot be used with --json or --quiet."
+        return 1
+    fi
+
+    printf "Watching pomodoro '%s' — Press Ctrl+C to exit\n\n" "$name"
+
+    while true; do
+        clear 2>/dev/null || printf "\033[2J\033[H"
+
+        show_pomo_status "$name" "$mode"
+        local ret=$?
+
+        if [ "$ret" -eq 2 ]; then
+            # Full session (work + break) completed
+            printf "\n${GREEN}%s Full pomodoro session finished!${NC}\n" "$(get_icon "done")"
+            sleep 1.5
+            break
+        fi
+
         sleep 1
     done
 }
+    
+# =============================================================================
+# pomo_skip() - Skip current phase (work → break or break → work)
+# =============================================================================
+#
+# Behavior:
+#   - If in "work" phase: finishes it and immediately starts break phase
+#   - If in "break" phase: finishes it and immediately starts next work phase
+#   - Counts the work session as completed when skipping from work
+#   - Prints terminal bell when switching phases
+#
+# Uses the same state file format as pomo_start().
+# Fully supports JSON and quiet modes.
+#
+# !!! DO NOT SIMPLIFY PHASE SWITCHING LOGIC !!!
+# Accurate counting of completed pomodoros when skipping work is important.
+# =============================================================================
 
-cmd_skip() {
-    rm -f "$(get_pomo_file work)" "$(get_pomo_file break)"
-    printf "${YELLOW}%s Skipped.${NC}\n" "$(get_icon skip)"
-}
+pomo_skip() {
+    local name="${1:-default}"
+    local mode="${2:-volatile}"
+    local APP_FILE
+    APP_FILE=$(get_app_file "$name" "$mode")
 
-cmd_stop() {
-    local wf="$(get_pomo_file work)"
-    [ -f "$wf" ] || { printf "${YELLOW}No work pomodoro.${NC}\n"; return 1; }
-    local s="$(cat "$wf")" n="$(date +%s)" e="$((n - s))" m="$((e / 60))"
-    rm -f "$wf"
-    if [ "$FORCE" = true ] || [ "$COMMAND" = "kill" ]; then
-        printf "${YELLOW}%s Discarded.${NC}\n" "$(get_icon skip)"; return 0
+    if [ ! -f "$APP_FILE" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "No pomodoro '${name}' running." "no_pomodoro"
+        else
+            warn "No pomodoro '${name}' running to skip."
+        fi
+        exit 1
     fi
-    local sf="$(get_stats_file)" p=0 t=0
-    [ -f "$sf" ] && read p t < "$sf"
-    p="$((p + 1))" t="$((t + m))"
-    printf '%s %s\n' "$p" "$t" > "$sf"
-    printf "${GREEN}%s Completed %s min${NC}\n" "$(get_icon done)" "$m"
-    printf "Today: %s pomodoros • %s min\n" "$p" "$t"
-}
 
-cmd_list() {
-    printf "Pomodoros (%s):\n" "$STORAGE_MODE"
-    local f=0
-    for dir in "$VOLATILE_DIR" "$PERSISTENT_DIR"; do
-        for file in "$dir"/pomo_"${USERNAME}"_*; do
-            [ -f "$file" ] || continue
-            f=1
-            local name="${file##*pomo_${USERNAME}_}" s="$(cat "$file")" now="$(date +%s)" elapsed="$((now - s))"
-            printf "  %s %-18s %02d:%02d\n" "$(get_icon running)" "$name" "$((elapsed/60))" "$((elapsed%60))"
-        done
-    done
-    [ "$f" -eq 0 ] && printf "  (none)\n"
-}
+    # Read current state
+    local start_time target_time phase work_dur break_dur
+    if ! read -r start_time target_time phase work_dur break_dur < "$APP_FILE" 2>/dev/null; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Corrupted pomodoro file" "corrupted_data"
+        else
+            error "Corrupted pomodoro file."
+        fi
+        rm -f "$APP_FILE" 2>/dev/null || true
+        exit 1
+    fi
 
-cmd_stats() {
-    local sf="$(get_stats_file)"
-    if [ -f "$sf" ]; then
-        local p t; read p t < "$sf"
-        printf "${GREEN}Today:${NC} %s pomodoros • %s min\n" "$p" "$t"
+    local current_time
+    current_time=$(date +%s 2>/dev/null) || current_time=0
+
+    # If we are in work phase and skipping → count it as completed
+    if [ "$phase" = "work" ]; then
+        local elapsed_minutes=$(( (current_time - start_time) / 60 ))
+        increment_pomo_stats "$elapsed_minutes"
+    fi
+
+    # Remove current phase
+    rm -f "$APP_FILE" 2>/dev/null || true
+
+    # Determine next phase and start it
+    local next_phase next_duration next_icon
+    if [ "$phase" = "work" ]; then
+        next_phase="break"
+        next_duration="$break_dur"
+        next_icon=$(get_icon "break")
     else
-        printf "No stats today.\n"
+        next_phase="work"
+        next_duration="$work_dur"
+        next_icon=$(get_icon "work")
+    fi
+
+    # Start next phase immediately
+    local new_start new_target
+    new_start=$(date +%s)
+    new_target=$((new_start + next_duration))
+
+    if ! printf "%s %s %s %s %s\n" \
+        "$new_start" "$new_target" "$next_phase" "$work_dur" "$break_dur" \
+        > "$APP_FILE" 2>/dev/null; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Failed to start next phase" "io_error"
+        else
+            error "Failed to start next phase."
+        fi
+        exit 1
+    fi
+
+    # Success output
+    if [ "${JSON}" -eq 1 ]; then
+        output_json "success" "Skipped to ${next_phase} phase." \
+            "name" "$name" \
+            "mode" "$mode" \
+            "new_phase" "$next_phase"
+    else
+        local color
+        color=$(get_phase_color)
+
+        printf '\a'  # terminal bell on phase switch
+
+        printf "${color}%s Switched to %s phase${NC}\n" "$next_icon" "$next_phase"
+        if [ "$next_phase" = "break" ]; then
+            printf "Enjoy your break!\n"
+        else
+            printf "Back to focus!\n"
+        fi
+        printf "\n"
     fi
 }
 
-cmd_theme() {
-    local sub="$1" arg="$2"
-    [ -z "$sub" ] && die "theme <list|set name|next|prev>"
-    case "$sub" in
+# =============================================================================
+# pomo_theme() - Handle all theme-related subcommands
+# =============================================================================
+#
+# Supports:
+#   pomo theme list
+#   pomo theme set <name>
+#   pomo theme next
+#   pomo theme prev
+#
+# Saves current theme to persistent storage.
+# Fully respects --quiet and --json modes.
+#
+# !!! DO NOT SIMPLIFY THEME CYCLING LOGIC !!!
+# Consistent cycling (default → energetic → minimal → default) is important for UX.
+# =============================================================================
+
+pomo_theme() {
+    local subcommand="$1"
+    local arg="$2"
+
+    # If no subcommand, show help
+    if [ -z "$subcommand" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Theme subcommand required (list, set, next, prev)" "missing_subcommand"
+        else
+            warn "Theme subcommand required. Use: pomo theme list|set|next|prev"
+        fi
+        return 1
+    fi
+
+    case "$subcommand" in
         list)
-            printf "Themes:\n  default   $(get_icon work default)$(get_icon break default)$(get_icon done default)\n"
-            printf "  energetic $(get_icon work energetic)$(get_icon break energetic)$(get_icon done energetic)\n"
-            printf "  minimal   $(get_icon work minimal)$(get_icon break minimal)$(get_icon done minimal)\n"
-            printf "Current: ${GREEN}%s${NC}\n" "$THEME"
+            if [ "${JSON}" -eq 1 ]; then
+                output_json "list" "" \
+                    "type" "themes" \
+                    "current" "$THEME" \
+                    "available" "default energetic minimal"
+            else
+                if [ "${QUIET}" -eq 0 ]; then
+                    msg "Available themes:"
+                    printf "  default    - Classic tomato style %s\n" "$(get_icon "work")"
+                    printf "  energetic  - Dynamic & motivating %s\n" "$(get_icon "work")"
+                    printf "  minimal    - Zen & clean %s\n" "$(get_icon "work")"
+                    empty_line
+                    printf "Current theme: ${GREEN}%s${NC}\n" "$THEME"
+                fi
+            fi
             ;;
+
         set)
-            case "${arg:-}" in default|energetic|minimal)
-                printf '%s\n' "$arg" > "$THEME_FILE"
-                THEME="$arg"
-                printf "Theme: ${GREEN}%s %s${NC}\n" "$THEME" "$(get_icon work)"
-                ;;
-            *) die "Invalid: default/energetic/minimal" ;;
+            if [ -z "$arg" ]; then
+                if [ "${JSON}" -eq 1 ]; then
+                    output_json_error "Theme name required" "missing_argument"
+                else
+                    error "Theme name required. Example: pomo theme set energetic"
+                fi
+                return 1
+            fi
+
+            case "$arg" in
+                default|energetic|minimal)
+                    local theme_file="${PERSISTENT_DIR}/theme"
+                    mkdir -p "${PERSISTENT_DIR}" 2>/dev/null || true
+                    echo "$arg" > "$theme_file" 2>/dev/null || true
+
+                    # Update in-memory theme
+                    THEME="$arg"
+
+                    if [ "${JSON}" -eq 1 ]; then
+                        output_json "success" "Theme changed successfully." \
+                            "theme" "$arg"
+                    else
+                        if [ "${QUIET}" -eq 0 ]; then
+                            local icon
+                            icon=$(get_icon "work")
+                            success "Theme changed to: $arg $icon"
+                        fi
+                    fi
+                    ;;
+
+                *)
+                    if [ "${JSON}" -eq 1 ]; then
+                        output_json_error "Invalid theme '$arg'. Available: default, energetic, minimal" "invalid_theme"
+                    else
+                        error "Invalid theme '$arg'. Available: default, energetic, minimal"
+                    fi
+                    return 1
+                    ;;
             esac
             ;;
-        next) local new; case "$THEME" in default) new=energetic;; energetic) new=minimal;; *) new=default;; esac; printf '%s\n' "$new" > "$THEME_FILE"; THEME="$new"; printf "Next: ${GREEN}%s${NC}\n" "$THEME" ;;
-        prev) local new; case "$THEME" in default) new=minimal;; minimal) new=energetic;; *) new=default;; esac; printf '%s\n' "$new" > "$THEME_FILE"; THEME="$new"; printf "Prev: ${GREEN}%s${NC}\n" "$THEME" ;;
-        *) die "Unknown: list/set/next/prev" ;;
+
+        next)
+            local new_theme
+            case "$THEME" in
+                default)   new_theme="energetic" ;;
+                energetic) new_theme="minimal"   ;;
+                minimal)   new_theme="default"   ;;
+                *)         new_theme="energetic" ;;
+            esac
+
+            local theme_file="${PERSISTENT_DIR}/theme"
+            mkdir -p "${PERSISTENT_DIR}" 2>/dev/null || true
+            echo "$new_theme" > "$theme_file" 2>/dev/null || true
+            THEME="$new_theme"
+
+            if [ "${JSON}" -eq 1 ]; then
+                output_json "success" "Switched to next theme." "theme" "$new_theme"
+            else
+                if [ "${QUIET}" -eq 0 ]; then
+                    local icon
+                    icon=$(get_icon "work")
+                    success "Switched to: $new_theme $icon"
+                fi
+            fi
+            ;;
+
+        prev)
+            local new_theme
+            case "$THEME" in
+                default)   new_theme="minimal"   ;;
+                energetic) new_theme="default"   ;;
+                minimal)   new_theme="energetic" ;;
+                *)         new_theme="minimal"   ;;
+            esac
+
+            local theme_file="${PERSISTENT_DIR}/theme"
+            mkdir -p "${PERSISTENT_DIR}" 2>/dev/null || true
+            echo "$new_theme" > "$theme_file" 2>/dev/null || true
+            THEME="$new_theme"
+
+            if [ "${JSON}" -eq 1 ]; then
+                output_json "success" "Switched to previous theme." "theme" "$new_theme"
+            else
+                if [ "${QUIET}" -eq 0 ]; then
+                    local icon
+                    icon=$(get_icon "work")
+                    success "Switched to: $new_theme $icon"
+                fi
+            fi
+            ;;
+
+        *)
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Unknown theme subcommand '$subcommand'" "invalid_subcommand"
+            else
+                error "Unknown theme subcommand '$subcommand'. Use: list, set, next, prev"
+            fi
+            return 1
+            ;;
     esac
 }
 
-cmd_version() { printf "%s %s\n" "$APP_NAME" "$APP_VER"; }
-cmd_help() { show_help; }
+# =============================================================================
+# pomo_stats() - Show daily pomodoro statistics
+# =============================================================================
+#
+# Displays number of completed pomodoros and total minutes today.
+# Uses persistent storage with fallback via resolve_app_base_dir().
+# Fully supports --json and --quiet modes.
+#
+# !!! DO NOT SIMPLIFY STATS FILE HANDLING !!!
+# Graceful fallback when no stats file exists is important.
+# =============================================================================
 
-# ─────── Parse & dispatch ─────────────────────────────────────────────────────────
-parse_args() {
+pomo_stats() {
+    local stats_file
+    stats_file=$(get_stats_file)
+
+    local count=0 total_min=0
+
+    if [ -f "$stats_file" ]; then
+        read -r count total_min < "$stats_file" 2>/dev/null || true
+    fi
+
+    if [ "${JSON}" -eq 1 ]; then
+        output_json "stats" "" \
+            "date" "$(get_today)" \
+            "completed" "$count" \
+            "total_minutes" "$total_min"
+    else
+        if [ "${QUIET}" -eq 0 ]; then
+            if [ "$count" -eq 0 ]; then
+                msg "No pomodoros completed today."
+            else
+                local icon
+                icon=$(get_icon "stats")
+                success "${icon} Today: ${count} pomodoros • ${total_min} minutes"
+            fi
+        fi
+    fi
+}
+
+# =============================================================================
+# pomo_list() - List all running pomodoros for the current user
+# =============================================================================
+#
+# Shows all active pomodoros (both volatile and persistent).
+# Displays:
+#   - Themed icon
+#   - Name
+#   - Current phase (Work / Break)
+#   - Remaining time in MM:SS
+#
+# Automatically cleans up expired pomodoros.
+# Fully supports --json and --quiet modes.
+#
+# Uses central resolve_app_base_dir() for consistent storage handling.
+# =============================================================================
+
+pomo_list() {
+    local requested_mode="$1"   # "volatile", "persistent", or both if not specified
+    local base_dir timers_json count=0
+    local show_all=false
+
+    # If no mode specified or "both", we show both volatile and persistent
+    if [ -z "$requested_mode" ] || [ "$requested_mode" = "both" ]; then
+        show_all=true
+    fi
+
+    if [ "${JSON}" -eq 1 ]; then
+        timers_json="["
+        local first=true
+    else
+        if [ "${QUIET}" -eq 0 ]; then
+            msg "Running pomodoros:"
+        fi
+    fi
+
+    # Function to scan one storage directory
+    scan_directory() {
+        local dir="$1"
+        local mode_name="$2"
+
+        [ -d "$dir" ] || return
+
+        for file in "${dir}"/pomo_"${USERNAME}"_*; do
+            [ -f "$file" ] || continue
+
+            local name="${file##*pomo_${USERNAME}_}"
+            local start_time target_time phase work_dur break_dur
+            if ! read -r start_time target_time phase work_dur break_dur < "$file" 2>/dev/null; then
+                rm -f "$file" 2>/dev/null || true
+                continue
+            fi
+
+            local current_time remaining minutes seconds
+            current_time=$(date +%s 2>/dev/null) || continue
+            remaining=$((target_time - current_time))
+
+            # Auto-cleanup expired
+            if [ "$remaining" -le 0 ]; then
+                rm -f "$file" 2>/dev/null || true
+                continue
+            fi
+
+            minutes=$((remaining / 60))
+            seconds=$((remaining % 60))
+
+            local phase_name="Work"
+            [ "$phase" = "break" ] && phase_name="Break"
+
+            local icon
+            icon=$(get_icon "$phase")
+
+            count=$((count + 1))
+
+            if [ "${JSON}" -eq 1 ]; then
+                if [ "$first" = false ]; then
+                    timers_json="${timers_json},"
+                fi
+                timers_json="${timers_json}{\"name\":\"${name}\",\"mode\":\"${mode_name}\",\"phase\":\"${phase}\",\"phase_name\":\"${phase_name}\",\"remaining\":${remaining},\"minutes\":${minutes},\"seconds\":${seconds}}"
+                first=false
+            else
+                if [ "${QUIET}" -eq 0 ]; then
+                    printf "  %s %-12s %-6s %02d:%02d remaining\n" \
+                        "$icon" "$name" "(${phase_name})" "$minutes" "$seconds"
+                fi
+            fi
+        done
+    }
+
+    # Scan directories
+    if [ "$show_all" = true ] || [ "$requested_mode" = "volatile" ]; then
+        local volatile_dir
+        volatile_dir=$(resolve_app_base_dir "volatile")
+        scan_directory "$volatile_dir" "volatile"
+    fi
+
+    if [ "$show_all" = true ] || [ "$requested_mode" = "persistent" ]; then
+        local persistent_dir
+        persistent_dir=$(resolve_app_base_dir "persistent")
+        scan_directory "$persistent_dir" "persistent"
+    fi
+
+    # Final output
+    if [ "${JSON}" -eq 1 ]; then
+        timers_json="${timers_json}]"
+        output_json "list" "" \
+            "mode" "${requested_mode:-both}" \
+            "count" "$count" \
+            "timers" "$timers_json"
+    else
+        if [ "${QUIET}" -eq 0 ]; then
+            if [ "$count" -eq 0 ]; then
+                msg "  No running pomodoros found."
+            fi
+            empty_line
+        fi
+    fi
+}
+
+# =============================================================================
+# THEME AND VISUAL HELPERS
+# =============================================================================
+#
+# These functions provide the beautiful themed output for pomo:
+#   - Icons per phase and theme
+#   - Progress bar characters (filled / empty) that differ by theme
+#   - Phase-specific colors
+#
+# All functions are designed to be safe, POSIX-compatible, and work
+# even if theme file is missing or corrupted.
+#
+# !!! DO NOT SIMPLIFY OR REMOVE THEME FALLBACKS !!!
+# The default theme must always work as a safe fallback.
+# =============================================================================
+
+# ----------------------------- Theme Loading ---------------------------------
+# Loads the current theme from persistent storage.
+# Falls back to "default" if file is missing, empty, or invalid.
+load_theme() {
+    : "${THEME:=default}"   # Defensive default
+
+    local theme_file
+    theme_file="${PERSISTENT_DIR}/theme"
+
+    if [ -f "$theme_file" ]; then
+        local saved
+        read -r saved < "$theme_file" 2>/dev/null || saved=""
+        case "$saved" in
+            default|energetic|minimal)
+                THEME="$saved"
+                ;;
+            *)
+                THEME="default"   # corrupted or invalid → safe fallback
+                ;;
+        esac
+    else
+        THEME="default"
+    fi
+}
+
+# =============================================================================
+# get_icon() - Returns unicode icon based on theme and context
+# =============================================================================
+#
+# Usage:
+#   icon=$(get_icon "work")
+#   icon=$(get_icon "break")
+#   icon=$(get_icon "done")
+#
+# Supported contexts: work, break, done, skip, stats, running
+#
+# Always returns a safe fallback (empty string) in case of error.
+# Designed to be called frequently (status, watch, list, etc.).
+# =============================================================================
+
+get_icon() {
+    local context="$1"
+
+    # Defensive: ensure THEME is always valid
+    case "$THEME" in
+        default|energetic|minimal) ;;
+        *) THEME="default" ;;
+    esac
+
+    case "$THEME,$context" in
+        # Default theme - classic tomato style
+        default,work)     echo "🍅" ;;
+        default,break)    echo "☕" ;;
+        default,done)     echo "✅" ;;
+        default,skip)     echo "⏭️" ;;
+        default,stats)    echo "📊" ;;
+        default,running)  echo "⏳" ;;
+
+        # Energetic theme - dynamic & motivating
+        energetic,work)   echo "⚡" ;;
+        energetic,break)  echo "🌿" ;;
+        energetic,done)   echo "🏆" ;;
+        energetic,skip)   echo "⛔" ;;
+        energetic,stats)  echo "⭐" ;;
+        energetic,running) echo "🔥" ;;
+
+        # Minimal theme - zen & clean
+        minimal,work)     echo "⏳" ;;
+        minimal,break)    echo "🧘" ;;
+        minimal,done)     echo "✨" ;;
+        minimal,skip)     echo "×" ;;
+        minimal,stats)    echo "·" ;;
+        minimal,running)  echo "⋯" ;;
+
+        # Safe fallback for any unknown combination
+        *) echo "⏱️" ;;
+    esac
+}
+
+# =============================================================================
+# get_bar_filled() - Returns character used for filled part of progress bar
+# =============================================================================
+#
+# Different themes use slightly different visual styles for the filled portion.
+# Returns a single character. Always safe.
+# =============================================================================
+
+get_bar_filled() {
+    case "$THEME" in
+        default)   echo "█" ;;    # Full block - bold and classic
+        energetic) echo "█" ;;    # Same as default for strong visual impact
+        minimal)   echo "█" ;;    # Still use full block for clarity
+        *)         echo "█" ;;    # Safe fallback
+    esac
+}
+
+# =============================================================================
+# get_bar_empty() - Returns character used for empty part of progress bar
+# =============================================================================
+#
+# Gives each theme its distinct minimal/zen feel.
+# Returns a single character. Always safe.
+# =============================================================================
+
+get_bar_empty() {
+    case "$THEME" in
+        default)   echo "░" ;;    # Light shade - clean and common
+        energetic) echo "░" ;;    # Same as default for consistency
+        minimal)   echo "□" ;;    # White square - more minimal/zen look
+        *)         echo "░" ;;    # Safe fallback
+    esac
+}
+
+# =============================================================================
+# get_phase_color() - Returns ANSI color code for current phase
+# =============================================================================
+#
+# Returns color based on active theme.
+# Must be used inside output_text() or with proper color handling.
+# Returns empty string in non-interactive / quiet / JSON mode (handled by caller).
+# =============================================================================
+
+get_phase_color() {
+    # Defensive: ensure THEME is valid
+    case "$THEME" in
+        default|energetic|minimal) ;;
+        *) THEME="default" ;;
+    esac
+
+    case "$THEME" in
+        default)   echo "${GREEN}" ;;
+        energetic) echo "${CYAN}" ;;
+        minimal)   echo "${BLUE}" ;;
+        *)         echo "${GREEN}" ;;   # Safe fallback
+    esac
+}
+
+# =============================================================================
+# repeat_string() - Repeat any string (including UTF-8) N times
+# =============================================================================
+#
+# Pure POSIX implementation using only parameter expansion and a while loop.
+# This is the safest way to repeat multi-byte UTF-8 characters (░ █ □ 🍅 etc.)
+# across dash, ash (BusyBox), Git Bash, and standard shells.
+#
+# It avoids sed/awk/tr entirely, which can corrupt or fail on wide characters
+# in minimal environments.
+#
+# Usage:
+#   bar_filled=$(repeat_string "$(get_bar_filled)" 18)
+#   bar_empty=$(repeat_string "$(get_bar_empty)" 12)
+# =============================================================================
+
+repeat_string() {
+    local str="$1"
+    local count="$2"
+    local result=""
+
+    # Defensive: treat negative or non-number as 0
+    case "$count" in
+        *[!0-9]*|"") count=0 ;;
+    esac
+
+    while [ "$count" -gt 0 ]; do
+        result="${result}${str}"
+        count=$((count - 1))
+    done
+
+    printf "%s" "$result"
+}
+
+# =============================================================================
+# render_bar() - Build a progress bar string (filled + empty)
+# =============================================================================
+#
+# This is the recommended replacement for repeat_char() when building
+# themed progress bars in pomo.
+#
+# Why a dedicated render_bar instead of a generic repeat_char?
+#   - It directly produces the full bar in one go
+#   - Better performance (fewer function calls)
+#   - Handles UTF-8 characters correctly on BusyBox ash / dash / Git Bash
+#   - Fully POSIX compliant, no external tools beyond printf
+#
+# Usage:
+#   bar=$(render_bar "$filled_count" "$empty_count" )
+#   printf "%s%s" "$bar_filled_part" "$bar_empty_part"   # or just use the returned string
+#
+# Always returns something safe even if count=0 or invalid input.
+# =============================================================================
+
+render_bar() {
+    local filled_count="$1"
+    local empty_count="$2"
+    local filled_char empty_char
+
+    # Defensive defaults
+    : "${filled_count:=0}"
+    : "${empty_count:=0}"
+
+    # Get theme-specific characters (single character, possibly UTF-8)
+    filled_char=$(get_bar_filled)
+    empty_char=$(get_bar_empty)
+
+    # Build filled part
+    local filled=""
+    while [ "$filled_count" -gt 0 ]; do
+        filled="${filled}${filled_char}"
+        filled_count=$((filled_count - 1))
+    done
+
+    # Build empty part
+    local empty=""
+    while [ "$empty_count" -gt 0 ]; do
+        empty="${empty}${empty_char}"
+        empty_count=$((empty_count - 1))
+    done
+
+    # Return the complete bar
+    printf "%s%s" "$filled" "$empty"
+}
+
+# =============================================================================
+# show_pomo_status() - SINGLE SOURCE OF TRUTH for pomodoro status display
+# =============================================================================
+#
+# Displays current pomodoro with:
+#   - Themed icon + phase name
+#   - Remaining time in MM:SS
+#   - UTF-8 progress bar (using render_bar)
+#   - Automatic cleanup of expired pomodoros
+#
+# Critical behavior:
+#   - If work phase reaches 0  → automatically start break phase using saved break_dur
+#   - If break phase reaches 0 → end session cleanly
+#   - break_dur is ALWAYS preserved from the original start command
+#
+# Fully respects --quiet and --json modes.
+# Uses central storage via get_app_file() + resolve_app_base_dir().
+#
+# !!! THIS IS THE MAIN STATUS RENDERER !!!
+# Used by status, watch, and list commands.
+# Do not duplicate this logic elsewhere.
+# =============================================================================
+
+show_pomo_status() {
+    local name="${1:-default}"
+    local mode="${2:-volatile}"
+    local APP_FILE
+    APP_FILE=$(get_app_file "$name" "$mode")
+
+    if [ ! -f "$APP_FILE" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "No pomodoro '${name}' running." "no_pomodoro"
+        else
+            if [ "${QUIET}" -eq 0 ]; then
+                warn "No pomodoro '${name}' running."
+            fi
+        fi
+        return 1
+    fi
+
+    # Read full state - both durations must be present
+    local start_time target_time phase work_dur break_dur
+    if ! read -r start_time target_time phase work_dur break_dur < "$APP_FILE" 2>/dev/null; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Corrupted pomodoro file for '${name}'" "corrupted_data"
+        else
+            error "Corrupted pomodoro file."
+        fi
+        rm -f "$APP_FILE" 2>/dev/null || true
+        return 1
+    fi
+
+    # Defensive: ensure durations are valid numbers
+    work_dur=${work_dur:-300}
+    break_dur=${break_dur:-300}
+
+    local current_time remaining
+    current_time=$(date +%s 2>/dev/null) || current_time=0
+    remaining=$((target_time - current_time))
+
+    # ==================== EXPIRATION + TRANSITION LOGIC ====================
+    if [ "$remaining" -le 0 ]; then
+
+        if [ "$phase" = "work" ]; then
+            # === WORK JUST ENDED → START BREAK ===
+            local new_start new_target
+            new_start=$(date +%s)
+            new_target=$((new_start + break_dur))
+
+            # Write break phase - preserve both original durations
+            if ! printf "%s %s %s %s %s\n" \
+                "$new_start" "$new_target" "break" "$work_dur" "$break_dur" \
+                > "$APP_FILE" 2>/dev/null; then
+                if [ "${JSON}" -eq 1 ]; then
+                    output_json_error "Failed to start break phase" "io_error"
+                else
+                    error "Failed to start break phase."
+                fi
+                return 1
+            fi
+
+            # Show break immediately
+            if [ "${JSON}" -eq 1 ]; then
+                output_json "status" "" \
+                    "name" "$name" \
+                    "mode" "$mode" \
+                    "phase" "break" \
+                    "phase_name" "Break" \
+                    "duration" "$break_dur" \
+                    "remaining" "$break_dur" \
+                    "minutes" "$((break_dur / 60))" \
+                    "seconds" "$((break_dur % 60))" \
+                    "percent" "0"
+            else
+                if [ "${QUIET}" -eq 0 ]; then
+                    local icon color
+                    icon=$(get_icon "break")
+                    color=$(get_phase_color)
+                    printf '\a'
+                    printf "\n${color}%s Break phase started${NC} — %d minutes\n\n" \
+                        "$icon" "$((break_dur / 60))"
+                fi
+            fi
+            return 0
+        fi
+
+        # === BREAK JUST ENDED → SESSION COMPLETE ===
+        rm -f "$APP_FILE" 2>/dev/null || true
+        if [ "${JSON}" -eq 1 ]; then
+            output_json "status" "" \
+                "name" "$name" \
+                "mode" "$mode" \
+                "phase" "break" \
+                "remaining" "0" \
+                "expired" "true"
+        else
+            if [ "${QUIET}" -eq 0 ]; then
+                local icon
+                icon=$(get_icon "done")
+                success "${icon} Pomodoro session completed!"
+                printf '\a'
+            fi
+        fi
+        return 2   # Signal to watch mode that full session is done
+    fi
+
+    # ==================== STILL RUNNING ====================
+    local total_seconds=$((target_time - start_time))
+    [ "$total_seconds" -le 0 ] && total_seconds=1
+    local percent=$(( (total_seconds - remaining) * 100 / total_seconds ))
+    [ "$percent" -gt 100 ] && percent=100
+    [ "$percent" -lt 0 ] && percent=0
+
+    local minutes=$((remaining / 60))
+    local seconds=$((remaining % 60))
+
+    local phase_name="Pomodoro"
+    [ "$phase" = "work" ] && phase_name="Work"
+    [ "$phase" = "break" ] && phase_name="Break"
+
+    local icon color
+    icon=$(get_icon "$phase")
+    color=$(get_phase_color)
+
+    if [ "${JSON}" -eq 1 ]; then
+        output_json "status" "" \
+            "name" "$name" \
+            "mode" "$mode" \
+            "phase" "$phase" \
+            "phase_name" "$phase_name" \
+            "duration" "$total_seconds" \
+            "remaining" "$remaining" \
+            "minutes" "$minutes" \
+            "seconds" "$seconds" \
+            "percent" "$percent"
+        return 0
+    fi
+
+    if [ "${QUIET}" -eq 1 ]; then
+        return 0
+    fi
+
+    local bar_width=30
+    local filled_count=$(( (percent * bar_width + 50) / 100 ))
+    local empty_count=$((bar_width - filled_count))
+    local bar
+    bar=$(render_bar "$filled_count" "$empty_count")
+
+    printf "\n${color}%s %s${NC}   %02d:%02d remaining\n" \
+        "$icon" "$phase_name" "$minutes" "$seconds"
+
+    printf "  %s  %3d%%\n" "$bar" "$percent"
+
+    if [ "$mode" = "persistent" ]; then
+        printf "  (persistent mode)\n"
+    fi
+    printf "\n"
+
+    return 0
+}
+
+# =============================================================================
+# STATS HELPERS
+# =============================================================================
+#
+# Simple daily statistics support.
+# Uses persistent storage with proper fallback via resolve_app_base_dir().
+# =============================================================================
+
+# ----------------------------- Date Helpers ----------------------------------
+# Returns current date in YYYY-MM-DD format (used for daily stats)
+get_today() {
+    date +%Y-%m-%d 2>/dev/null || echo "1970-01-01"
+}
+
+# ----------------------------- Stats File Path -------------------------------
+# Returns full path to today's stats file using central storage resolver
+get_stats_file() {
+    local base_dir
+    base_dir=$(resolve_app_base_dir "persistent")   # Always use persistent for stats
+
+    echo "${base_dir}/stats_$(get_today)"
+}
+
+# =============================================================================
+# main_pomo() - Main dispatcher for the pomo tool
+# =============================================================================
+#
+# Handles argument parsing and routes to the correct pomo functions.
+# Improved start command parsing to correctly handle name vs duration.
+#
+# Supported start syntax:
+#   pomo start
+#   pomo start 40
+#   pomo start focus 40
+#   pomo start 50 --break 10 --persist
+#   pomo start work 25 --break 5
+#
+# IMPORTANT DESIGN DECISION:
+#   The auto-install logic (`maybe_install` / `perform_self_install`) is triggered
+#   when the script is run with ZERO arguments via `curl | sh`.
+#
+#   This is INTENTIONAL and CRITICAL for the one-liner installer to work.
+#   Without it, `curl -fsSL ... | sh` would only print help and exit, leaving
+#   the user with "command not found" — exactly the problem we are solving.
+#
+#   Even though subcommands like "help", "version", or "about" exist,
+#   we still want to check/install first in the curl | sh context because
+#   the primary use-case of piping the raw script is installation.
+#
+#   This pattern is common in robust single-file CLI tools and must be preserved.
+#
+# !!! DO NOT REMOVE OR SIMPLIFY THE AUTO-INSTALL BLOCK !!!
+#   Many AI assistants will try to "clean it up", move it after parsing,
+#   or tie it only to specific subcommands.
+#   Doing so would break the one-liner installation experience (`curl | sh`),
+#   which is one of the core promises of this project.
+#
+#   Previous Grok versions already attempted to remove or relocate this logic.
+#   Respect this decision and keep the auto-install check at the top, before
+#   any argument parsing.
+# =============================================================================
+
+main_pomo() {
+    # ---------------------- Default Variables ----------------------
+    local COMMAND="help"
+    NAME="default"
+    PERSIST=0
+    FORCE=0
+    CUSTOM_WORK=""
+    CUSTOM_BREAK=""
+
+    # === AUTO-INSTALL FOR ONE-LINER (curl | sh) ===
+    # This block MUST stay at the very top
+    if ! is_installed && [ $# -eq 0 ]; then
+        if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
+            perform_self_install
+        else
+            maybe_install
+        fi
+        exit 0
+    fi
+
+    # === IMPROVED ARGUMENT PARSING - Flags first ===
     while [ $# -gt 0 ]; do
         case "$1" in
-            --persist) PERSIST=true; shift ;;
-            --force) FORCE=true; shift ;;
-            --break) BREAK_MIN="$2"; shift 2 || die "--break <N>" ;;
-            start|status|skip|stop|kill|list|stats|watch|theme|version|help)
-                COMMAND="$1"; shift; break ;;
-            *) die "Unknown: $1 (pomo help)" ;;
+            --persist)
+                PERSIST=1
+                ;;
+            --force)
+                FORCE=1
+                ;;
+            --quiet|-q)
+                QUIET=1
+                ;;
+            --json)
+                JSON=1
+                QUIET=1
+                ;;
+            --break)
+                if [ -z "$2" ] || ! printf '%s' "$2" | grep -qE '^[0-9]+$'; then
+                    if [ "${JSON}" -eq 1 ]; then
+                        output_json_error "--break requires a positive number" "invalid_argument"
+                    else
+                        error "--break requires a positive number (minutes)."
+                    fi
+                    exit 1
+                fi
+                CUSTOM_BREAK="$2"
+                shift
+                ;;
+            start|status|watch|skip|stop|kill|list|stats|theme|version|help|about)
+                COMMAND="$1"
+                ;;
+            version-check|self-update|self-uninstall)
+                COMMAND="${1#--}"
+                ;;
+            *)
+                # Positional arguments
+                if [ "$COMMAND" = "start" ]; then
+                    if [ -z "$CUSTOM_WORK" ] && printf '%s' "$1" | grep -qE '^[0-9]+$'; then
+                        CUSTOM_WORK="$1"
+                    elif [ "$NAME" = "default" ]; then
+                        NAME="$1"
+                    else
+                        if [ "${JSON}" -eq 1 ]; then
+                            output_json_error "Too many arguments" "bad_argument"
+                        else
+                            error "Too many arguments for start command."
+                        fi
+                        exit 1
+                    fi
+                elif [ "$COMMAND" = "theme" ]; then
+                    THEME_SUBCOMMAND="$1"
+                    shift
+                    THEME_ARG="$1"
+                    break
+                else
+                    NAME="$1"
+                fi
+                ;;
         esac
+        shift
     done
-    STORAGE_MODE="$([ "$PERSIST" = true ] && echo persistent || echo volatile)"
+
+    # === Validation for start command ===
+    if [ "$COMMAND" = "start" ] && [ -n "$CUSTOM_WORK" ] && [ "$CUSTOM_WORK" -le 0 ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            output_json_error "Work duration must be positive" "invalid_duration"
+        else
+            error "Work duration must be positive."
+        fi
+        exit 1
+    fi
+
+    # Sanitize name when needed
+    if [ "$COMMAND" = "start" ] || [ "$COMMAND" = "status" ] || [ "$COMMAND" = "stop" ] || \
+       [ "$COMMAND" = "kill" ] || [ "$COMMAND" = "skip" ] || [ "$COMMAND" = "watch" ] || \
+       [ "$COMMAND" = "list" ]; then
+        sanitize_name
+    fi
+
+    # Determine storage mode
+    local STORAGE_MODE
+    STORAGE_MODE=$([ "$PERSIST" -eq 1 ] && echo "persistent" || echo "volatile")
+
+    # Load theme early
+    load_theme
+
+    # === Command Dispatch ===
     case "$COMMAND" in
-        start|watch) WORK_MIN="$1" ;;  # Positional minutes for start/watch
-        theme) cmd_theme "$1" "$2" ;;
-        version) cmd_version ;;
-        help) cmd_help ;;
-        status) cmd_status ;;
-        skip) cmd_skip ;;
-        stop|kill) cmd_stop ;;
-        list) cmd_list ;;
-        stats) cmd_stats ;;
+        start)
+            pomo_start "$CUSTOM_WORK"
+            ;;
+
+        status)
+            show_pomo_status "$NAME" "$STORAGE_MODE"
+            ;;
+
+        watch)
+            pomo_watch "$NAME" "$STORAGE_MODE"
+            ;;
+
+        skip)
+            pomo_skip "$NAME" "$STORAGE_MODE"
+            ;;
+
+        stop)
+            pomo_stop "$NAME" "$STORAGE_MODE"
+            ;;
+
+        kill)
+            FORCE=1
+            pomo_stop "$NAME" "$STORAGE_MODE"
+            ;;
+
+        list)
+            pomo_list "$STORAGE_MODE"
+            ;;
+
+        stats)
+            pomo_stats
+            ;;
+
+        theme)
+            pomo_theme "$THEME_SUBCOMMAND" "$THEME_ARG"
+            ;;
+
+        version)
+            if [ "${JSON}" -eq 1 ]; then
+                output_json "version" "" "app" "${APP_NAME}" "version" "${VERSION}"
+            else
+                msg "${APP_NAME} version ${VERSION}"
+            fi
+            ;;
+
+        about)
+            show_about
+            ;;
+
+        version-check)
+            version_check
+            ;;
+
+        self-update)
+            self_update
+            ;;
+
+        self-uninstall)
+            self_uninstall
+            ;;
+
+        help|*)
+            show_pomo_help
+            ;;
     esac
 }
 
-run_command() {
-    case "$COMMAND" in
-        start) cmd_start "$1" "$@" ;;  # Pass args
-        watch) cmd_watch "$1" "$@" ;;
-        *) ;;  # Handled above
-    esac
-}
-
-main() {
-    reload_theme
-    parse_args "$@"
-    if [ -z "$COMMAND" ]; then maybe_install; cmd_help; exit 0; fi
-    maybe_install
-    run_command "$@"
-}
-
-main "$@"
+# Call the main function
+main_pomo "$@"

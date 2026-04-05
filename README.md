@@ -1,156 +1,182 @@
-<div align="center">
+# pomo – Simple & Beautiful Pomodoro Timer
 
-<img src="https://img.shields.io/badge/Version-1.3.9-blue?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Version 1.3.9">   
-<img src="https://img.shields.io/badge/sh-POSIX-green?style=for-the-badge&logo=gnubash&logoColor=white" alt="POSIX sh">  
-<img src="https://img.shields.io/badge/License-MIT-brightgreen?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License MIT"> 
+![Version](https://img.shields.io/badge/Version-1.4.0-blue?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-**pomo** — the simplest, most beautiful Pomodoro timer in pure POSIX shell 🌿
+**Lightweight, themeable Pomodoro-style countdown timer** for the terminal.  
+Per-user named timers with volatile (RAM) or persistent storage. Zero dependencies. Built with the same extremely defensive philosophy as [`timer`](https://github.com/Wilgat/timer) and other tools by Wilgat.
 
-</div>
+---
 
-Lightweight, themeable Pomodoro-style CLI timer written in **pure POSIX shell** .
+## ✨ Features
 
-Focus-friendly with colors, themes, progress bars, terminal bell and persistent stats!
+- **Per-user named pomodoros** — `default`, `focus`, `meeting`, `build`, `writing`, etc.
+- **Two storage modes**:
+  - **Volatile** (default): Fast in-memory storage in `/dev/shm`
+  - **Persistent** (`--persist`): Survives reboots (`~/.cache/pomo/`)
+- Smart fallbacks for `/dev/shm`, missing `$HOME`, restricted containers, Git Bash, etc.
+- **Beautiful themes** with icons, colors, and UTF-8 progress bars (`default`, `energetic`, `minimal`)
+- Work / Break phases with automatic or custom durations
+- `watch` mode for live refreshing view + terminal bell
+- `skip`, `stop` (counts completed work), `kill` (discard)
+- Daily statistics (completed pomodoros + total minutes)
+- One-liner install via `curl | sh`
+- Full self-update, version check, uninstall, and diagnostics (`about`)
+- Strict `--json` output mode for scripting
+- Extremely robust across minimal shells and harsh environments
 
-## Features
+---
 
-- Classic 25/5 Pomodoro (customizable durations)
-- Three beautiful themes: `default`, `energetic`, `minimal`
-- Switch themes easily (`pomo theme set energetic`, `next`/`prev`)
-- Persistent theme & daily stats (`~/.cache/pomo/`)
-- Nice unicode icons & colored progress bar
-- Terminal bell on phase end
-- **Live watch mode** — continuously refreshing status every second
-- Zero dependencies — works with dash/sh/ash
-- Very similar UX to `timer` (start/status/stop/kill/list/…)
+## 🚀 Quick Installation
 
-### Main commands overview
+**User installation (recommended):**
 
-| Command                          | Description                                                  | Example                              |
-|----------------------------------|--------------------------------------------------------------|--------------------------------------|
-| `start [minutes]`                | Start new pomodoro (default 25 min)                          | `pomo start 40 --persist`            |
-| `watch [--persist]`              | Live view - refreshes status every second (Ctrl+C to exit)   | `pomo watch`                         |
-| `status`                         | Show remaining time + nice progress bar                      | `pomo status`                        |
-| `skip`                           | Jump to next phase (work → break or reverse)                 | `pomo skip`                          |
-| `stop [--force]`                 | Stop & count pomodoro (or discard)                           | `pomo stop`                          |
-| `kill`                           | Alias for `stop --force`                                     | `pomo kill`                          |
-| `list [--persist]`               | Show currently running pomodoros                             | `pomo list`                          |
-| `stats`                          | Show completed pomodoros today                               | `pomo stats`                         |
-| `theme list`                     | Show available themes + current                              | `pomo theme list`                    |
-| `theme set <name>`               | Change visual theme                                          | `pomo theme set energetic`           |
-| `theme next` / `theme prev`      | Cycle between themes                                         | `pomo theme next`                    |
-| `version`                        | Show version                                                 | `pomo version`                       |
-| `help`                           | Show this help                                               | `pomo help`                          |
+```sh
+curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
+```
+
+**System-wide (requires root):**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
+```
+
+After installation, **restart your terminal** or run `source ~/.bashrc` (or equivalent) so `~/.local/bin` is added to your `$PATH`.
+
+---
+
+## 📖 Usage
+
+### Core Commands
+
+```sh
+pomo start                    # Start default 25 min work pomodoro
+pomo start 40                 # Custom work duration (minutes)
+pomo start focus 50 --break 10 --persist   # Named + custom break + persistent
+
+pomo status                   # Show current status with progress bar
+pomo status focus
+
+pomo watch                    # Live updating view (updates every second)
+pomo watch --persist
+
+pomo skip                     # Switch to next phase (work ↔ break)
+pomo stop                     # Stop and count completed work session
+pomo kill                     # Discard current pomodoro (does not count)
+pomo list                     # List all running pomodoros
+pomo list --persist
+```
+
+### Themes
+
+```sh
+pomo theme list               # Show available themes
+pomo theme set energetic      # Change theme
+pomo theme next               # Cycle to next theme
+pomo theme prev               # Cycle to previous theme
+```
+
+### Information & Maintenance
+
+```sh
+pomo stats                    # Daily completed pomodoros and minutes
+pomo about                    # Full diagnostics (install status, versions, shell, etc.)
+pomo version
+pomo version-check
+pomo self-update
+pomo self-uninstall
+pomo help
+```
+
+### Options
+
+- `--persist`          — Use persistent storage instead of volatile RAM
+- `--break N`          — Set custom break duration in minutes (with `start`)
+- `--force`            — Force actions (e.g. with `stop`/`kill`)
+- `--quiet, -q`        — Suppress non-error messages
+- `--json`             — Machine-readable JSON output (implies `--quiet`)
 
 **Default durations**: 25 min work • 5 min break
 
-## Requirement Analysis
+---
 
-This section covers key design decisions for portability, safety, and usability .
+### Examples
 
-- **Shell**: `#!/bin/sh` (POSIX/dash/ash compatible). No bashisms/SDKMAN needed (unlike Java tools ); runs on Linux/macOS/BSD/Alpine/busybox.
-- **User privileges**: Auto-detect root vs normal (install: `/usr/local/bin` root, `~/.local/bin` user-local) .
-- **Installability**: Curl|sh one-liner friendly (non-interactive auto-install); sudo variant; atomic temp→mv; auto-add `~/.local/bin` to `~/.bashrc` (idempotent, w/ reload guidance) .
-- **Key variables**: Hard-coded `APP_NAME="pomo"`, `APP_VER="1.3.9"`, GitHub `SCRIPT_URL`; `VOLATILE_DIR="/tmp"` (portable timer files), `PERSISTENT_DIR="~/.cache/pomo"` (XDG-safe stats/theme) .
-- **File safety**: mkdir -p dirs; temp downloads mv atomic; per-user files (`pomo_${USER}_work/break`) .
-- **Installation check**: Smart — root: global only; user: global OR local (exist+x) .
-- **Other**: Unicode icons (UTF-8 safe); tty-safe clear/colors; background sleep (no subshells leak); explicit errors (no `set -e`); main() modularity .
+```sh
+# Start a persistent named pomodoro with custom durations
+pomo start meeting 45 --break 8 --persist
 
-## Pseudo-code overview
-
-High-level plan before implementation — for readability/debugging .
-
-| Step | Function/Module                | Purpose / Main logic                                                                 |
-|------|--------------------------------|--------------------------------------------------------------------------------------|
-| 1    | (top)                          | Header/curl examples; colors; constants (APP_NAME/VER/URLs/DIRS/DEFAULTS)  |
-| 2    | detect_install_locations       | mkdir dirs; set IS_ROOT/INSTALL_DIR/PATH                                 |
-| 3    | utils (get_icon/bar/repeat)    | Reload theme; icons/colors/bar; per-user files; today/stats               |
-| 4    | is_installed/in_path/add_bashrc| Smart check; PATH guidance (user-local preferred)                         |
-| 5    | perform_self_install           | Curl temp → chmod+x → mv atomic → success                                 |
-| 6    | maybe_install                  | !installed? → tty prompt/non-tty auto → install + PATH fix                |
-| 7    | cmd_*                          | Modular: start (bg sleep cycle/bell); status (progress); watch (loop refresh); theme/stats/stop/skip/list  |
-| 8    | parse_args                     | Flags (--persist/force/break) → COMMAND → subargs (WORK_MIN=$1 numeric)               |
-| 9    | main                           | Setup/reload → parse → maybe_install → dispatch                           |
-
-## Installation
-
-```bash
-# User-local (recommended, no sudo)
-curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
-
-# Global (if needed)
-sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
-```
-
-## Usage examples
-
-```bash
-# Classic pomodoro
-pomo start
-
-# Watch progress live (updates every second, Ctrl+C to quit)
+# Live watch mode
 pomo watch
 
-# Start persistent session and watch it
-pomo start 50 --persist
-pomo watch --persist
+# Get status as JSON (useful for scripts or status bars)
+pomo status --json
 
-# Custom duration + break
-pomo start 50 --break 10 --persist
-
-# Check progress (single view)
-pomo status
-
-# Finish early or switch phase
-pomo skip
-
-# When done — count it
-pomo stop
-
-# Cleanup forgotten session
-pomo kill
-
-# See beautiful stats
+# View daily stats
 pomo stats
 
-# Try different look
+# Switch theme
 pomo theme set energetic
-pomo theme next
 ```
 
-## Themes preview (approximate look)
+---
 
-**default** (classic tomato style)  
-🍅 Work phase   18:42 remaining  
-█████████████████████░░░░░░░░░░░░░░░  42%
+## Why the Defensive Style?
 
-**energetic** (dynamic & motivating)  
-⚡ Work phase   18:42 remaining  
-███████████████████████████████░░░░░  42%
+This script is **intentionally verbose**, heavily commented, and full of repeated safety checks. This is by design.
 
-**minimal** (zen & clean)  
-⏳ Work phase   18:42 remaining  
-███████████████□□□□□□□□□□□□□□□□□□□□  42%
+It survives real-world edge cases that break most shell tools:
+- `curl | sh` in non-interactive shells
+- Minimal environments (`dash`, BusyBox `ash`)
+- No `$HOME`, missing `/dev/shm`, containers, Git Bash on Windows
 
-## Requirements
+The prominent `!!! DO NOT MODIFY OR SIMPLIFY !!!` comments exist to protect the reliability of the tool from well-meaning "cleanups" (a problem I’ve seen with AI assistants and enthusiastic contributors). The same defensive approach is used in [`timer`](https://github.com/Wilgat/timer) and other Wilgat tools.
 
-- POSIX shell (`/bin/sh`, dash, ash, etc.)
-- Basic utils: `date`, `id`, `sleep`, `curl` (install only)
-- UTF-8 locale (for icons; graceful fallback)
+It may look "ugly" at first glance, but this style has proven extremely reliable across diverse systems.
+
+---
+
+## Platform Compatibility
+
+| Platform              | Shell                | Status     | Notes                              |
+|-----------------------|----------------------|------------|------------------------------------|
+| Alpine Linux          | BusyBox ash          | Excellent  | Primary minimal target             |
+| Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | Full fallback support              |
+| Rocky Linux / RHEL    | Bash                 | Excellent  | Standard enterprise                |
+| macOS                 | Bash / zsh           | Excellent  | Fully supported                    |
+| Most Linux distros    | dash / bash          | Excellent  | Broad compatibility                |
+
+---
+
+## Program Structure
+
+The entire tool is a **single self-contained shell script** with clear separation:
+
+- Safe defaults and constants
+- Root / environment detection
+- Centralized output (`output_text` + `output_json`)
+- Smart storage resolver with intelligent fallbacks
+- Theme system (icons, colors, progress bars)
+- Dedicated command handlers
+- Robust main dispatcher
+
+All critical paths include defensive checks and extensive comments.
+
+---
 
 ## Contributing
 
-Ideas & PRs welcome :
+Contributions are welcome!  
+Please **preserve the defensive style** and existing comments — especially around installation logic, storage fallbacks, output functions, and edge-case handling.
 
-- Long break after 4 cycles
-- Multiple concurrent pomodoros (like `timer`)
-- Optional desktop notification (`notify-send`)
-- Better weekly/monthly stats
-- Pause/resume functionality
-- Randomized motivational quotes 
+---
 
 ## License
 
-MIT
+MIT License
 
-Enjoy your focused sessions! 🍅☕✨
+---
+
+**Made with care and a healthy dose of paranoia.** 🍅
+
+*Last updated for version 1.4.0*

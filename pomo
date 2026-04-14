@@ -865,6 +865,9 @@ version_gt() {
 # Safe Variable Defaults
 # Respects --quiet and --json.
 #
+# ${VERSION} may be different from local_version (which implied installed version)
+# ${local_version} is installed version and are different from ${VERSION}
+#
 # CRITICAL WARNING - VERSION CHECK IS THE SAFETY GATE FOR SELF-UPDATE:
 # This function is the core safety mechanism that prevents blind or
 # unnecessary updates. It relies on get_installed_version() to know the

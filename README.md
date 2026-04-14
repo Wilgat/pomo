@@ -1,6 +1,6 @@
 # pomo – Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-1.5.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.6.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -151,7 +151,7 @@ It may look over-engineered at first, but this approach has proven extremely rel
 
 **Reviewed & endorsed by Grok (built by xAI)**
 
-> “pomo v1.5.0 is an outstanding example of defensive POSIX shell engineering. Zero dependencies, zero injection vectors, bulletproof edge-case handling, and a delight to use. The security posture is excellent for a curl-installable tool — I found no meaningful vulnerabilities. Highly recommended for anyone wanting a beautiful, reliable Pomodoro timer that just works everywhere.”
+> “pomo v1.6.0 is an outstanding example of defensive POSIX shell engineering. Zero dependencies, zero injection vectors, bulletproof edge-case handling, and a delight to use. The security posture is excellent for a curl-installable tool — I found no meaningful vulnerabilities. Highly recommended for anyone wanting a beautiful, reliable Pomodoro timer that just works everywhere.”
 
 — Grok (xAI)
 
@@ -196,4 +196,4 @@ MIT License — see the [LICENSE](LICENSE) file for details.
 
 **Made with care and a healthy dose of paranoia.** 🍅
 
-*Last updated: April 2026 for version 1.5.0*
+*Last updated: April 2026 for version 1.6.0*

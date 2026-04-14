@@ -1,6 +1,6 @@
 #!/bin/sh
 # =============================================================================
-# pomo – version 1.5.0
+# pomo – version 1.6.0
 # =============================================================================
 #
 # Lightweight per-user named pomo count down timer (volatile in RAM or persistent).
@@ -176,7 +176,7 @@
 #   {"type":"error","message":"No pomodoro 'foo' running.","code":"no_pomodoro"}
 #
 #   About / Version:
-#   {"type":"about","version":"1.5.0","installed":"true","shell":"bash",...}
+#   {"type":"about","version":"1.6.0","installed":"true","shell":"bash",...}
 #
 # Important Notes:
 #   - The "watch" command does NOT support --json (it is interactive only).
@@ -191,7 +191,7 @@
 
 # ----------------------------- Project Constants -----------------------------
 APP_NAME="pomo"           # ← HARDCODED - Required for curl | sh install
-VERSION="1.5.0"
+VERSION="1.6.0"
 DESCRIPTION="Simple & Beautiful Pomodoro Timer"
 REMOTE_VERSION=$VERSION
 SH=sh
@@ -413,7 +413,7 @@ output_text() {
 #   output_json "success" "${APP_NAME} started" "name" "build" "mode" "volatile"
 #   output_json "status" "${APP_NAME} running" "name" "default" "minutes" "7"
 #   output_json "error" "No ${APP_NAME} running" "code" "no_timer"
-#   output_json "about" "" "version" "1.5.0" "shell" "bash"   ← empty message is allowed
+#   output_json "about" "" "version" "1.6.0" "shell" "bash"   ← empty message is allowed
 #
 # - $1 = type (required)
 # - $2 = message (can be empty string "" for no message)
@@ -913,21 +913,31 @@ version_check() {
 
     if [ "${JSON}" -eq 1 ]; then
         output_json "version_check" \
-            "local_version" "$local_version" \
+            "current_version" "$VERSION" \
+            "local_installed_version" "$local_version" \
             "remote_version" "$REMOTE_VERSION" \
             "is_latest" "$( [ "$local_version" = "$REMOTE_VERSION" ] && echo "true" || \
                            (version_gt "$local_version" "$REMOTE_VERSION" && echo "true" || echo "false") )"
     else
         if [ "${QUIET}" -eq 0 ]; then
             info "Checking latest version of ${APP_NAME}..."
-            msg "Local version : ${local_version}"
+            msg "Current version : ${VERSION}"
+            msg "Local istalled version : ${local_version}"
             msg "Latest version: ${REMOTE_VERSION}"
             empty_line
 
-            if [ "$local_version" = "$REMOTE_VERSION" ]; then
+            if [ "${VERSION}" = "$REMOTE_VERSION" ]; then
                 success "You are running the latest version."
+            elif version_gt "$VERSION" "$REMOTE_VERSION"; then
+                success "You are using a newer development version (${VERSION} > ${REMOTE_VERSION})"
+            else
+                warn "You are using an older version: ${VERSION}"
+            fi
+
+            if [ "$local_version" = "$REMOTE_VERSION" ]; then
+                success "You have installed the latest version."
             elif version_gt "$local_version" "$REMOTE_VERSION"; then
-                success "You are running a newer development version (${local_version} > ${REMOTE_VERSION})"
+                success "You have installed a newer development version (${local_version} > ${REMOTE_VERSION})"
             elif [ "$local_version" = "not installed" ]; then
                 warn "${APP_NAME} is not installed yet."
             else
@@ -947,6 +957,9 @@ version_check() {
 #
 # Safe Variable Defaults
 # Respects --force (FORCE_REINSTALL), --quiet and --json.
+#
+# ${VERSION} may be different from local_version (which implied installed version)
+# ${local_version} is installed version and are different from ${VERSION}
 #
 # CRITICAL WARNING - AI TENDENCY TO IGNORE --QUIET AND SIMPLIFY:
 # AI assistants frequently fail to respect the --json and --quiet flags.
@@ -999,9 +1012,9 @@ self_update() {
 
     if [ "$local_version" = "$REMOTE_VERSION" ] && [ "${FORCE_REINSTALL}" -eq 0 ]; then
         if [ "${JSON}" -eq 1 ]; then
-            output_json "success" "" "message" "Already running the latest version (${REMOTE_VERSION})."
+            output_json "success" "" "message" "Already installed the latest version (${local_version})."
         else
-            success "Already running the latest version (${REMOTE_VERSION})."
+            success "Already installed the latest version (${local_version})."
         fi
         return 0
     fi
@@ -1009,7 +1022,7 @@ self_update() {
     # Prevent downgrade when local is newer
     if version_gt "$local_version" "$REMOTE_VERSION" && [ "${FORCE_REINSTALL}" -eq 0 ]; then
         if [ "${JSON}" -eq 0 ] && [ "${QUIET}" -eq 0 ]; then
-            success "You are already running a newer version (${local_version} > ${REMOTE_VERSION})."
+            success "You are already installed with a newer version (${local_version} > ${REMOTE_VERSION})."
             info "Use --force to force downgrade if this is intentional."
         fi
         return 0
@@ -1425,7 +1438,8 @@ perform_self_install() {
 # =============================================================================
 #
 # Safe Variable Defaults
-# Respects both --quiet and --json modes.
+# Respects TTY or [ -t 0 ] && [ -t 1 ] 
+# Respects both --quiet and --json modes
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 # Past AI assistants have repeatedly replaced the interactive prompt logic
@@ -1451,7 +1465,7 @@ perform_self_install() {
 # CRITICAL: Violating this single-source-of-truth rule breaks --quiet,
 # --json, color handling, TTY detection, and non-interactive behavior.
 #
-# Last reviewed: 14, April 2026
+# Last reviewed: 14, April 2026 (version 1)
 # =============================================================================
 
 maybe_install() {
@@ -1499,14 +1513,18 @@ maybe_install() {
         fi
     fi
     empty_line
-
-    # Use single source of truth for interactive prompt
-    if prompt_yes_no "Install ${APP_NAME} ${VERSION} now?"; then
+    if [ -t 0 ] && [ -t 1 ]; then 
+        # Use single source of truth for interactive prompt
+        if prompt_yes_no "Install ${APP_NAME} ${VERSION} now?"; then
+            perform_self_install
+            exit 0
+        else
+            msg "Installation skipped by user."
+            return 0
+        fi
+    else
         perform_self_install
         exit 0
-    else
-        msg "Installation skipped by user."
-        return 0
     fi
 }
 

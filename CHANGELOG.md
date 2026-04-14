@@ -4,6 +4,22 @@ All notable changes to **pomo** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-04-14
+
+### Fixed
+- `maybe_install()` now correctly uses `Wilgat/pomo` repository instead of leftover `cloudgen/grokrec`
+- Improved logic for non-interactive installs (`curl | sh`)
+- Better messaging when auto-installing in non-TTY environments
+
+### Changed
+- `maybe_install()` hardened to strictly respect `prompt_yes_no()` as single source of truth
+- Minor cleanup in variable defaults and comments for consistency
+- Bumped version to **1.6.0** everywhere (badge + last updated).
+- Added a new **"Version Awareness (v1.6.0+)"** section explaining the improved behavior.
+- Updated `version-check` description in Usage.
+- Fixed repository references to `Wilgat/pomo`.
+- Minor wording improvements for clarity and consistency.
+
 ## [Unreleased] / 1.5.0 (WIP)
 
 ### Added

@@ -8,7 +8,7 @@
 [![GrokRec](https://img.shields.io/badge/GrokRec-Reviewed-0A66C2?logo=ai&logoColor=white)](https://github.com/Wilgat/pomo/blob/main/RECOMMENDATION.md)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
 
-Official Recommendation from [grok](https://grok.com/c/f1f3590c-df8c-476f-a753-2401993b1ade?rid=92d7a52c-12b2-4b81-b1a9-8853060698d5). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refers to the [downloaded copy](https://github.com/Wilgat/pomo/blob/main/RECOMMENDATION.md) .
+Official Recommendation from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refers to the [downloaded copy](https://github.com/Wilgat/pomo/blob/main/RECOMMENDATION.md) .
 
 **A lightweight, themeable Pomodoro timer for the terminal.**  
 Supports named timers, volatile (RAM) or persistent storage, beautiful themes, live watch mode, daily statistics, and full self-management (install/update/uninstall).  

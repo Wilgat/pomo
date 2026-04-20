@@ -1,4 +1,4 @@
-**README.md updated** — old "Grok's Code Review" section replaced with updated version # pomo – Simple & Beautiful Pomodoro Timer
+# pomo – Simple & Beautiful Pomodoro Timer
 
 ![Version](https://img.shields.io/badge/Version-1.7.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)

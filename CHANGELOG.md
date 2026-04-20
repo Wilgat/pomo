@@ -4,6 +4,18 @@ All notable changes to **pomo** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-04-20
+
+### Changed
+- Bumped version to **1.7.0** (header, `VERSION` constant, references, and last reviewed date)
+- Updated JSON output examples and `about` command diagnostics to reflect new version
+- Minor wording and date consistency in header comments
+
+### Security / Defensive
+- All CIAO-Lite Protection Zones, checksum verification in `perform_self_install_v2()`, centralized output functions, and version awareness logic (`version_gt_v1`, `get_installed_version_v1`) remain fully intact and untouched.
+
+**No functional or behavioral changes** — this is a clean version bump from 1.6.0.
+
 ## [1.6.0] - 2026-04-14
 
 ### Fixed

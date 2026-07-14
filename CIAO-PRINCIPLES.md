@@ -5,6 +5,8 @@
 
 **CIAO** = **C**aution • **I**ntentional • **A**nti-fragile • **O**ver-engineered
 
+> **Product alignment (pomo 2.0.0):** This workspace targets **[CIAO v2.10.2](https://github.com/cloudgen/ciao)** and **[CIAO-Lite](https://github.com/cloudgen/ciao-lite)** (see `README.md`, `SECURITY.md`, product requirements). The body below is a **vendored snapshot** (v2.9.1 text) for local reading; when this file and the canonical CIAO repo disagree, **prefer the published CIAO v2.10.2 principles**.
+
 ---
 
 ## Purpose

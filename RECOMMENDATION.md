@@ -1,5 +1,7 @@
 from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45)
 
+> **Archive note (2026-07-14):** This document is the **historical** grokrec review of **pomo v1.7.0**. Current product is **pomo 2.0.0** (countdown architecture + 1.7.0 domain specialty; CIAO **v2.10.2**). See [`CHANGELOG.md`](./CHANGELOG.md), [`README.md`](./README.md), and [`SECURITY.md`](./SECURITY.md) for the live surface. Do not treat function names or layout below as the 2.0.0 ship-unit map.
+
 **Review and Security Inspection of pomo v1.7.0 (tagged commit 71b84bf32815fd4b41c2152bd49aba432e054544)**
 
 **Project Overview**  

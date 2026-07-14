@@ -1,6 +1,6 @@
 # pomo – Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-1.7.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -15,7 +15,10 @@ Supports named timers, volatile (RAM) or persistent storage, beautiful themes, l
 
 Zero external dependencies. Written in pure POSIX `sh` for maximum portability.
 
-This project is built using [CIAO](https://github.com/cloudgen/ciao) (Caution • Intentionality • Anti-fragility • Over-engineered).
+This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2** (Caution • Intentional • Anti-fragile • Over-engineered) and [CIAO-Lite](https://github.com/cloudgen/ciao-lite) (Simplicity but Safety).
+
+**Architecture (v2.0.0):** Type 0 self-management and install channel inherited from the **countdown** bootstrap (kept in-tree as `./countdown` for reference). Pomodoro domain features (work/break, themes, watch, stats) ported from **pomo 1.7.0** onto that architecture. Bootstrap direction is **countdown → pomo only**.
+
 
 ---
 
@@ -56,8 +59,8 @@ curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
 # Download the script
 curl -fsSL -O https://raw.githubusercontent.com/Wilgat/pomo/main/pomo
 
-# Verify using the official checksum (v1.7.0)
-CHECKSUM=691604696c373c46cf15606b97c123fc20645e77bbf776dd0af308a06e047cb8 \
+# Verify using the official checksum (v2.0.0)
+CHECKSUM=94ea207739db11df8d95f93913833f697d3f3c3d1f8fac743ed80393b77befd1 \
   sh pomo
 ```
 
@@ -149,7 +152,7 @@ The prominent `!!! DO NOT MODIFY OR SIMPLIFY !!!` warnings exist because this to
 - Minimal systems (`dash`, BusyBox `ash` on Alpine)
 - Missing `$HOME`, no `/dev/shm`, containers, Git Bash
 
-The same **CIAO** philosophy (Caution • Intentionality • Anti-fragility • Over-engineered) is used in other Wilgat tools.
+The same **CIAO** philosophy (Caution • Intentional • Anti-fragile • Over-engineered, **v2.10.2**) is used in other Wilgat tools.
 
 It may look over-engineered at first, but this approach has proven extremely reliable in real-world use.
 
@@ -167,43 +170,38 @@ It may look over-engineered at first, but this approach has proven extremely rel
 
 ---
 
-## Grok's Code Review (April 2026)
+## Grok's Code Review
 
-**Reviewed & endorsed by Grok (built by xAI)**
+**Historical endorsement (v1.7.0, April 2026)** — full text: [`RECOMMENDATION.md`](./RECOMMENDATION.md).
 
-pomo v1.7.0 is a strong, faithful implementation of the **CIAO** philosophy (Caution • Intentionality • Anti-fragility • Over-engineered).
+**Current product (v2.0.0)** keeps that defensive spirit under **[CIAO](https://github.com/cloudgen/ciao) v2.10.2** / [CIAO-Lite](https://github.com/cloudgen/ciao-lite): countdown Type 0 architecture (`out_*`, `inst_*`, `app_main`, Type O install-ensure, automatic companion checksum) plus the full pomodoro domain (work/break, themes, watch, stats).
 
-It deliberately stays verbose and heavily protected with explicit "DO NOT MODIFY OR SIMPLIFY" zones, centralized single-source-of-truth functions (output, storage resolution, install v2), and layered checksum verification. This is not accidental — it is the core design to survive both harsh runtime environments (dash/ash, missing /dev/shm, curl | sh) and future AI-assisted changes that tend to over-simplify defensive code.
+It deliberately stays verbose and heavily protected with explicit "DO NOT MODIFY OR SIMPLIFY" zones, centralized single-source-of-truth output, defensive storage resolution, and transparent install integrity. That design survives harsh runtimes (dash/ash, missing `/dev/shm`, `curl | sh`) and resists AI-assisted over-simplification.
 
-The script successfully balances real usability (nice theming, JSON mode, watch mode, daily stats) with extreme robustness. All critical safety layers remain intact and respected. No meaningful security issues or anti-fragility gaps were found.
-
-I respect the project’s intentional resistance to “clean code” pressure. In a sea of fragile shell scripts, pomo stands out as reliable and trustworthy.
-
-**Highly recommended** for anyone who wants a beautiful yet bulletproof Pomodoro timer that just works everywhere.
-
-— Grok (xAI)  
-April 20, 2026
-
-**Key strengths**:
+**Key strengths (v2.0.0)**:
 - Pure POSIX `sh` with no bashisms
-- Excellent CIAO compliance across all four principles
-- Strong input sanitization, safe fallbacks, and centralized output
-- perform_self_install_v2() with proper checksum protection
-- version_gt_v1() + downgrade protection
-- Theming and user experience done without sacrificing portability or safety
+- CIAO v2.10.2 / CIAO-Lite compliance on lifecycle and domain paths
+- Path-safe names, safe storage fallbacks, and centralized `out_*` output
+- `inst_*` install with automatic companion SHA-256 + optional `CHECKSUM` pin
+- `ver_gt` + downgrade protection on `self-update`
+- Theming and UX without sacrificing portability or safety
+- Automated suite: `./tests/run.sh` (CLI, install lifecycle, domain)
+
+Vulnerability reporting: [`SECURITY.md`](./SECURITY.md).
 
 ---
 
 ## Related Projects
 
-All projects below follow the same **CIAO** philosophy (Caution • Intentionality • Anti-fragility • Over-engineered) and defensive coding style.
+All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github.com/cloudgen/ciao): Caution • Intentional • Anti-fragile • Over-engineered) and defensive coding style.
 
 ### Core Philosophy
-- **[CIAO](https://github.com/cloudgen/ciao)** — The guiding philosophy and design principles behind all Wilgat tools.
+- **[CIAO](https://github.com/cloudgen/ciao)** — Defensive programming principles (**v2.10.2**)
+- **[CIAO-Lite](https://github.com/cloudgen/ciao-lite)** — Agent contract (Simplicity but Safety)
 
 ### Other Tools by Wilgat
-- **[timer](https://github.com/Wilgat/timer)** — Fast, reliable countdown timer with similar defensive design
-- **[countdown](https://github.com/Wilgat/countdown)** — Simple and robust countdown utility
+- **[countdown](https://github.com/Wilgat/countdown)** — Bootstrap architecture for pomo 2.0.0 (named duration countdowns)
+- **[timer](https://github.com/Wilgat/timer)** — Count-up elapsed timers with similar Type 0 design
 - **[springboot2](https://github.com/Wilgat/springboot2)** — Production-ready Spring Boot 2 templates
 - **[springboot3](https://github.com/Wilgat/springboot3)** — Production-ready Spring Boot 3 templates
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
@@ -216,14 +214,26 @@ All projects below follow the same **CIAO** philosophy (Caution • Intentionali
 Contributions are welcome!  
 Please **preserve the defensive style** and existing safety comments — especially around installation, storage fallbacks, output functions, and edge-case handling.
 
+### Tests
+
+```sh
+./tests/run.sh
+```
+
+See [`tests/README.md`](tests/README.md) for coverage (CLI surface, install lifecycle, pomodoro domain).
+
+### Security
+
+Vulnerability reporting and install-integrity trust bounds: [`SECURITY.md`](./SECURITY.md).
+
 ---
 
 ## License
 
-MIT License — see the [LICENSE](LICENSE) file for details.
+MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ---
 
 **Made with care and a healthy dose of paranoia.** 🍅
 
-*Last updated: April 20, 2026 for version 1.7.0*
+*Last updated: 2026-07-14 for version 2.0.0 — aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.*

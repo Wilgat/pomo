@@ -1,0 +1,103 @@
+# =============================================================================
+# .gitignore — skill-create-gitignore
+# Detected: Shell (POSIX CLI: ./pomo, ./countdown, tests/*.sh)
+# Docs: Pattern A — track docs/requirements/** only
+# Artifacts: compiled, caches, temp, secrets ignored (universal + shell)
+# Harness: ignore AGENTS.md + docs skills/incidents/terminologies/templates/…
+# Companion audit: skill-file-leaks-check after every change to this file
+# =============================================================================
+
+# --- universal: secrets / local env ---
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+!*.key.example
+
+# --- universal: OS ---
+.DS_Store
+.DS_Store?
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# --- universal: editors / IDEs ---
+*.swp
+*.swo
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.code-workspace
+
+# --- universal: temp / scratch / logs ---
+tmp/
+temp/
+temps/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.log
+logs/
+*.pid
+*.seed
+
+# --- universal: generic build / compile / package outputs ---
+build/
+dist/
+out/
+output/
+bin/
+obj/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.class
+*.jar
+*.war
+*.ear
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+*.whl
+*.rlib
+*.rmeta
+
+# --- universal: caches ---
+.cache/
+*.cache
+.turbo/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# --- shell / local run debris ---
+*.YYYYMMDD-*.bak
+
+# --- agent harness (root) — local only (avoid-expose-agents) ---
+AGENTS.md
+CLAUDE.md
+.claude/
+.cursor/
+.codex/
+
+# --- docs layer (Pattern A) — track requirements only ---
+# Nested docs/.gitignore mirrors this policy under docs/.
+docs/**
+!docs/.gitignore
+!docs/requirements/
+!docs/requirements/**
+
+# --- project-local reference snapshots (not product ship surface) ---
+pomo-*-domain-ref

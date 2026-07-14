@@ -4,6 +4,42 @@ All notable changes to **pomo** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-14
+
+### Changed
+- **Major architecture specialize:** product ship unit rebuilt from **countdown** bootstrap (A → B) with full **pomo 1.7.0** domain surface.
+- Version **2.0.0**; `APP_NAME=pomo`, channel `Wilgat/pomo`, companion `pomo.sha256`.
+- Output SSOT is countdown-family `out_*` (not the legacy `info` / `success` / `output_json` stack).
+- Install / lifecycle is `inst_*` / Type O empty-argv install-ensure from countdown (`app_main` always runs under pipe).
+- Philosophy alignment documented as **[CIAO](https://github.com/cloudgen/ciao) v2.10.2** / [CIAO-Lite](https://github.com/cloudgen/ciao-lite).
+
+### Added (domain from 1.7.0 specialty)
+- Work/break phases with automatic transition and terminal bell
+- Named timers, volatile `/dev/shm` and `--persist` storage
+- Themes: `default`, `energetic`, `minimal` (`theme list|set|next|prev`)
+- `watch`, `skip`, `stats`, themed `status` progress bars
+- Daily completed-pomodoro statistics
+- Domain flags: `--break N`, `--persist` (with Type 0 `--quiet` / `--json` / `--force` / `--debug`)
+
+### Added (product engineering surface)
+- POSIX CI suite under `tests/` (`run.sh`, CLI surface, install lifecycle on local channel, pomodoro domain)
+- Product-root [`SECURITY.md`](./SECURITY.md) (reporting, CIAO security principles, honest automatic-checksum trust bounds)
+- Product law: nine live `docs/requirements/requirement-shell-*.md` files, including **`requirement-shell-pomo-domain`**
+
+### Security / Defensive
+- Automatic companion-digest integrity (`${SCRIPT_URL}.sha256`) with transparent link / value / result; optional `CHECKSUM` pin secondary
+- Path-safe pomodoro names; fail-closed domain codes (`invalid_name`, `already_running`, `no_pomodoro`, …)
+- Non-interactive uninstall requires `--force` (`confirm_required`); no silent fake cancel success
+- Downgrade refuse without `--force` on `self-update`
+
+### Preserved
+- In-tree `./countdown` bootstrap ship unit (reference; not overwritten by pomo)
+- Domain oracle archive: `pomo-1.7.0-domain-ref` (local reference of 1.7.0 body)
+
+### Requirements
+- Retargeted `docs/requirements/*` Implementation Notes to pomo
+- CLI interface lists Type 0 + domain routing; domain semantics owned by `requirement-shell-pomo-domain.md`
+
 ## [1.7.0] - 2026-04-20
 
 ### Changed

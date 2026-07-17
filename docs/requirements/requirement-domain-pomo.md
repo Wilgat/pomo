@@ -1,5 +1,5 @@
-**file**: docs/requirements/requirement-shell-pomo-domain.md  
-**Status**: Active (Version 1.0.0 – CIAO v2.10.2 Principles 1/5/18/19/20)  
+**file**: docs/requirements/requirement-domain-pomo.md  
+**Status**: Active (Version 1.1.0 – CIAO v2.10.2 Principles 1/4/5/17/18/19/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose
@@ -8,10 +8,10 @@ This requirement is the **project Single Source of Truth** for the **pomodoro do
 
 It **does not** re-own Type 0 install/self-management, empty-argv install-ensure, output SSOT primitives, or automatic checksum — those remain under peer `requirement-shell-*.md` files. Domain commands are still **Type 0 invoker privilege** (not Type 1 host bootstrap, not Type 2 system-user app ops).
 
-**Scope:** Domain commands (`start`, `status`, `watch`, `skip`, `stop`, `kill`, `list`, `stats`, `theme`), domain flags (`--persist`, `--break`), state format, storage resolution, themes, daily stats, path-safe names, domain JSON codes.  
+**Scope:** Domain commands (`start`, `status`, `watch`, `skip`, `stop`, `kill`, `list`, `stats`, `theme`), domain flags (`--persist`, `--break`), state format, storage resolution, themes, daily stats, path-safe names, domain JSON codes, **domain help items**, **domain about items**.  
 **Out of scope:** Install channel, self-update/uninstall, companion digest, global quiet/json contracts (cited from peers).
 
-**Bootstrap note:** Architecture inherited from **countdown** (A). Domain specialty from **pomo 1.7.0** oracle. Direction A→B only.
+**Bootstrap note:** Architecture lineage from **countdown** (A → B only). Domain specialty from **pomo 1.7.0** oracle. An in-tree `./countdown` bootstrap ship unit is **optional** (present only if that file exists on disk — never invent or assume it).
 
 ---
 
@@ -84,7 +84,32 @@ Names that become path segments **MUST** be validated **before** I/O:
 3. Invalid theme name **MUST** fail closed with stable code (`invalid_theme`).  
 4. Missing/corrupt theme file **MUST** fall back to `default`.
 
-### 2.8 Implementation Notes (this project)
+### 2.8 Specialized project help items (domain pillar)
+
+Domain law **MUST** define what `help` lists for the domain surface (in addition to Type 0 lifecycle rows owned by `requirement-shell-cli-interface.md` / self-management).
+
+| Help surface | Rule |
+|--------------|------|
+| **Domain verbs** | Human `help` **MUST** list every domain command in §2.1 / §2.10 command table with a one-line purpose |
+| **Domain flags** | Human `help` **MUST** document `--persist` and `--break N` (or point to start usage that includes them) |
+| **Examples** | Human `help` **SHOULD** include at least one domain example (e.g. `start` / `status` / `theme`) |
+| **JSON help** | In `--json` mode, help remains a short structured note (not a long human dump) per CLI interface law |
+| **Errors → help** | Domain fail-closed paths **SHOULD** point operators to `help` when the error is usage-shaped (unknown subcommand, missing argument) |
+
+Routing ownership stays in `requirement-shell-cli-interface.md`; **this file** owns which domain rows must appear.
+
+### 2.9 Specialized project about items (domain pillar)
+
+| About surface | Rule |
+|---------------|------|
+| **Domain diagnostics** | **about: Type 0 only; no domain fields** for this product — `about` **MUST NOT** invent pomodoro state, themes, stats, or storage paths as required about fields |
+| **Type 0 retained** | Install presence, paths, user, shell, TTY, version remain under Type 0 `about` law (`requirement-shell-self-management.md` / CLI interface) |
+| **Non-leak** | Domain law **MUST NOT** add `CHECKSUM` or secrets to about (peer automatic-checksum still applies) |
+| **JSON about** | No domain-only about keys are required; absence is intentional |
+
+If future product claims domain about diagnostics, this pillar **MUST** be revised in the same change as implementation (no silent about fields).
+
+### 2.10 Implementation Notes (this project)
 
 | Item | Value for pomo |
 |------|----------------|
@@ -101,8 +126,10 @@ Names that become path segments **MUST** be validated **before** I/O:
 | **Stats path** | `${persistent_base}/stats_YYYY-MM-DD` (`count total_min`) |
 | **Theme path** | `${persistent_base}/theme` |
 | **Themes** | `default`, `energetic`, `minimal` |
-| **Bootstrap A** | In-tree `./countdown` (architecture only; not domain law) |
-| **Domain oracle** | `./pomo-1.7.0-domain-ref` (behavior reference; not ship unit) |
+| **Bootstrap A (lineage)** | **countdown** architecture parent (A→B only; not domain law). In-tree `./countdown` **only if present on disk** — optional reference, never assumed |
+| **Domain oracle** | `./pomo-1.7.0-domain-ref` when present (behavior reference; not ship unit) |
+| **Help (domain)** | `app_help` must list domain verbs + `--persist` / `--break` (see §2.8) |
+| **About (domain)** | Type 0 only — no domain about fields (see §2.9) |
 | **Tests** | `tests/test_pomo_domain.sh` (+ CLI/help coverage in `tests/test_cli.sh`) |
 
 #### Command table (normative for this project)
@@ -147,15 +174,20 @@ Names that become path segments **MUST** be validated **before** I/O:
 8. `theme list|set|next|prev` work; invalid theme → `invalid_theme`.  
 9. `watch --json` fails closed.  
 10. Domain messages use `out_*` (bell / clear for watch UX only as non-message control).  
-11. Suite: `./tests/run.sh` domain section green.
+11. Suite: `./tests/run.sh` domain section green.  
+12. Human `help` lists all domain verbs and domain flags (§2.8).  
+13. `about` has no required domain fields (§2.9).
 
-### 2.9 Why This Requirement Exists (Direct CIAO Alignment)
+### 2.11 Why This Requirement Exists (Direct CIAO Alignment)
+
+Numbers match [cloudgen/ciao](https://github.com/cloudgen/ciao) **v2.10.2** / harness `template-ciao-principles.md` (not pre-2.10 maps).
 
 - **CIAO Principle 1 – Caution**: Fail closed on bad names, missing timers, already-running, corrupt state.  
-- **CIAO Principle 5 – Single source of output**: Domain uses `out_*`; no parallel product messaging stack.  
-- **CIAO Principle 18 – Input pattern checking**: Path-safe names and duration/break validation.  
-- **CIAO Principle 19 – Defensive storage**: Resolve volatile/persistent paths; never hardcode only `~/.cache/pomo` without resolution.  
-- **CIAO Principle 4 / CIAO-Lite O · Principle 20**: Phase transition and stats counting are Protection Zone material — do not “simplify” away.
+- **CIAO Principle 4 – CIAO-Lite (Over-protect) · Principle 20 – Protect Against AI & Human Modification**: Phase transition and stats counting are Protection Zone material — do not “simplify” away.  
+- **CIAO Principle 5 – Single Source of Output**: Domain uses `out_*`; no parallel product messaging stack.  
+- **CIAO Principle 17 – Encouraging User Help Functions**: Domain help items (§2.8) keep verbs/flags discoverable.  
+- **CIAO Principle 18 – Input Pattern Checking**: Path-safe names and duration/break validation.  
+- **CIAO Principle 19 – Defensive Storage Location Handling**: Resolve volatile/persistent paths; never hardcode only `~/.cache/pomo` without resolution.
 
 ---
 
@@ -166,7 +198,7 @@ Names that become path segments **MUST** be validated **before** I/O:
 - **Anti-fragile:** Fallback storage chains; theme default fallback; stats zero when file absent.  
 - **Over-protect:** Keep name sanitization, already-running, and count-vs-discard rules.  
 - **SSOT:** Domain behavior here; command **routing** also listed in `requirement-shell-cli-interface.md`; prefixes in modular design.  
-- **Respect bootstrap:** Do not reverse-copy domain into `./countdown`.
+- **Respect bootstrap:** Do not reverse-copy domain into countdown lineage / optional `./countdown` if present.
 
 ---
 
@@ -182,7 +214,8 @@ Names that become path segments **MUST** be validated **before** I/O:
 6. Point domain default storage only at a hard-coded absolute path without resolution/fallback.  
 7. Drop `--persist` or theme persistence without an explicit requirement change.  
 8. Treat `watch` as a JSON API (must remain human live view; refuse `--json`).  
-9. Reverse-copy pomo domain into the countdown bootstrap ship unit.
+9. Reverse-copy pomo domain into the countdown bootstrap ship unit (or any bootstrap A).  
+10. Claim domain help/about pillars are complete while §2.8 / §2.9 are empty or contradicted by live `help`/`about`.
 
 **Violating this rule is a critical pomodoro domain regression.**
 
@@ -192,14 +225,16 @@ Names that become path segments **MUST** be validated **before** I/O:
 
 This requirement is satisfied when all of the following hold:
 
-1. Every command in §2.8 is implemented and routed.  
+1. Every command in §2.10 command table is implemented and routed.  
 2. State format and phase rules in §2.2 / §2.5 hold.  
-3. Path-safe names and stable codes in §2.4 / §2.8 hold.  
+3. Path-safe names and stable codes in §2.4 / §2.10 hold.  
 4. Stats counting rules in §2.6 hold.  
 5. Themes rules in §2.7 hold.  
-6. Protection Rule items are not violated.  
-7. `tests/test_pomo_domain.sh` covers happy path + fail-closed cases.  
-8. Traceability: domain changes cite this file key `requirement-shell-pomo-domain`.
+6. **Help pillar** (§2.8): human `help` lists domain verbs + domain flags.  
+7. **About pillar** (§2.9): about remains Type 0 only (no required domain fields).  
+8. Protection Rule items are not violated.  
+9. `tests/test_pomo_domain.sh` covers happy path + fail-closed cases.  
+10. Traceability: domain changes cite this file key `requirement-domain-pomo`.
 
 ---
 
@@ -207,7 +242,8 @@ This requirement is satisfied when all of the following hold:
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-cli-interface.md` | Command routing / flags surface |
+| `docs/requirements/requirement-shell-cli-interface.md` | Command routing / flags surface; help must include domain rows |
+| `docs/requirements/requirement-shell-self-management.md` | Type 0 `about` baseline (domain adds none) |
 | `docs/requirements/requirement-shell-output-requirements.md` | `out_*` SSOT |
 | `docs/requirements/requirement-shell-modular-function-design.md` | `pomo_*` prefix ownership |
 | `docs/requirements/requirement-shell-idempotency.md` | Already-running vs lifecycle ensure |
@@ -218,6 +254,6 @@ This requirement is satisfied when all of the following hold:
 
 ---
 
-**Last Updated**: 2026-07-14  
+**Last Updated**: 2026-07-16  
 **Owner**: pomo project maintainers  
-**Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 5, 18, 19, 20 (v2.10.2); CIAO-Lite.
+**Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO v2.10.2 Principles **1, 4, 5, 17, 18, 19, 20** (names per `template-ciao-principles.md`); CIAO-Lite.

@@ -18,13 +18,13 @@
 # - requirement-shell-output-requirements.md
 # - requirement-shell-interactive-vs-noninteractive.md
 # - requirement-shell-automatic-checksum.md
-# - requirement-shell-pomo-domain.md
+# - requirement-domain-pomo.md
 # Plus CIAO Protection Zones and "DO NOT MODIFY" rules.
 #
 # Philosophy: CIAO (Caution • Intentional • Anti-fragile • Over-engineered)
 # Single file for curl | sh compatibility.
 #
-# APP NAME: countdown via APP_NAME (Config SSOT; safe default below).
+# APP_NAME: product binary name (Config SSOT; default pomo below).
 # REPO_USER / REPO_NAME: GitHub owner/repo identity for the install channel.
 # SCRIPT_URL: product channel SSOT — composed from repo identity + APP_NAME (raw content URL).
 #   Override SCRIPT_URL with env for a full custom channel; or override REPO_* before first use
@@ -44,9 +44,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_DESC:=Simple & Beautiful Pomodoro Timer (volatile or persistent, themed)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
-# Product version SSOT (specialized 2.0.0 from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
-VERSION="2.0.0"
-: "${VERSION:=2.0.0}"
+# Product version SSOT (specialized from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
+VERSION="2.0.1"
+: "${VERSION:=2.0.1}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"

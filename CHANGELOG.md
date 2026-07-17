@@ -4,6 +4,23 @@ All notable changes to **pomo** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-07-17
+
+### Changed
+- Domain product law basename: **`requirement-domain-pomo.md`** (Area **`domain`**); was mis-prefixed `requirement-shell-pomo-domain.md`; registry, peers, ship-unit ALIGNMENT, and tests map updated.
+- Domain SSOT adds explicit **help** and **about** pillars (about: Type 0 only; no domain fields).
+- Automatic-checksum requirement: Definition of done; CIAO v2.10.2 principle labels clarified.
+- Requirements folder README aligned to live registry vocabulary (`Active`, flat `requirement-*` keys).
+- README install integrity: optional pin loads live `pomo.sha256` (no stale hard-coded hash); automatic companion remains primary.
+- README architecture: countdown lineage only; in-tree `./countdown` optional if present (stay-honest).
+- Ship unit header: `APP_NAME` default **pomo** (not countdown residue); version **2.0.1**.
+
+### Added
+- Public product review surface under `reviews/` (what-to-review, test-plan, lessons, index, full-product report + fix report).
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.0.1 ship-unit bytes; SECURITY supported-versions table updated.
+
 ## [2.0.0] - 2026-07-14
 
 ### Changed

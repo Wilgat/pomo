@@ -9,7 +9,7 @@ This requirement is the **project Single Source of Truth** for the **POSIX shell
 It defines a **Type 0–centric self-managed shell CLI** (install / update / uninstall of the tool itself). It does **not** invent Type 1 host-bootstrap or Type 2 system-user app-ops commands unless a future requirement adds them.
 
 **Scope:** User-facing command names, flags, dispatch, privilege labels, and mode contracts.  
-**Out of scope (own requirements when specialized):** Online-install checksum mechanics detail, self-management safety beyond the command surface, shell coding style, full output-function catalog, and pomodoro domain semantics detail (`requirement-shell-pomo-domain.md` — cited, not re-owned here beyond routing).
+**Out of scope (own requirements when specialized):** Online-install checksum mechanics detail, self-management safety beyond the command surface, shell coding style, full output-function catalog, and pomodoro domain semantics detail (`requirement-domain-pomo.md` — cited, not re-owned here beyond routing).
 
 ---
 
@@ -23,7 +23,7 @@ Every CIAO-Lite shell CLI **MUST** expose a documented command set. Commands **M
 |----------|-----------|---------|-------------------|
 | **Type 0 – Self-management / CLI lifecycle** | Invoking user (no elevation required for user-owned install) | Manage the CLI binary and diagnostics | `version`, `about`, `help`, `version-check`, `self-update`, `self-uninstall` |
 | **Type 0 – Install CLI binary** | Invoking user (root → global path; non-root → user path) | First-time or explicit placement of the CLI | `install`; empty argv **Type O install-ensure** (not installed / local / global) — `requirement-shell-cli-zero-arguments.md` |
-| **Type 0 – Product domain ops** | Invoking user | Product specialty beyond lifecycle | Pomodoro `start`/`status`/`watch`/… — semantics: `requirement-shell-pomo-domain.md` |
+| **Type 0 – Product domain ops** | Invoking user | Product specialty beyond lifecycle | Pomodoro `start`/`status`/`watch`/… — semantics: `requirement-domain-pomo.md` |
 | **Type 1 – Host preparation** | Elevated (internal escalation when designed) | Host packages, system user create, Docker engine | *Not in scope for current product surface* |
 | **Type 2 – App ops under system user** | Dedicated least-privilege system user | App install/configure/runtime under app identity | *Not in scope for current product surface* |
 
@@ -43,7 +43,7 @@ Every CIAO-Lite shell CLI **MUST** expose a documented command set. Commands **M
 | `--debug` | `DEBUG=1` | Extra diagnostics when designed (must not break JSON purity on stdout) |
 | `--force` | Force/reinstall policy vars | Skip safe confirms or force reinstall only where documented; never silent security bypass |
 
-Additional flags **MAY** be added only when documented here (or a superseding requirement) and wired in the dispatcher. Domain flags for this product (`--persist`, `--break`) are documented in Implementation Notes and owned in detail by `requirement-shell-pomo-domain.md`.
+Additional flags **MAY** be added only when documented here (or a superseding requirement) and wired in the dispatcher. Domain flags for this product (`--persist`, `--break`) are documented in Implementation Notes and owned in detail by `requirement-domain-pomo.md`.
 
 ### 2.3 Dispatcher and entry rules (portable)
 
@@ -134,7 +134,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 
 - Type 1: `prerequisites`, `create-user`, Docker host install, etc.  
 - Type 2: app ops under a dedicated system user  
-- Pomodoro **behavior detail** (state format, phase transitions, stats counting, themes, path-safe rules) — owned by `requirement-shell-pomo-domain.md` (routing rows remain in this file)  
+- Pomodoro **behavior detail** (state format, phase transitions, stats counting, themes, path-safe rules) — owned by `requirement-domain-pomo.md` (routing rows remain in this file)  
 
 ### 2.7 Why This Requirement Exists (Direct CIAO Alignment)
 
@@ -190,7 +190,7 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 5. No Type 1/2 surface claims exist without matching specialized requirements.  
 6. Protection Rule items are not violated in code or docs.  
 7. Traceability: implementation changes cite this file path / key `requirement-shell-cli-interface`.
-8. Domain command **behavior** (not only routing) satisfies `requirement-shell-pomo-domain.md`.
+8. Domain command **behavior** (not only routing) satisfies `requirement-domain-pomo.md`.
 
 ---
 
@@ -204,7 +204,7 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | `docs/requirements/requirement-shell-cli-zero-arguments.md` | Empty argv install-ensure (not installed / local / global) |
 | `docs/requirements/requirement-shell-idempotency.md` | Re-run safety for ensure ops |
 | `docs/requirements/requirement-shell-modular-function-design.md` | Prefix ownership (`app_`, `inst_`, `out_*`, `pomo_*`) |
-| `docs/requirements/requirement-shell-pomo-domain.md` | Pomodoro domain semantics (state, phases, stats, themes) |
+| `docs/requirements/requirement-domain-pomo.md` | Pomodoro domain semantics (state, phases, stats, themes) |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 

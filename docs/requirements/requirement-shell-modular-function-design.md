@@ -158,7 +158,7 @@ function_name() {
 | `path_` | `path_add_bashrc`, `path_add_zshrc`, `path_add_fish`, `path_add_shell` |
 | `util_` | `util_json_escape`, `util_sha256_file`, `util_fetch_remote_version`, `util_get_install_bin_path`, `util_backup`, `util_resolve_storage`, `util_get_current_shell` |
 | `prompt_` | `prompt_ask`, `prompt_yes_no` |
-| `pomo_` | `pomo_resolve_base_dir`, `pomo_get_file`, `pomo_sanitize_name`, `pomo_domain_fail`, `pomo_parse_duration`, `pomo_start`, `pomo_show_status`, `pomo_watch`, `pomo_skip`, `pomo_stop`, `pomo_list`, `pomo_list_scan_dir`, `pomo_stats`, `pomo_theme`, `pomo_get_icon` / bar helpers (domain law: `requirement-shell-pomo-domain.md`) |
+| `pomo_` | `pomo_resolve_base_dir`, `pomo_get_file`, `pomo_sanitize_name`, `pomo_domain_fail`, `pomo_parse_duration`, `pomo_start`, `pomo_show_status`, `pomo_watch`, `pomo_skip`, `pomo_stop`, `pomo_list`, `pomo_list_scan_dir`, `pomo_stats`, `pomo_theme`, `pomo_get_icon` / bar helpers (domain law: `requirement-domain-pomo.md`) |
 | `app_` | `app_about`, `app_version` (dispatcher routes `version` here), `app_help`, `app_main` |
 
 #### Structural notes (implementation status)

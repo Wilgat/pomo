@@ -1,6 +1,6 @@
 # pomo – Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.1-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -17,7 +17,7 @@ Zero external dependencies. Written in pure POSIX `sh` for maximum portability.
 
 This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2** (Caution • Intentional • Anti-fragile • Over-engineered) and [CIAO-Lite](https://github.com/cloudgen/ciao-lite) (Simplicity but Safety).
 
-**Architecture (v2.0.0):** Type 0 self-management and install channel inherited from the **countdown** bootstrap (kept in-tree as `./countdown` for reference). Pomodoro domain features (work/break, themes, watch, stats) ported from **pomo 1.7.0** onto that architecture. Bootstrap direction is **countdown → pomo only**.
+**Architecture (v2.0.1):** Type 0 self-management and install channel inherited from the **countdown** bootstrap lineage (A→B only — **do not reverse-copy**). An in-tree `./countdown` reference ship unit is **optional** (only if that file exists on disk; never assumed). Pomodoro domain features (work/break, themes, watch, stats) ported from **pomo 1.7.0** onto that architecture.
 
 
 ---
@@ -53,23 +53,24 @@ curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
 ```
 
-**Secure manual installation with checksum verification (paranoid / CI use):**
+**Optional pin install (secondary / CI — not higher trust than automatic companion):**
 
 ```sh
 # Download the script
 curl -fsSL -O https://raw.githubusercontent.com/Wilgat/pomo/main/pomo
 
-# Verify using the official checksum (v2.0.0)
-CHECKSUM=94ea207739db11df8d95f93913833f697d3f3c3d1f8fac743ed80393b77befd1 \
+# Pin to the published companion for this release (do not hard-code an old hash from docs)
+CHECKSUM=$(curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo.sha256 | awk '{print $1; exit}') \
   sh pomo
 ```
 
 After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`) so `~/.local/bin` is added to your `$PATH`.
 
-> **How verification works** (v2 security layer):
-> - If `CHECKSUM=...` is set → strict verification against the provided hash.
-> - If not set → the script automatically attempts to fetch and check `pomo.sha256` from GitHub (best-effort).
-> - Mismatch → installation aborts with clear error (no silent failure).
+> **How verification works** (install integrity):
+> - **Default (recommended one-liner):** no `CHECKSUM` → automatic companion fetch of `${SCRIPT_URL}.sha256` with transparent link / value / result (best-effort if companion missing).
+> - **Optional pin:** `CHECKSUM=…` set → strict verify against that digest (secondary path; same-origin pin is **not** higher assurance than automatic companion).
+> - **Mismatch** → installation aborts (no silent failure).
+> - Publish rule: after changing `./pomo`, regenerate companion `pomo.sha256` so channel and pin stay aligned.
 
 ---
 
@@ -174,11 +175,11 @@ It may look over-engineered at first, but this approach has proven extremely rel
 
 **Historical endorsement (v1.7.0, April 2026)** — full text: [`RECOMMENDATION.md`](./RECOMMENDATION.md).
 
-**Current product (v2.0.0)** keeps that defensive spirit under **[CIAO](https://github.com/cloudgen/ciao) v2.10.2** / [CIAO-Lite](https://github.com/cloudgen/ciao-lite): countdown Type 0 architecture (`out_*`, `inst_*`, `app_main`, Type O install-ensure, automatic companion checksum) plus the full pomodoro domain (work/break, themes, watch, stats).
+**Current product (v2.0.1)** keeps that defensive spirit under **[CIAO](https://github.com/cloudgen/ciao) v2.10.2** / [CIAO-Lite](https://github.com/cloudgen/ciao-lite): countdown Type 0 architecture (`out_*`, `inst_*`, `app_main`, Type O install-ensure, automatic companion checksum) plus the full pomodoro domain (work/break, themes, watch, stats).
 
 It deliberately stays verbose and heavily protected with explicit "DO NOT MODIFY OR SIMPLIFY" zones, centralized single-source-of-truth output, defensive storage resolution, and transparent install integrity. That design survives harsh runtimes (dash/ash, missing `/dev/shm`, `curl | sh`) and resists AI-assisted over-simplification.
 
-**Key strengths (v2.0.0)**:
+**Key strengths (v2.0.1)**:
 - Pure POSIX `sh` with no bashisms
 - CIAO v2.10.2 / CIAO-Lite compliance on lifecycle and domain paths
 - Path-safe names, safe storage fallbacks, and centralized `out_*` output
@@ -236,4 +237,4 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 **Made with care and a healthy dose of paranoia.** 🍅
 
-*Last updated: 2026-07-14 for version 2.0.0 — aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.*
+*Last updated: 2026-07-17 for version 2.0.1 — aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.*

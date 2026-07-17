@@ -28,7 +28,7 @@ APP_NAME=pomo ./tests/run.sh
 
 ## Mapping (product law)
 
-Type 0 cases map to live `docs/requirements/requirement-shell-*.md` (CLI interface, zero-arguments, output, interactive, idempotency, self-management, automatic-checksum, modular design). Domain cases map to **`requirement-shell-pomo-domain.md`** (work/break, themes, stats, path-safe names, storage).
+Type 0 cases map to live `docs/requirements/requirement-shell-*.md` (CLI interface, zero-arguments, output, interactive, idempotency, self-management, automatic-checksum, modular design). Domain cases map to **`requirement-domain-pomo.md`** (work/break, themes, stats, path-safe names, storage).
 
 ## Network / safety
 

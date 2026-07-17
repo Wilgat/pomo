@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-automatic-checksum.md  
-**Status**: Active (Version 1.0.1 – CIAO v2.10.2 principle map)  
+**Status**: Active (Version 1.0.2 – CIAO v2.10.2 Principles 1/2/3/4/5/14/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose
@@ -148,11 +148,13 @@ When this requirement is **Active** for the product:
 
 ### 2.8 Why This Requirement Exists (Direct CIAO Alignment)
 
+Numbers match [cloudgen/ciao](https://github.com/cloudgen/ciao) **v2.10.2** / harness `template-ciao-principles.md`.
+
 - **CIAO Principle 1 – Caution:** Network bytes are untrusted; verify when a companion exists; fail closed on mismatch.  
-- **CIAO Principle 2 – Intentional:** Automatic vs optional pin are deliberate modes; transparency makes intent visible to operators.  
-- **CIAO Principle 3 – Anti-fragile:** Missing companion does not hard-break older channels; whitespace-tolerant digest parse.  
-- **CIAO Principle 5 / 14 – Output & traceability:** Link, value, and result are operator-visible audit trail via `out_*`.  
-- **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI:** Do not remove automatic companion verify or silent-ize integrity outcomes.
+- **CIAO Principle 2 – Intentional Verbosity & Transparency:** Automatic vs optional pin are deliberate modes; transparency makes intent visible to operators.  
+- **CIAO Principle 3 – Anti-fragile & Resilient Design:** Missing companion does not hard-break older channels; whitespace-tolerant digest parse.  
+- **CIAO Principle 4 – CIAO-Lite (Over-protect) · Principle 20 – Protect Against AI & Human Modification:** Do not remove automatic companion verify or silent-ize integrity outcomes.  
+- **CIAO Principle 5 – Single Source of Output · Principle 14 – Security & Traceability:** Link, value, and result are operator-visible audit trail via `out_*`.
 
 ---
 
@@ -185,7 +187,22 @@ Violating this rule is a requirements failure and must be recorded (incident or 
 
 ---
 
-## 5. Related (versioned requirements surface only)
+## 5. Definition of done (automatic checksum)
+
+This requirement is satisfied when all of the following hold:
+
+1. Default install / self-update download path uses automatic companion verification when `CHECKSUM` is unset (§2.1).  
+2. Companion URL is `${SCRIPT_URL}.sha256`; in-repo `pomo.sha256` ships with the channel artifact and is regenerated when `./pomo` changes for publish.  
+3. Human-mode transparency shows companion **link**, expected **value**, and verification **result** (via `out_*`).  
+4. Digest mismatch aborts install/update (fail closed); missing companion behavior matches this requirement’s documented best-effort/warn policy.  
+5. `CHECKSUM` pin remains secondary install-path only and **MUST NOT** appear in `help` or `about`.  
+6. Product root `README.md` primary integrity story matches automatic companion path (not pin-as-primary).  
+7. Protection Rule items are not violated.  
+8. Traceability: integrity changes cite this file key `requirement-shell-automatic-checksum`.
+
+---
+
+## 6. Related (versioned requirements surface only)
 
 | Artifact | Role |
 |----------|------|
@@ -199,9 +216,10 @@ Violating this rule is a requirements failure and must be recorded (incident or 
 
 ---
 
-## 6. Revision history
+## 7. Revision history
 
 | Date | Change | Author / agent |
 |------|--------|----------------|
 | 2026-07-13 | Initial Active v1.0.0 — automatic companion digest + transparency (link/value/result); secondary CHECKSUM; README primary-path rules | Multi-agent council |
 | 2026-07-13 | `CHECKSUM` = install-path runtime variable only; **MUST NOT** display in `help` / `about` | Multi-agent council |
+| 2026-07-16 | v1.0.2 — Definition of done; CIAO v2.10.2 principle names verified | Multi-agent council |

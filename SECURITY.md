@@ -4,8 +4,9 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.0.0 (current) | Yes |
-| 1.x releases | Best-effort only; please upgrade to **2.0.0+** when possible |
+| 2.0.1 (current) | Yes |
+| 2.0.0 | Yes (please upgrade to **2.0.1+** when possible) |
+| 1.x releases | Best-effort only; please upgrade to **2.0.x+** when possible |
 
 ## Reporting a Vulnerability
 
@@ -63,7 +64,7 @@ Beyond install integrity, domain ops intentionally constrain risk:
 | **Storage resolution** | Volatile and persistent paths use defensive fallbacks (missing `/dev/shm`, missing `$HOME`); no silent write to unusable locations. |
 | **Privilege** | Domain and Type 0 lifecycle run as the **invoking user** (no Type 1 host bootstrap / Type 2 system-user surface in current product). |
 
-Domain product law: `docs/requirements/requirement-shell-pomo-domain.md` (when present in a full checkout).
+Domain product law: `docs/requirements/requirement-domain-pomo.md` (when present in a full checkout).
 
 ## Scope notes
 
@@ -73,4 +74,4 @@ Domain product law: `docs/requirements/requirement-shell-pomo-domain.md` (when p
 
 ---
 
-*Last updated: 2026-07-14 (pomo 2.0.0 · CIAO v2.10.2).*
+*Last updated: 2026-07-17 (pomo 2.0.1 · CIAO v2.10.2).*

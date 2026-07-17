@@ -105,7 +105,7 @@ Force **MUST NOT** be used as a silent way to skip integrity verification.
 - Type 1 prerequisites / package ensure loops  
 - Type 2 system-user / app service ensure  
 - Continuous FSM `update*` tick thrash (no product FSM in current shell surface)  
-- Full domain phase/stats semantics (see `requirement-shell-pomo-domain.md`; already-running row above is the ensure-style gate)
+- Full domain phase/stats semantics (see `requirement-domain-pomo.md`; already-running row above is the ensure-style gate)
 
 ### 2.6 Why This Requirement Exists (Direct CIAO Alignment)
 

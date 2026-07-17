@@ -167,7 +167,7 @@ This dual policy is intentional: **pipe install proceeds**; **destructive uninst
 | Domain `watch` | Live TTY refresh (Ctrl+C to exit) | **Refuse** `--json` and `--quiet` (non-zero); not a machine API |
 | Domain prompts | None for domain ops (no confirm on stop) | No stdin hang |
 
-Detail: `requirement-shell-pomo-domain.md`.
+Detail: `requirement-domain-pomo.md`.
 
 ### 2.6 Why This Requirement Exists (Direct CIAO Alignment)
 

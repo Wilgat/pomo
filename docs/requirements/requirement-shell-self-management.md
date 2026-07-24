@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-self-management.md  
+**Requirement-ID**: `RQ-SHELL-SELF-MANAGEMENT`  
 **Status**: Active (Version 1.0.2 – CIAO v2.10.2 Principles 5/9/10/11/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -199,12 +200,12 @@ Work claiming self-management support for pomo is **not done** if any of the fol
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-cli-interface.md` | Command surface, flags, dispatcher |
-| `docs/requirements/requirement-shell-idempotency.md` | Re-run safety for ensure ops |
-| `docs/requirements/requirement-shell-interactive-vs-noninteractive.md` | Uninstall confirm / non-interactive fail-closed |
-| `docs/requirements/requirement-shell-automatic-checksum.md` | Integrity on self-update downloads |
-| `docs/requirements/requirement-shell-output-requirements.md` | Lifecycle messaging / quiet / JSON |
-| `docs/requirements/requirement-shell-modular-function-design.md` | `inst_*` / `out_*` ownership |
+| **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Command surface, flags, dispatcher |
+| **`RQ-SHELL-IDEMPOTENCY`** (`requirement-shell-idempotency.md`) | Re-run safety for ensure ops |
+| **`RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE`** (`requirement-shell-interactive-vs-noninteractive.md`) | Uninstall confirm / non-interactive fail-closed |
+| **`RQ-SHELL-AUTOMATIC-CHECKSUM`** (`requirement-shell-automatic-checksum.md`) | Integrity on self-update downloads |
+| **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | Lifecycle messaging / quiet / JSON |
+| **`RQ-SHELL-MODULAR-FUNCTION-DESIGN`** (`requirement-shell-modular-function-design.md`) | `inst_*` / `out_*` ownership |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 
@@ -213,3 +214,19 @@ Work claiming self-management support for pomo is **not done** if any of the fol
 **Last Updated**: 2026-07-14
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 2, 3, 4, 5, 9, 10, 11, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-SELF-MANAGEMENT`  
+**Specialized from:** `LM-SELF-MANAGEMENT`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-LC-04** about installed + version-check JSON | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-05** self-update already-latest | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-05b** self-update when remote newer | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-07** uninstall refuse / force + PATH cleanup | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-08** downgrade refuse / force | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-11** version-check network failure | `tests/test_install_lifecycle.sh` | have |
+| **TP-CLI-11** uninstall refuse (CLI suite) | `tests/test_cli.sh` | have |

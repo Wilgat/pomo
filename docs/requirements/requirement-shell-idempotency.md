@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-idempotency.md  
+**Requirement-ID**: `RQ-SHELL-IDEMPOTENCY`  
 **Status**: Active (Version 1.0.3 – CIAO v2.10.2 Principles 11/12/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -166,10 +167,10 @@ A state-changing shell change for pomo is **not done** if any of the following f
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-cli-interface.md` | Command surface, flags, force wiring |
-| `docs/requirements/requirement-shell-cli-zero-arguments.md` | Empty argv ensure for not-installed / local / global |
-| `docs/requirements/requirement-shell-self-management.md` | Lifecycle commands; integrity + downgrade policy |
-| `docs/requirements/requirement-shell-output-requirements.md` | Messages on no-op / already-done paths |
+| **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Command surface, flags, force wiring |
+| **`RQ-SHELL-CLI-ZERO-ARGUMENTS`** (`requirement-shell-cli-zero-arguments.md`) | Empty argv ensure for not-installed / local / global |
+| **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | Lifecycle commands; integrity + downgrade policy |
+| **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | Messages on no-op / already-done paths |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 
@@ -178,3 +179,16 @@ A state-changing shell change for pomo is **not done** if any of the following f
 **Last Updated**: 2026-07-14
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 2, 3, 4, 11, 12, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-IDEMPOTENCY`  
+**Specialized from:** `LM-IDEMPOTENCY`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-LC-10** idempotent re-install | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-01** already-installed empty argv no-op | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-05** self-update already-latest | `tests/test_install_lifecycle.sh` | have |
+| **TP-POMO-03** domain already-running fail-closed | `tests/test_pomo_domain.sh` | have |

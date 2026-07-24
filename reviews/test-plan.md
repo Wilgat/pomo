@@ -13,7 +13,7 @@ Maps **portable TP families** (proof molds) to product-root `tests/`.
 | **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle |
 | **TP-U** | `PM-SET-U-TEST-PLAN` | CLI (partial) |
 | **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | *(no suite yet)* |
-| **TP-POMO** | `PM-DOMAIN-TEST-PLAN` (specialize) | `tests/test_pomo_domain.sh` |
+| **TP-POMO** | `PM-DOMAIN-TEST-PLAN` (specialize) → **`RQ-DOMAIN-POMO`** | `tests/test_pomo_domain.sh` |
 | Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` |
 
 Status: **have** = automated · **todo** = needed · **n/a** = not applicable · **optional** = gated
@@ -102,11 +102,11 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 
 ---
 
-## TP-POMO — Domain-subject family (`requirement-domain-pomo` / domain SSOT)
+## TP-POMO — Domain-subject family (`RQ-DOMAIN-POMO`)
 
 Domain product cases use **`TP-POMO-*`** (subject = `pomo`), **not** portable **`TP-DOM-*`**, **not** bare numeric `TP-01`.  
 Proof mold **`PM-DOMAIN-TEST-PLAN`** is a design aid only; Type O-P payload tokens **`TP-PAYLOAD-*`** are **n/a**.  
-Policy: `policy-harness-id-notation` §5.
+Law: **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`). Policy: `policy-harness-id-notation` §5.
 
 | TP-ID | Intent | Status | Evidence |
 |-------|--------|--------|----------|
@@ -172,5 +172,5 @@ Policy: `policy-harness-id-notation` §5.
 1. Closing a **bug** finding updates the matching TP to **have** (or supersedes with a new test).  
 2. Do not mark TP **have** without a suite assertion (or documented static fix).  
 3. Domain product: keep domain suite green; primary domain family is **`TP-POMO-*`**.  
-4. Primary citation uses **TP-IDs** / requirement basenames; suite path secondary (`policy-harness-id-notation`).  
+4. Primary citation uses **TP-IDs** / **`RQ-*`**; suite path / basename secondary (`policy-harness-id-notation`).  
 5. Versioned requirements list TP + `tests/*` + `reviews/*` only — never `docs/templates/**`.  

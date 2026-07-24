@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-zero-arguments.md  
+**Requirement-ID**: `RQ-SHELL-CLI-ZERO-ARGUMENTS`  
 **Status**: Active (Version 1.1.1 – CIAO v2.10.2 principle map)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -207,12 +208,12 @@ This requirement is satisfied when all of the following hold:
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-cli-interface.md` | Full command surface; empty-argv row must match this SSOT |
-| `docs/requirements/requirement-shell-idempotency.md` | Ensure re-run / force boundary |
-| `docs/requirements/requirement-shell-interactive-vs-noninteractive.md` | TTY vs pipe for Case A |
-| `docs/requirements/requirement-shell-self-management.md` | self-update / uninstall (not empty-argv default) |
-| `docs/requirements/requirement-shell-output-requirements.md` | out_* / JSON purity |
-| `docs/requirements/requirement-shell-automatic-checksum.md` | Integrity on install download path |
+| **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Full command surface; empty-argv row must match this SSOT |
+| **`RQ-SHELL-IDEMPOTENCY`** (`requirement-shell-idempotency.md`) | Ensure re-run / force boundary |
+| **`RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE`** (`requirement-shell-interactive-vs-noninteractive.md`) | TTY vs pipe for Case A |
+| **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | self-update / uninstall (not empty-argv default) |
+| **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | out_* / JSON purity |
+| **`RQ-SHELL-AUTOMATIC-CHECKSUM`** (`requirement-shell-automatic-checksum.md`) | Integrity on install download path |
 | Repo root `./pomo` | Implementation (`app_main`, `inst_*`) |
 | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | Regression coverage |
 
@@ -224,3 +225,15 @@ This requirement is satisfied when all of the following hold:
 |------|--------|----------------|
 | 2026-07-14 | Initial Active v1.0.0: empty argv = install-ensure for not-installed / local / global; forbid help fallthrough | Grok (owner request) |
 | 2026-07-14 | v1.1.0: Classify product as Type O (online-install) under dual-type empty-argv template model | Grok |
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-CLI-ZERO-ARGUMENTS`  
+**Specialized from:** `LM-SHELL-CLI-ZERO-ARGUMENTS` (or portable zero-arg mold when named)  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CLI-09** / **TP-LC-09** / **TP-U-02** zero-arg bad channel | `tests/test_cli.sh` | have |
+| **TP-LC-01** empty-argv ensure first + already local/global | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-12** explicit `install --json` | `tests/test_install_lifecycle.sh` | have |

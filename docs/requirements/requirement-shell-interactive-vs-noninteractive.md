@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-interactive-vs-noninteractive.md  
+**Requirement-ID**: `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE`  
 **Status**: Active (Version 1.0.3 – CIAO v2.10.2 Principles 16/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -226,11 +227,11 @@ Mode-related work for pomo is **not done** if any of the following fail:
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-cli-interface.md` | Flags and commands |
-| `docs/requirements/requirement-shell-cli-zero-arguments.md` | Empty argv install-ensure matrix |
-| `docs/requirements/requirement-shell-output-requirements.md` | quiet/json/debug output contracts |
-| `docs/requirements/requirement-shell-self-management.md` | Uninstall confirm / force policy |
-| `docs/requirements/requirement-shell-idempotency.md` | Re-run safety under automation |
+| **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Flags and commands |
+| **`RQ-SHELL-CLI-ZERO-ARGUMENTS`** (`requirement-shell-cli-zero-arguments.md`) | Empty argv install-ensure matrix |
+| **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | quiet/json/debug output contracts |
+| **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | Uninstall confirm / force policy |
+| **`RQ-SHELL-IDEMPOTENCY`** (`requirement-shell-idempotency.md`) | Re-run safety under automation |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 
@@ -239,3 +240,17 @@ Mode-related work for pomo is **not done** if any of the following fail:
 **Last Updated**: 2026-07-14
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; CIAO Principles 1, 2, 3, 4, 16, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE`  
+**Specialized from:** `LM-INTERACTIVE-VS-NONINTERACTIVE`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CLI-07** quiet mode | `tests/test_cli.sh` | have |
+| **TP-CLI-09** non-interactive zero-arg fail path | `tests/test_cli.sh` | have |
+| **TP-CLI-11** / **TP-LC-07** uninstall refuse without force | `tests/test_cli.sh` + lifecycle | have |
+| **TP-POMO-10** watch rejects `--json` | `tests/test_pomo_domain.sh` | have |
+| **TP-CURL-*** curl\|sh non-interactive path | no suite yet | todo |

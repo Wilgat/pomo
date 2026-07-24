@@ -2,43 +2,47 @@
 
 Authoritative product and engineering requirements for this project live here.
 
-**Current state (2026-07-16 — pomo specialization from countdown bootstrap):** **Nine** live requirements registered in `index.md` — eight Type 0 `requirement-shell-*.md` (automatic-checksum, CLI interface, CLI zero-arguments, idempotency, interactive vs noninteractive, modular design, output, self-management) plus one domain SSOT **`requirement-domain-pomo.md`** (`requirement-domain-*` prefix; Area **`domain`**). Live header Status is **Active** (not the legacy council draft/approved/done vocabulary below — that table is historical/optional only). Versions per file header (e.g. `requirement-shell-cli-zero-arguments` **v1.1.1** Type O; `requirement-domain-pomo` **v1.1.0**; `requirement-shell-automatic-checksum` **v1.0.2**). Type 0 lifecycle is covered by composition (zero-arguments + CLI + checksum + self-management + interactive + idempotency + modular + output); **pomodoro specialty** is owned by `requirement-domain-pomo.md` (not only CLI routing rows). Domain product law **MUST** use the `requirement-domain-*` basename prefix. **Review scope:** treat **registry rows** as this product’s law; list/confirm unregistered or foreign-looking files before assuming they apply. Do **not** invent additional requirement paths without a real ownership gap — verify on disk and register new files in `index.md` in the same change.
+**Current state (2026-07-24 — ID notation):** **Nine** live requirements registered in `index.md` with primary **Requirement-IDs (`RQ-*`)**. Eight Type 0 shell REQs plus domain SSOT **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`; Area **`domain`**). Live header Status is **Active**. Each file declares **`Requirement-ID`** and a **Design-time verification** table (**TP-*** + `tests/*` + `reviews/*` only — never `docs/templates/**`). Type 0 lifecycle is composition of shell REQs; **pomodoro specialty** is **`RQ-DOMAIN-POMO`** / family **`TP-POMO`**. Domain product law **MUST** use the `requirement-domain-*` basename prefix. **Review scope:** treat **registry rows** as this product’s law; list/confirm unregistered files before assuming they apply.
 
 ## Purpose
 
 - **Plan mode** designs work by reading and **updating** these docs — not only the session `plan.md`.
-- **Implement** delivers code and docs that **trace** to requirement keys / basenames.
+- **Implement** delivers code and docs that **trace** to **`RQ-*`** (primary) and basenames (secondary).
 - **Review** verifies delivery against requirements **and** defensive (CIAO) checklists (`skill-requirement-review` Step −1: registry inventory first).
+- **Primary citation:** `RQ-*` on product surfaces (reviews, tests comments, DTV). Never freeze product `RQ-*` into portable templates/skills/terminologies (`policy-harness-id-notation`).
+- Test cases use **`TP-*`**; skills **`SK-*`**; law molds **`LM-*`**; proof molds **`PM-*-TEST-PLAN`**.
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `docs/requirements/index.md` | **Registry SSOT** — keys, Area, Status, Path; keep in sync with files |
-| `docs/requirements/requirement-*.md` | **Live product law** (flat basenames; primary convention for this project) |
+| `docs/requirements/index.md` | **Registry SSOT** — `RQ-*`, keys, Area, Status, Path |
+| `docs/requirements/requirement-*.md` | **Live product law** (flat basenames + declared **Requirement-ID**) |
 
 **Live basename rules:**
 
-| Kind | Prefix / pattern | Registry Area |
-|------|------------------|---------------|
-| Type 0 / shell lifecycle | `requirement-shell-*` | `shell` |
-| Domain product law | `requirement-domain-*` | `domain` |
+| Kind | Prefix / pattern | Requirement-ID pattern | Registry Area |
+|------|------------------|------------------------|---------------|
+| Type 0 / shell lifecycle | `requirement-shell-*` | `RQ-SHELL-*` | `shell` |
+| Domain product law | `requirement-domain-*` | `RQ-DOMAIN-<SUBJECT>` | `domain` |
 
 Optional nested `docs/requirements/<area>/REQ-…` trees are **not** used by this product’s current registry. Prefer flat `requirement-*` + `index.md` rows.
 
-## Live keys (see index.md)
+## Live Requirement-IDs (see index.md)
 
-Authoritative list is always **`index.md`**. As of this README update, Active keys are:
+Authoritative list is always **`index.md`**. Active IDs:
 
-- `requirement-shell-automatic-checksum`
-- `requirement-shell-cli-interface`
-- `requirement-shell-cli-zero-arguments`
-- `requirement-shell-idempotency`
-- `requirement-shell-interactive-vs-noninteractive`
-- `requirement-shell-modular-function-design`
-- `requirement-shell-output-requirements`
-- `requirement-shell-self-management`
-- `requirement-domain-pomo`
+| Requirement-ID | Key |
+|----------------|-----|
+| `RQ-SHELL-AUTOMATIC-CHECKSUM` | requirement-shell-automatic-checksum |
+| `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface |
+| `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments |
+| `RQ-SHELL-IDEMPOTENCY` | requirement-shell-idempotency |
+| `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE` | requirement-shell-interactive-vs-noninteractive |
+| `RQ-SHELL-MODULAR-FUNCTION-DESIGN` | requirement-shell-modular-function-design |
+| `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements |
+| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management |
+| `RQ-DOMAIN-POMO` | requirement-domain-pomo |
 
 ## Status values (live practice)
 
@@ -60,18 +64,20 @@ When planning non-trivial work:
 2. List any on-disk `requirement-*.md` **not** in the registry as orphans — **do not** assume they are this product’s law until the user confirms.
 3. Decide: **new requirement**, **update existing**, or **no requirements impact** (state why).
 4. Apply requirement file changes **before** or as part of finishing the plan; same-change registry row for new files.
-5. Session plan must list affected requirement keys and whether each is create / update / no-change.
+5. Session plan must list affected **`RQ-*`** / keys and whether each is create / update / no-change.
 6. Do not implement against unstated intent — if behavior is required, it belongs in a requirement file.
+7. **Design-time verification** lists TP-IDs + `tests/*` + `reviews/*` only — never `docs/templates/**` paths.
 
 ## Implementation rules
 
-- Every non-trivial PR/change set cites one or more **registered** requirement keys when requirements exist.
+- Every non-trivial PR/change set cites one or more **registered** **`RQ-*`** (or basenames) when requirements exist.
 - Do not invent requirements only in code comments; promote durable intent here.
 - **No placeholders** in requirement files: no `TBD`/`TODO` acceptance criteria, hollow sections, or stub “later” text (no-placeholder / dual-policy hygiene; deliver complete criteria or explicit deferred ownership).
-- Product source comments cite only **live** `requirement-*.md` files listed in the registry (never invent basenames).
+- Product source comments cite only **live** registered requirements (basename and/or `RQ-*`) — never invent basenames; never cite `template-*` / `skill-*` as law.
 
 ## Review rules
 
 - Requirements changes and code/docs delivery use the project’s plan/implement/code-review/security checklist process.
 - Empty registry is valid for genesis; do not invent requirements to “fill” the index.
 - On “review requirements”: run registry vs disk inventory first; confirm foreign/unregistered files before treating them as law (`skill-requirement-review` Step −1).
+- Gate **id-notation**: every Active REQ has **`Requirement-ID`**, registry row, and DTV with **TP-*** (or honest n/a/todo).

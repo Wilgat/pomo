@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-modular-function-design.md  
+**Requirement-ID**: `RQ-SHELL-MODULAR-FUNCTION-DESIGN`  
 **Status**: Active (Version 1.0.3 – CIAO v2.10.2 Principles 6/7/8/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -245,10 +246,10 @@ A modular-structure change for pomo is **not done** if any of the following fail
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-cli-interface.md` | Command surface owned by `app_*` dispatch |
-| `docs/requirements/requirement-shell-self-management.md` | Lifecycle owned by `inst_*` / `ver_*` |
-| `docs/requirements/requirement-shell-idempotency.md` | Re-run safety inside ensure helpers |
-| `docs/requirements/requirement-shell-output-requirements.md` | `out_*` ownership |
+| **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Command surface owned by `app_*` dispatch |
+| **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | Lifecycle owned by `inst_*` / `ver_*` |
+| **`RQ-SHELL-IDEMPOTENCY`** (`requirement-shell-idempotency.md`) | Re-run safety inside ensure helpers |
+| **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | `out_*` ownership |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under modular design rules |
 
@@ -257,3 +258,15 @@ A modular-structure change for pomo is **not done** if any of the following fail
 **Last Updated**: 2026-07-14
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; CIAO Principles 1, 2, 3, 4, 6, 7, 8, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-MODULAR-FUNCTION-DESIGN`  
+**Specialized from:** `LM-MODULAR-FUNCTION-DESIGN`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CLI-01** `sh -n` syntax of modular ship unit | `tests/test_cli.sh` | have |
+| **TP-CITE-01** ALIGNMENT cites live REQs only | static (`./pomo` headers) | have |
+| Domain prefix `pomo_*` ops | `tests/test_pomo_domain.sh` (**TP-POMO-***) | have |

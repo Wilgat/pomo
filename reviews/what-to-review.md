@@ -2,7 +2,7 @@
 
 **Product:** pomo v2.0.1  
 **Ship unit:** `./pomo`  
-**Domain SSOT:** `docs/requirements/requirement-domain-pomo.md`  
+**Domain SSOT:** **`RQ-DOMAIN-POMO`** (`docs/requirements/requirement-domain-pomo.md`)  
 **Domain TP family:** **`TP-POMO-*`** (not `TP-DOM-*`; policy-harness-id-notation §5)  
 **Bootstrap lineage:** countdown (A) → pomo (B); **no reverse-copy**
 

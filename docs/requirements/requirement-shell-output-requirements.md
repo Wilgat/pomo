@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-output-requirements.md  
+**Requirement-ID**: `RQ-SHELL-OUTPUT-REQUIREMENTS`  
 **Status**: Active (Version 1.1.0 – CIAO v2.10.2 Principle 5 SSOT family)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -256,9 +257,9 @@ Output-related work for pomo is **not done** if any of the following fail:
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-cli-interface.md` | Flag wiring and command surface |
-| `docs/requirements/requirement-shell-modular-function-design.md` | `out_*` prefix ownership |
-| `docs/requirements/requirement-shell-interactive-vs-noninteractive.md` | Mode interaction with quiet/json |
+| **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Flag wiring and command surface |
+| **`RQ-SHELL-MODULAR-FUNCTION-DESIGN`** (`requirement-shell-modular-function-design.md`) | `out_*` prefix ownership |
+| **`RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE`** (`requirement-shell-interactive-vs-noninteractive.md`) | Mode interaction with quiet/json |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 
@@ -267,3 +268,18 @@ Output-related work for pomo is **not done** if any of the following fail:
 **Last Updated**: 2026-07-14
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; CIAO Principles 1, 2, 3, 4, 5, 14, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-OUTPUT-REQUIREMENTS`  
+**Specialized from:** `LM-OUTPUT-REQUIREMENTS`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CLI-02** version JSON fields | `tests/test_cli.sh` | have |
+| **TP-CLI-04** help/about JSON purity | `tests/test_cli.sh` | have |
+| **TP-CLI-06** unknown command JSON `out_error` | `tests/test_cli.sh` | have |
+| **TP-CLI-07** quiet suppresses human chatter | `tests/test_cli.sh` | have |
+| **TP-CLI-12** out_json string-key escape | `tests/test_cli.sh` | have |
+| **TP-POMO-04** domain JSON contracts | `tests/test_pomo_domain.sh` | have |

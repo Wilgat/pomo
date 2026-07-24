@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-automatic-checksum.md  
+**Requirement-ID**: `RQ-SHELL-AUTOMATIC-CHECKSUM`  
 **Status**: Active (Version 1.0.2 – CIAO v2.10.2 Principles 1/2/3/4/5/14/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -206,10 +207,10 @@ This requirement is satisfied when all of the following hold:
 
 | Artifact | Role |
 |----------|------|
-| `requirement-shell-self-management.md` | Lifecycle reuses install integrity path |
-| `requirement-shell-output-requirements.md` | `out_*` / JSON error channel for integrity messages |
-| `requirement-shell-cli-interface.md` | Install command surface / modes |
-| `requirement-shell-interactive-vs-noninteractive.md` | Quiet/json/pipe mode interaction with messaging |
+| **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | Lifecycle reuses install integrity path |
+| **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | `out_*` / JSON error channel for integrity messages |
+| **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Install command surface / modes |
+| **`RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE`** (`requirement-shell-interactive-vs-noninteractive.md`) | Quiet/json/pipe mode interaction with messaging |
 | `./pomo` | Ship unit implementation |
 | `pomo.sha256` | In-repo companion digest |
 | Product root `README.md` | User-facing automatic integrity story |
@@ -223,3 +224,17 @@ This requirement is satisfied when all of the following hold:
 | 2026-07-13 | Initial Active v1.0.0 — automatic companion digest + transparency (link/value/result); secondary CHECKSUM; README primary-path rules | Multi-agent council |
 | 2026-07-13 | `CHECKSUM` = install-path runtime variable only; **MUST NOT** display in `help` / `about` | Multi-agent council |
 | 2026-07-16 | v1.0.2 — Definition of done; CIAO v2.10.2 principle names verified | Multi-agent council |
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-AUTOMATIC-CHECKSUM`  
+**Specialized from:** `LM-AUTOMATIC-CHECKSUM`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CSUM-01** publisher companion matches ship unit | `tests/test_cli.sh` | have |
+| **TP-CSUM-02** / **TP-LC-06** human force reinstall transparency | `tests/test_install_lifecycle.sh` | have |
+| **TP-CSUM-03** Shape B pin mismatch | `tests/test_install_lifecycle.sh` | have |
+| **TP-CSUM-04** Shape B pin match | `tests/test_install_lifecycle.sh` | have |
+| **TP-CSUM-05** help/about hide CHECKSUM | `tests/test_cli.sh` | have |

@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
+**Requirement-ID**: `RQ-SHELL-CLI-INTERFACE`  
 **Status**: Active (Version 1.0.3 – CIAO v2.10.2 Principles 5/6/9/10/16/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -198,13 +199,13 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 
 | Artifact | Role |
 |----------|------|
-| `docs/requirements/requirement-shell-self-management.md` | Lifecycle command semantics |
-| `docs/requirements/requirement-shell-output-requirements.md` | Output SSOT and channels |
-| `docs/requirements/requirement-shell-interactive-vs-noninteractive.md` | TTY / automation mode behavior |
-| `docs/requirements/requirement-shell-cli-zero-arguments.md` | Empty argv install-ensure (not installed / local / global) |
-| `docs/requirements/requirement-shell-idempotency.md` | Re-run safety for ensure ops |
-| `docs/requirements/requirement-shell-modular-function-design.md` | Prefix ownership (`app_`, `inst_`, `out_*`, `pomo_*`) |
-| `docs/requirements/requirement-domain-pomo.md` | Pomodoro domain semantics (state, phases, stats, themes) |
+| **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | Lifecycle command semantics |
+| **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | Output SSOT and channels |
+| **`RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE`** (`requirement-shell-interactive-vs-noninteractive.md`) | TTY / automation mode behavior |
+| **`RQ-SHELL-CLI-ZERO-ARGUMENTS`** (`requirement-shell-cli-zero-arguments.md`) | Empty argv install-ensure (not installed / local / global) |
+| **`RQ-SHELL-IDEMPOTENCY`** (`requirement-shell-idempotency.md`) | Re-run safety for ensure ops |
+| **`RQ-SHELL-MODULAR-FUNCTION-DESIGN`** (`requirement-shell-modular-function-design.md`) | Prefix ownership (`app_`, `inst_`, `out_*`, `pomo_*`) |
+| **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`) | Pomodoro domain semantics (state, phases, stats, themes) |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 
@@ -213,3 +214,25 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 **Last Updated**: 2026-07-14
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 2, 3, 4, 6, 9, 10, 16, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-CLI-INTERFACE`  
+**Specialized from:** `LM-CLI-INTERFACE`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CLI-01** syntax + companion | `tests/test_cli.sh` | have |
+| **TP-CLI-02** version human + JSON | `tests/test_cli.sh` | have |
+| **TP-CLI-03** help Type 0 + domain rows | `tests/test_cli.sh` | have |
+| **TP-CLI-04** help/about JSON purity | `tests/test_cli.sh` | have |
+| **TP-CLI-05** about shell storage fields | n/a — domain owns storage | n/a |
+| **TP-CLI-06** unknown command | `tests/test_cli.sh` | have |
+| **TP-CLI-07** quiet / `-q` | `tests/test_cli.sh` | have |
+| **TP-CLI-08** / **TP-U-01** `env -u HOME` | `tests/test_cli.sh` | have |
+| **TP-CLI-09** zero-arg bad channel | `tests/test_cli.sh` | have |
+| **TP-CLI-10** bashrc+sdkman | n/a — no product sdkman path | n/a |
+| **TP-CLI-11** self-uninstall refuse | `tests/test_cli.sh` | have |
+| **TP-CLI-12** out_json string-key contract | `tests/test_cli.sh` | have |
+| **TP-POMO-01** domain help verbs | `tests/test_pomo_domain.sh` | have |

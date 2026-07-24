@@ -1,6 +1,6 @@
 **file**: docs/requirements/requirement-domain-pomo.md  
 **Requirement-ID**: `RQ-DOMAIN-POMO`  
-**Status**: Active (Version 1.1.0 – CIAO v2.10.2 Principles 1/4/5/17/18/19/20)  
+**Status**: Active (Version 1.1.1 – CIAO v2.10.2 Principles 1/4/5/17/18/19/20; duration unit + minimum)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose

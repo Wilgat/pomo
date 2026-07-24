@@ -13,7 +13,7 @@
 | `RQ-SHELL-IDEMPOTENCY` | requirement-shell-idempotency | Shell idempotency / re-run safety for ensure-style ops | shell | Active | `requirement-shell-idempotency.md` | 2026-07-24 |
 | `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE` | requirement-shell-interactive-vs-noninteractive | Interactive vs non-interactive / `curl\|sh` behavior | shell | Active | `requirement-shell-interactive-vs-noninteractive.md` | 2026-07-24 |
 | `RQ-SHELL-MODULAR-FUNCTION-DESIGN` | requirement-shell-modular-function-design | Single-file modular function design (prefixes, zones) | shell | Active | `requirement-shell-modular-function-design.md` | 2026-07-24 |
-| `RQ-DOMAIN-POMO` | requirement-domain-pomo | Pomodoro domain (work/break, themes, stats, path-safe names, storage; help + about pillars) | domain | Active | `requirement-domain-pomo.md` | 2026-07-24 |
+| `RQ-DOMAIN-POMO` | requirement-domain-pomo | Pomodoro domain (work/break, **minutes unit + 1-min minimum**, themes, stats, path-safe names, storage; help + about pillars) | domain | Active | `requirement-domain-pomo.md` | 2026-07-24 |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements | Central `out_*` output SSOT (stdout/stderr, modes) | shell | Active | `requirement-shell-output-requirements.md` | 2026-07-24 |
 | `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about) | shell | Active | `requirement-shell-self-management.md` | 2026-07-24 |
 

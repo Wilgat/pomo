@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Changed
+- Domain law **`RQ-DOMAIN-POMO`**: lock-in finding that CLI duration unit is **whole minutes**, shortest valid work duration is **1 minute** (not 1 second); `0` → `invalid_duration` (§2.2.1).
 - Test plan and suites adopt **harness ID notation**: portable families **TP-CLI** / **TP-LC** / **TP-CSUM** / **TP-U** / **TP-CURL**, domain-subject family **`TP-POMO-*`** (retired bare `TP-01…23`).
 - Lifecycle suite parity: self-update when remote newer (**TP-LC-05b**), version-check network failure (**TP-LC-11**), uninstall PATH cleanup (**TP-LC-07**).
 - Requirements declare **`RQ-*` Requirement-IDs** (registry + headers), Related peers cite **`RQ-*`**, and each Active REQ has **Design-time verification** (**TP-*** → `tests/*`).

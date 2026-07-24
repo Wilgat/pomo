@@ -1,14 +1,14 @@
 # Reviews registry (pomo)
 
 **Product:** pomo  
-**Updated:** 2026-07-16  
+**Updated:** 2026-07-24  
 
 ## Plans (living)
 
 | Artifact | Role | Status |
 |----------|------|--------|
 | `what-to-review.md` | Living checklist / review plan | Active |
-| `test-plan.md` | TP-* → tests/ | Active |
+| `test-plan.md` | Family TP-* → tests/ (**TP-POMO-*** domain) | Active |
 | `lessons.md` | L-* prior failure modes | Active |
 | `README.md` | Surface rules | Active |
 
@@ -23,9 +23,10 @@
 
 | ID | Severity | Summary | TP | Status |
 |----|----------|---------|----|--------|
-| POMO-DOC-01 | **bug** (docs/trust) | README CHECKSUM example hash stale vs live companion | TP-21 | **fixed** |
-| POMO-DOC-02 | **suggestion** | README claims in-tree `./countdown` while file absent | TP-22 | **fixed** |
-| POMO-NIT-01 | **nit** | Ship unit header comment still says “APP NAME: countdown” | TP-23 | **fixed** |
+| POMO-DOC-01 | **bug** (docs/trust) | README CHECKSUM example hash stale vs live companion | **TP-DOC-01** (was TP-21) | **fixed** |
+| POMO-DOC-02 | **suggestion** | README claims in-tree `./countdown` while file absent | **TP-DOC-02** (was TP-22) | **fixed** |
+| POMO-NIT-01 | **nit** | Ship unit header comment still says “APP NAME: countdown” | **TP-HYG-01** (was TP-23) | **fixed** |
+| — | coverage | Online curl\|sh suite (`TP-CURL-*`) not yet ported | **TP-CURL-*** | **todo** |
 
 ## Rules
 

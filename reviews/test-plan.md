@@ -1,53 +1,176 @@
-# Test plan (pomo) — TP-* lock-in
+# Test plan — pomo
 
-Maps product-law risks and review findings to automated cases under `tests/`.
+Maps **portable TP families** (proof molds) to product-root `tests/`.  
+**Suite entry:** `./tests/run.sh`  
+**Last update:** 2026-07-24 (H2 harness sync, ID notation, **TP-POMO-*** domain family)
 
-**Runner:** `./tests/run.sh`  
-**Last suite evidence:** 2026-07-16 — PASS=181 FAIL=0 SKIP=0  
+**Proof molds (cite by PM-ID):**
 
----
+| Family | Proof mold-ID | Suite file |
+|--------|---------------|------------|
+| **TP-CLI** | `PM-SHELL-CLI-TEST-PLAN` | `tests/test_cli.sh` |
+| **TP-LC** | `PM-INSTALL-LIFECYCLE-TEST-PLAN` | `tests/test_install_lifecycle.sh` |
+| **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle |
+| **TP-U** | `PM-SET-U-TEST-PLAN` | CLI (partial) |
+| **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | *(no suite yet)* |
+| **TP-POMO** | `PM-DOMAIN-TEST-PLAN` (specialize) | `tests/test_pomo_domain.sh` |
+| Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` |
 
-## Baseline coverage (have)
+Status: **have** = automated · **todo** = needed · **n/a** = not applicable · **optional** = gated
 
-| TP ID | Area | Maps to | Suite / case | Status |
-|-------|------|---------|--------------|--------|
-| **TP-01** | Syntax | modular / ship unit | `test_cli.sh` `sh -n` | **have** |
-| **TP-02** | Companion digest file present | automatic-checksum | `test_cli.sh` companion | **have** |
-| **TP-03** | version / help / about human+JSON | CLI interface | `test_cli.sh` | **have** |
-| **TP-04** | Domain verbs in help | domain help pillar + CLI | `test_cli.sh` domain verbs | **have** |
-| **TP-05** | CHECKSUM not on help/about | automatic-checksum | `test_cli.sh` | **have** |
-| **TP-06** | Unknown command fail-closed | CLI interface | `test_cli.sh` | **have** |
-| **TP-07** | Type O zero-arg install-ensure | zero-arguments | `test_install_lifecycle.sh` | **have** |
-| **TP-08** | Install idempotent / already installed | idempotency | `test_install_lifecycle.sh` | **have** |
-| **TP-09** | version-check / self-update already-latest | self-management | `test_install_lifecycle.sh` | **have** |
-| **TP-10** | Integrity transparency human | automatic-checksum | `test_install_lifecycle.sh` | **have** |
-| **TP-11** | CHECKSUM pin match/mismatch | automatic-checksum | `test_install_lifecycle.sh` | **have** |
-| **TP-12** | Uninstall refuse / `--force` | interactive + self-mgmt | `test_install_lifecycle.sh` | **have** |
-| **TP-13** | Downgrade refuse / `--force` | self-management | `test_install_lifecycle.sh` | **have** |
-| **TP-14** | Domain start/status/list/stop/kill/skip | domain-pomo | `test_pomo_domain.sh` | **have** |
-| **TP-15** | Domain stats + theme | domain-pomo | `test_pomo_domain.sh` | **have** |
-| **TP-16** | Path-safe invalid_name | domain-pomo | `test_pomo_domain.sh` | **have** |
-| **TP-17** | already_running / no_pomodoro | domain-pomo | `test_pomo_domain.sh` | **have** |
-| **TP-18** | watch rejects --json | domain-pomo | `test_pomo_domain.sh` | **have** |
-| **TP-19** | --persist storage mode | domain-pomo | `test_pomo_domain.sh` | **have** |
-| **TP-20** | stop --force not counted | domain-pomo | `test_pomo_domain.sh` | **have** |
+**Policy:** `policy-harness-id-notation` §5 — stack families portable; domain-subject family is **`TP-POMO-*`** only (not `TP-DOM-*`, not bare `TP-01`).
 
 ---
 
-## Findings → TP rows (2026-07-16 full product review)
+## Baseline result
 
-| TP ID | Finding | Automated? | Status | Notes |
-|-------|---------|------------|--------|-------|
-| **TP-21** | README CHECKSUM pin stale vs live `pomo.sha256` (L-12) | Doc check | **closed** | Fixed 2026-07-16: pin example fetches live companion first field (no frozen doc hash) |
-| **TP-22** | README claims in-tree `./countdown` when absent (L-13) | Doc check | **closed** | Fixed 2026-07-16: optional if present; lineage-only wording |
-| **TP-23** | Ship unit header “APP NAME: countdown” residue | Comment hygiene | **closed** | Fixed 2026-07-16: header says APP_NAME default pomo |
+| Date | Result | Notes |
+|------|--------|-------|
+| 2026-07-16 | PASS=181 FAIL=0 SKIP=0 | Pre–family-ID suite |
+| 2026-07-24 | **PASS=211 FAIL=0 SKIP=0** | TP family labels + **TP-POMO-***; lifecycle parity gaps filled |
 
 ---
 
-## Open item owners
+## TP-CLI — CLI surface (`PM-SHELL-CLI-TEST-PLAN`)
 
-| Item | Owner | Target |
-|------|-------|--------|
-| — | — | No open TP remediation owners |
+| TP-ID | Intent | Status | Evidence |
+|-------|--------|--------|----------|
+| **TP-CLI-01** | Syntax + companion Shape A | **have** | `sh -n`; `pomo.sha256` match |
+| **TP-CLI-02** | Version human + JSON | **have** | version exit/app/version |
+| **TP-CLI-03** | Help Type 0 + domain surface | **have** | install/self-*; domain verbs; no CHECKSUM |
+| **TP-CLI-04** | Help/about JSON purity | **have** | help/about JSON; about no CHECKSUM |
+| **TP-CLI-05** | About shell storage resolve | **n/a** | domain owns storage (**TP-POMO-***) |
+| **TP-CLI-06** | Unknown command | **have** | human + JSON `out_error` |
+| **TP-CLI-07** | Quiet mode | **have** | `--quiet` and `-q` |
+| **TP-CLI-08** | `env -u HOME` under set -u | **have** | also **TP-U-01** |
+| **TP-CLI-09** | Zero-arg bad channel | **have** | non-zero; not silent; no binary |
+| **TP-CLI-10** | bashrc+sdkman under set -u | **n/a** | No product sdkman/source path |
+| **TP-CLI-11** | self-uninstall refuse without force | **have** | `confirm_required`; binary remains |
+| **TP-CLI-12** | `out_json` string-key escape | **have** | harness; `@key` raw n/a (product string-escapes all pairs) |
 
-Closing a **bug** updates this table and preferably adds a suite case under `tests/`.
+---
+
+## TP-LC — Install lifecycle (`PM-INSTALL-LIFECYCLE-TEST-PLAN`)
+
+| TP-ID | Intent | Status | Evidence |
+|-------|--------|--------|----------|
+| **TP-LC-01** | Empty-argv ensure (first + already local/global) | **have** | lifecycle suite |
+| **TP-LC-02** | Payload `install` | **n/a** | Type O CLI — no domain payload project |
+| **TP-LC-03** | Payload uninstall | **n/a** | No payload surface |
+| **TP-LC-04** | About installed + version-check JSON | **have** | local/remote/is_latest |
+| **TP-LC-05** | self-update already-latest | **have** | success message |
+| **TP-LC-05b** | self-update when remote newer | **have** | upgrades VERSION |
+| **TP-LC-06** | Force reinstall companion transparency | **have** | link/expected/actual/PASS |
+| **TP-LC-07** | self-uninstall refuse / force + PATH cleanup | **have** | refuse + force remove |
+| **TP-LC-08** | Downgrade refuse / force | **have** | `downgrade_blocked` |
+| **TP-LC-09** | Bad channel empty argv | **have** | same class as **TP-CLI-09** |
+| **TP-LC-10** | Idempotent re-install | **have** | “already installed” |
+| **TP-LC-11** | version-check network failure | **have** | `network_error` |
+| **TP-LC-12** | Explicit `install --json` | **have** | first install path |
+
+---
+
+## TP-CSUM — Checksum (`PM-CHECKSUM-TEST-PLAN`)
+
+| TP-ID | Intent | Status | Evidence |
+|-------|--------|--------|----------|
+| **TP-CSUM-01** | Companion matches ship unit | **have** | CLI |
+| **TP-CSUM-02** | Human force reinstall transparency | **have** | lifecycle |
+| **TP-CSUM-03** | Shape B pin mismatch | **have** | lifecycle |
+| **TP-CSUM-04** | Shape B pin match | **have** | lifecycle |
+| **TP-CSUM-05** | Help/about hide CHECKSUM | **have** | CLI |
+
+---
+
+## TP-U — set -u (`PM-SET-U-TEST-PLAN`)
+
+| TP-ID | Intent | Status | Evidence |
+|-------|--------|--------|----------|
+| **TP-U-01** | HOME unset | **have** | TP-CLI-08 |
+| **TP-U-02** | Defaults on zero-arg fail path | **have** | TP-CLI-09 |
+| **TP-U-03** | HOME with bashrc stub | **todo** | needs **TP-CURL** suite |
+| **TP-U-04** | bashrc via pipe | **n/a** / partial | product does not source bashrc on pipe |
+| **TP-U-05** | Safe external source helper | **n/a** | no bare product sdkman source path |
+
+---
+
+## TP-CURL — curl\|sh (`PM-ONLINE-CURL-INSTALL-TEST-PLAN`)
+
+| TP-ID | Intent | Status | Evidence |
+|-------|--------|--------|----------|
+| **TP-CURL-01**…**09** | Local HTTP curl\|sh + optional public | **todo** | No `tests/test_online_curl_install.sh` yet (parity with countdown/timer) |
+
+---
+
+## TP-POMO — Domain-subject family (`requirement-domain-pomo` / domain SSOT)
+
+Domain product cases use **`TP-POMO-*`** (subject = `pomo`), **not** portable **`TP-DOM-*`**, **not** bare numeric `TP-01`.  
+Proof mold **`PM-DOMAIN-TEST-PLAN`** is a design aid only; Type O-P payload tokens **`TP-PAYLOAD-*`** are **n/a**.  
+Policy: `policy-harness-id-notation` §5.
+
+| TP-ID | Intent | Status | Evidence |
+|-------|--------|--------|----------|
+| **TP-POMO-01** | Help lists domain verbs/flags | **have** | start/status/watch/skip/stop/kill/list/stats/theme/--persist/--break |
+| **TP-POMO-02** | start / status / list / stop human (+ minutes) | **have** | `test_pomo_domain.sh` |
+| **TP-POMO-03** | already-running start fails | **have** | domain suite |
+| **TP-POMO-04** | JSON start/status/list/stop + phase/minutes | **have** | domain suite |
+| **TP-POMO-05** | `no_pomodoro` error code | **have** | domain suite |
+| **TP-POMO-06** | kill / skip phase transitions | **have** | domain suite |
+| **TP-POMO-07** | `invalid_name` / `invalid_duration` | **have** | domain suite |
+| **TP-POMO-08** | `--persist` start/list/status/stop | **have** | domain suite |
+| **TP-POMO-09** | stats + theme list/set/next/prev | **have** | domain suite |
+| **TP-POMO-10** | watch rejects `--json` | **have** | domain suite |
+| **TP-POMO-11** | stop `--force` not counted | **have** | domain suite |
+| **TP-PAYLOAD-*** | Type O-P payload scaffold (mold) | **n/a** | not a Type O-P payload product |
+
+---
+
+## Static proof (finding lock-in)
+
+| TP-ID | Intent | Status | Notes |
+|-------|--------|--------|-------|
+| **TP-CITE-01** | Ship unit ALIGNMENT cites live REQs | **have** | header comments |
+| **TP-ID-01** | `APP_NAME` hard-assign / Config SSOT | **have** | ship unit pomo |
+| **TP-DOC-01** | README pin not frozen stale hash | **have** | closed 2026-07-16 (was TP-21) |
+| **TP-DOC-02** | README bootstrap claim disk-honest | **have** | closed 2026-07-16 (was TP-22) |
+| **TP-HYG-01** | Ship unit header APP_NAME default | **have** | closed 2026-07-16 (was TP-23) |
+
+---
+
+## Legacy map (retired → family)
+
+| Legacy | Now |
+|--------|-----|
+| TP-01 | **TP-CLI-01** |
+| TP-02 | **TP-CLI-01** / **TP-CSUM-01** |
+| TP-03 | **TP-CLI-02** / **TP-CLI-04** |
+| TP-04 | **TP-CLI-03** / **TP-POMO-01** |
+| TP-05 | **TP-CSUM-05** |
+| TP-06 | **TP-CLI-06** |
+| TP-07 | **TP-CLI-09** / **TP-LC-01** / **TP-LC-09** |
+| TP-08 | **TP-LC-10** |
+| TP-09 | **TP-LC-04** / **TP-LC-05** |
+| TP-10 | **TP-LC-06** / **TP-CSUM-02** |
+| TP-11 | **TP-CSUM-03** / **TP-CSUM-04** |
+| TP-12 | **TP-CLI-11** / **TP-LC-07** |
+| TP-13 | **TP-LC-08** |
+| TP-14 | **TP-POMO-02**…**06** |
+| TP-15 | **TP-POMO-09** |
+| TP-16 | **TP-POMO-07** |
+| TP-17 | **TP-POMO-03** / **TP-POMO-05** |
+| TP-18 | **TP-POMO-10** |
+| TP-19 | **TP-POMO-08** |
+| TP-20 | **TP-POMO-11** |
+| TP-21 | **TP-DOC-01** (closed) |
+| TP-22 | **TP-DOC-02** (closed) |
+| TP-23 | **TP-HYG-01** (closed) |
+
+---
+
+## Rules
+
+1. Closing a **bug** finding updates the matching TP to **have** (or supersedes with a new test).  
+2. Do not mark TP **have** without a suite assertion (or documented static fix).  
+3. Domain product: keep domain suite green; primary domain family is **`TP-POMO-*`**.  
+4. Primary citation uses **TP-IDs** / requirement basenames; suite path secondary (`policy-harness-id-notation`).  
+5. Versioned requirements list TP + `tests/*` + `reviews/*` only — never `docs/templates/**`.  

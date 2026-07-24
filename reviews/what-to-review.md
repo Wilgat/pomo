@@ -1,8 +1,9 @@
 # What to review (pomo) — living checklist
 
-**Product:** pomo v2.0.0  
+**Product:** pomo v2.0.1  
 **Ship unit:** `./pomo`  
 **Domain SSOT:** `docs/requirements/requirement-domain-pomo.md`  
+**Domain TP family:** **`TP-POMO-*`** (not `TP-DOM-*`; policy-harness-id-notation §5)  
 **Bootstrap lineage:** countdown (A) → pomo (B); **no reverse-copy**
 
 Load **`lessons.md`** before every run. This file is the **review plan** surface checklist (term: review-plan).
@@ -64,8 +65,10 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 ## Tests lock-in
 
 - [ ] `./tests/run.sh` PASS with FAIL=0 (or documented environment block)  
-- [ ] Suites: `test_cli.sh`, `test_install_lifecycle.sh`, `test_pomo_domain.sh`  
-- [ ] Open bugs mapped in `test-plan.md` (TP-*)  
+- [ ] Suites: `test_cli.sh` (**TP-CLI**), `test_install_lifecycle.sh` (**TP-LC** / **TP-CSUM**), `test_pomo_domain.sh` (**TP-POMO-***)  
+- [ ] Assert labels include primary **TP-IDs** (id-notation)  
+- [ ] Open bugs mapped in `test-plan.md` (family TP-*)  
+- [ ] Residual: **TP-CURL-*** suite still **todo** (parity with countdown/timer)  
 
 ---
 

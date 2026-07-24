@@ -1,5 +1,5 @@
 # =============================================================================
-# tests/test_pomo_domain.sh — pomo domain (PM-DOMAIN-TEST-PLAN §4.2.3)
+# tests/test_pomo_domain.sh — pomo domain (PM-DOMAIN-TEST-PLAN §4.3.3 ops + §4.2 storage)
 # =============================================================================
 # Mold: PM-DOMAIN-TEST-PLAN — ops §4.3.3 (TP-POMO) + shared storage §4.2 (TP-STORAGE).
 # Ops: TP-POMO-01..07, 09..11 → subject=pomo verbs/phases/themes/stats.
@@ -11,7 +11,7 @@
 . "${TESTS_ROOT}/helpers.sh"
 
 run_test_pomo_domain() {
-    t_header "Pomo domain (PM-DOMAIN §4.2.3 / TP-POMO + TP-STORAGE)"
+    t_header "Pomo domain (PM-DOMAIN §4.3.3 ops + §4.2 TP-STORAGE)"
 
     require_cmd date
     require_cmd sh
@@ -227,8 +227,7 @@ run_test_pomo_domain() {
         t_fail "TP-POMO-07 --break without value expected non-zero"
     fi
 
-    # --- TP-STORAGE-02: persistent mode (--persist) ---
-    # (was TP-POMO-08; storage family owns path modes)
+    # --- TP-STORAGE-02: persistent mode (--persist; shared dual-storage) ---
     _out=$(_run start --persist persist-t 1 --break 1 2>/dev/null)
     _ec=$?
     assert_eq "TP-STORAGE-02 persist start exit 0" 0 "$_ec"
@@ -254,9 +253,8 @@ run_test_pomo_domain() {
     assert_eq "TP-POMO-11 stop --force exit 0" 0 "$_ec"
     assert_contains "TP-POMO-11 stop --force not counted" "$_out" '"counted":"false"'
 
-    # --- TP-STORAGE-01: volatile storage path ---
+    # --- TP-STORAGE-01: volatile storage path (shared dual-storage) ---
     # Live layout (pomo_get_file): ${/dev/shm|/tmp}/${APP_NAME}_${USER}_${name}
-    # (was TP-POMO-12)
     _run start stor-path 1 --break 1 >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
     _hit=0
@@ -289,8 +287,7 @@ run_test_pomo_domain() {
     _run kill stor-path >/dev/null 2>&1 || true
     _run stop stor-path >/dev/null 2>&1 || true
 
-    # --- TP-STORAGE-03: corrupted state → fail-closed ---
-    # (was TP-POMO-13)
+    # --- TP-STORAGE-03: corrupted state → fail-closed (shared dual-storage) ---
     _run start corrupt-me 1 --break 1 >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
     _state=

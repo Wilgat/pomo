@@ -5,7 +5,7 @@ POSIX `/bin/sh` CI suite for the Type 0 + pomodoro domain ship unit `./pomo`.
 Bootstrap architecture matches the countdown Type 0 harness; this suite is specialized for `APP_NAME=pomo` and covers **pomodoro domain** (work/break, themes, watch, stats, skip).
 
 **Product map:** `reviews/test-plan.md` (mold columns + status)  
-**Proof molds:** `PM-SHELL-CLI-TEST-PLAN`, `PM-INSTALL-LIFECYCLE-TEST-PLAN`, `PM-CHECKSUM-TEST-PLAN`, `PM-SET-U-TEST-PLAN`, `PM-ONLINE-CURL-INSTALL-TEST-PLAN`, `PM-DOMAIN-TEST-PLAN` §4.2.3, umbrella `PM-SHELL-CLI-SUITE-TEST-PLAN`  
+**Proof molds:** `PM-SHELL-CLI-TEST-PLAN`, `PM-INSTALL-LIFECYCLE-TEST-PLAN`, `PM-CHECKSUM-TEST-PLAN`, `PM-SET-U-TEST-PLAN`, `PM-ONLINE-CURL-INSTALL-TEST-PLAN`, `PM-DOMAIN-TEST-PLAN` (§4.2 **TP-STORAGE**, §4.3.3 **TP-POMO**), umbrella `PM-SHELL-CLI-SUITE-TEST-PLAN`  
 **ID notation:** stack **TP-CLI / TP-LC / TP-CSUM / TP-U / TP-CURL**; shared storage **TP-STORAGE** (timer/countdown/pomo); domain ops **TP-POMO-*** → **RQ-DOMAIN-POMO**
 
 ## Run locally

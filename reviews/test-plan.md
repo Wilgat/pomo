@@ -2,7 +2,7 @@
 
 Maps **portable proof molds (`PM-*`)** to product-root `tests/` with status.  
 **Suite entry:** `./tests/run.sh` (`PM-SHELL-CLI-SUITE-TEST-PLAN` order: CLI → LC → CURL → domain)  
-**Last update:** 2026-07-24 (mold alignment: CURL order + TP-POMO/STORAGE worked catalog)
+**Last update:** 2026-07-24 (suite re-check PASS=239; mold § refs; shared TP-STORAGE)
 
 **Proof molds (cite by PM-ID):**
 
@@ -29,7 +29,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 |------|--------|-------|
 | 2026-07-16 | PASS=181 FAIL=0 SKIP=0 | Pre–family-ID suite |
 | 2026-07-24 | **PASS=236 FAIL=0 SKIP=1** | CURL + domain storage; SKIP=TP-CURL-09 optional |
-| 2026-07-24 | *(mold align)* | CURL catalog order + mold-faithful TP-CURL-04 pipe; domain mold §4.2.3 |
+| 2026-07-24 | **PASS=239 FAIL=0 SKIP=1** | Mold-aligned CURL-04 pipe; shared **TP-STORAGE**; re-check green |
 
 ---
 
@@ -118,7 +118,7 @@ Mold catalog order and Core/Opt flags. Product uses **`sh`** where mold sketches
 
 Subject = `pomo` **ops/verbs**. **Not** portable **TP-DOM-***. Storage is **not** under this family — use **TP-STORAGE**.
 
-| TP-ID | Mold §4.2.3 intent | Status | Evidence |
+| TP-ID | Mold §4.3.3 intent | Status | Evidence |
 |-------|--------------------|--------|----------|
 | **TP-POMO-01** | Help domain verbs/flags | **have** | start/status/watch/skip/stop/kill/list/stats/theme/--persist/--break |
 | **TP-POMO-02** | start/status/list/stop human (+ minutes) | **have** | domain suite |

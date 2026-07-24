@@ -46,6 +46,26 @@ All domain user messages **MUST** go through the product output SSOT (`out_*` pe
 6. **Missing timer:** Status/stop/skip/kill on a missing name **MUST** fail closed with a stable machine code.  
 7. **Corruption:** Unreadable/partial state **MUST** fail closed (and should remove or refuse the bad file); **MUST NOT** invent silent success.
 
+### 2.2.1 Duration unit and minimum (project-normative — finding lock-in)
+
+**Finding:** Operators may assume a 1-second countdown (timer/countdown lineage uses seconds-style tokens). **Pomo domain law is minutes-first.**
+
+| Rule | Requirement |
+|------|-------------|
+| **CLI unit** | User-facing `start` work operand and `--break N` **MUST** be **whole minutes** (plain positive integers). Help/usage **MUST** document `minutes`, not free-form `1s` as the primary contract. |
+| **Minimum work duration** | Shortest valid work duration **MUST** be **1 minute**. Values that resolve to **≤ 0 minutes** of work **MUST** fail closed with **`invalid_duration`**. |
+| **Not 1 second** | A 1-second work session is **not** a valid primary CLI contract. Product **MUST NOT** claim “shortest countdown = 1s” on domain help or domain law. |
+| **Internal storage** | Runtime state **MAY** store phase lengths in **seconds** (e.g. `work_minutes * 60`) for clocks and remaining time; that does **not** change the user-facing unit or the 1-minute minimum. |
+| **Defaults** | When work minutes are omitted, defaults **MUST** remain whole minutes (`DEFAULT_WORK_MIN` / `DEFAULT_BREAK_MIN`, product: 25 / 5). |
+
+**Acceptance examples (this product):**
+
+| Input | Required outcome |
+|-------|------------------|
+| `start [name] 1` | Success; work phase **1 minute** (internally 60 seconds) |
+| `start [name] 0` | Non-zero; **`invalid_duration`** (human and/or JSON) |
+| Omitted minutes | Defaults to product default work minutes (25), not zero and not one second |
+
 ### 2.3 Storage modes (portable)
 
 | Mode | Intent | Rule |
@@ -119,8 +139,9 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 | **Domain prefix** | `pomo_*` (see `requirement-shell-modular-function-design.md`) |
 | **Dispatcher** | `app_main` routes domain verbs after global flags |
 | **Default work / break** | `DEFAULT_WORK_MIN=25`, `DEFAULT_BREAK_MIN=5` (minutes) |
-| **Start minutes** | Plain integer minutes for work (1.7.0 specialty); optional `--break N` minutes |
-| **State file format** | `start_time target_time phase work_dur break_dur` (epoch seconds; phase `work`\|`break`; durations seconds) |
+| **Start minutes (SSOT unit)** | Plain **integer minutes** for work (1.7.0 specialty); optional `--break N` **minutes** |
+| **Minimum work duration** | **1 minute** (not 1 second); `0` or non-positive → **`invalid_duration`** |
+| **State file format** | `start_time target_time phase work_dur break_dur` (epoch seconds; phase `work`\|`break`; **stored** durations in seconds = minutes×60) |
 | **State path pattern** | `${base}/${APP_NAME}_${USERNAME}_${name}` |
 | **Volatile base** | `/dev/shm` → `/tmp` → `/tmp/${APP_NAME}_${USERNAME}` |
 | **Persistent base** | `${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}` (fallback under `/tmp/..._persistent`) |
@@ -137,7 +158,7 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 
 | Command | Handler | Required behavior |
 |---------|---------|-------------------|
-| `start [name] [minutes] [--break N] [--persist]` | `pomo_start` | Start work phase; default name `default`, default 25/5 minutes; fail `already_running` if present |
+| `start [name] [minutes] [--break N] [--persist]` | `pomo_start` | Start work phase; default name `default`, default 25/5 minutes; **min work = 1 minute**; fail `invalid_duration` if ≤0; fail `already_running` if present |
 | `status [name] [--persist]` | `pomo_show_status` | Show phase + remaining (+ progress human); auto work→break; JSON `type=status` |
 | `watch [name] [--persist]` | `pomo_watch` | Live refresh; refuse `--json`/`--quiet` (non-zero) |
 | `skip [name] [--persist]` | `pomo_skip` | Phase advance; count work minutes when leaving work |
@@ -152,7 +173,7 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 | Code | When |
 |------|------|
 | `invalid_name` | Path-unsafe timer name |
-| `invalid_duration` | Non-positive / invalid work duration |
+| `invalid_duration` | Non-positive / invalid work duration (including **0** minutes; below **1-minute** minimum) |
 | `invalid_argument` | e.g. `--break` missing/non-numeric |
 | `already_running` | Start while state exists (may also appear as JSON error object with `code`) |
 | `no_pomodoro` | Status/stop/skip/kill/list target missing |
@@ -171,13 +192,14 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 4. `skip` from work → break phase with stored break duration; JSON reports `new_phase`.  
 5. `status` after work expiry transitions to break without losing `break_dur`.  
 6. Invalid name `bad/name` and `..` → `invalid_name`.  
-7. `--persist` start/status/list/stop use persistent base under isolated `HOME` in tests.  
-8. `theme list|set|next|prev` work; invalid theme → `invalid_theme`.  
-9. `watch --json` fails closed.  
-10. Domain messages use `out_*` (bell / clear for watch UX only as non-message control).  
-11. Suite: `./tests/run.sh` domain section green.  
-12. Human `help` lists all domain verbs and domain flags (§2.8).  
-13. `about` has no required domain fields (§2.9).
+7. **Duration unit/minimum (§2.2.1):** `start … 1` succeeds (1 minute work); `start … 0` → **`invalid_duration`**; help documents **minutes** (not 1s as primary unit).  
+8. `--persist` start/status/list/stop use persistent base under isolated `HOME` in tests.  
+9. `theme list|set|next|prev` work; invalid theme → `invalid_theme`.  
+10. `watch --json` fails closed.  
+11. Domain messages use `out_*` (bell / clear for watch UX only as non-message control).  
+12. Suite: `./tests/run.sh` domain section green (**TP-POMO-07** covers zero duration).  
+13. Human `help` lists all domain verbs and domain flags (§2.8), including start **minutes**.  
+14. `about` has no required domain fields (§2.9).
 
 ### 2.11 Why This Requirement Exists (Direct CIAO Alignment)
 

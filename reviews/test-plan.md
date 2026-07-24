@@ -13,13 +13,13 @@ Maps **portable proof molds (`PM-*`)** to product-root `tests/` with status.
 | **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle | Full 01–05 |
 | **TP-U** | `PM-SET-U-TEST-PLAN` | CLI + curl | 01–03 have; 04–05 n/a |
 | **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | `tests/test_online_curl_install.sh` | Full 01–09; sh not bash |
-| **TP-POMO** | `PM-DOMAIN-TEST-PLAN` §4.2.3 | `tests/test_pomo_domain.sh` | Subject `pomo` ops |
-| **TP-STORAGE** | `PM-DOMAIN-TEST-PLAN` §4.2.3 storage | same | Maps mold storage intents 08–10 pattern |
+| **TP-POMO** | `PM-DOMAIN-TEST-PLAN` §4.3.3 | `tests/test_pomo_domain.sh` | Subject `pomo` **ops** only |
+| **TP-STORAGE** | `PM-DOMAIN-TEST-PLAN` §4.2 **shared** dual-storage | same | Shared with **timer · countdown · peers** (not pomo-only) |
 | Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` | |
 
 Status: **have** = automated · **todo** = needed · **n/a** = not applicable · **optional** = gated  
 
-**Policy:** `policy-harness-id-notation` §5 — stack families portable; domain-subject **`TP-POMO-*`** + storage **`TP-STORAGE-*`** product-local (not `TP-DOM-*`).
+**Policy:** `policy-harness-id-notation` §5 — stack families portable; **shared domain-concern** **`TP-STORAGE`** (timer/countdown/pomo); domain-subject **`TP-POMO-*`** for ops only (not `TP-DOM-*`).
 
 ---
 
@@ -114,9 +114,9 @@ Mold catalog order and Core/Opt flags. Product uses **`sh`** where mold sketches
 
 ---
 
-## TP-POMO — `PM-DOMAIN-TEST-PLAN` §4.2.3 (ops)
+## TP-POMO — `PM-DOMAIN-TEST-PLAN` §4.3.3 (ops)
 
-Subject = `pomo`. **Not** portable **TP-DOM-***. Law: domain SSOT for pomodoro.
+Subject = `pomo` **ops/verbs**. **Not** portable **TP-DOM-***. Storage is **not** under this family — use **TP-STORAGE**.
 
 | TP-ID | Mold §4.2.3 intent | Status | Evidence |
 |-------|--------------------|--------|----------|
@@ -134,17 +134,17 @@ Subject = `pomo`. **Not** portable **TP-DOM-***. Law: domain SSOT for pomodoro.
 
 ---
 
-## TP-STORAGE — `PM-DOMAIN-TEST-PLAN` §4.2.3 (storage)
+## TP-STORAGE — `PM-DOMAIN-TEST-PLAN` §4.2 (shared dual-storage)
 
-Product-local storage family (mold dual-storage pattern). Maps countdown/timer storage intents without claiming those subject IDs.
+**Shared domain-concern family** — same IDs and intents on **timer**, **countdown**, **pomo**, and any dual volatile/`--persist` domain product. **Not pomo-only.**
 
-| TP-ID | Mold intent | Parallel mold row | Status | Evidence |
-|-------|-------------|-------------------|--------|----------|
-| **TP-STORAGE-01** | Volatile storage path resolve | ~ COUNTDOWN-09 / TIMER-09 | **have** | `/dev/shm\|tmp/${APP}_${USER}_${name}` |
-| **TP-STORAGE-02** | `--persist` start/list/status/stop | ~ COUNTDOWN-08 / TIMER-08 | **have** | isolated HOME |
-| **TP-STORAGE-03** | Corrupted state → `corrupted_data` | ~ COUNTDOWN-10 | **have** | empty state file |
+| TP-ID | Mold intent | Status | Evidence | Legacy (this product) |
+|-------|-------------|--------|----------|------------------------|
+| **TP-STORAGE-01** | Volatile storage path resolve | **have** | `/dev/shm\|tmp/${APP}_${USER}_${name}` | was TP-POMO-12 |
+| **TP-STORAGE-02** | `--persist` start/list/status/stop | **have** | isolated HOME | was TP-POMO-08 |
+| **TP-STORAGE-03** | Corrupted state → `corrupted_data` | **have** | empty state file | was TP-POMO-13 |
 
-Legacy: TP-POMO-08→**TP-STORAGE-02**, TP-POMO-12→**01**, TP-POMO-13→**03**.
+Cross-product legacy aliases: timer `TP-TIMER-08/09` → **02/01**; countdown `TP-COUNTDOWN-08/09/10` → **02/01/03**.
 
 ---
 

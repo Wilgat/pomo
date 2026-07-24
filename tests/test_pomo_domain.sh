@@ -1,10 +1,10 @@
 # =============================================================================
 # tests/test_pomo_domain.sh — pomo domain (PM-DOMAIN-TEST-PLAN §4.2.3)
 # =============================================================================
-# Mold: PM-DOMAIN-TEST-PLAN worked catalog subject=pomo.
-# Ops: TP-POMO-01..07, 09..11 → RQ-DOMAIN-POMO verbs/phases/themes/stats.
-# Storage: TP-STORAGE-01..03 → dual-mode path + integrity (mold §4.2.3 storage).
-# Not TP-DOM-*; not TP-COUNTDOWN-*/TP-TIMER-* (different subjects).
+# Mold: PM-DOMAIN-TEST-PLAN — ops §4.3.3 (TP-POMO) + shared storage §4.2 (TP-STORAGE).
+# Ops: TP-POMO-01..07, 09..11 → subject=pomo verbs/phases/themes/stats.
+# Storage: TP-STORAGE-01..03 → shared dual-storage family (also timer/countdown).
+# Not TP-DOM-*; subject ops not interchangeable with TP-TIMER-*/TP-COUNTDOWN-*.
 # =============================================================================
 
 # shellcheck source=helpers.sh

@@ -14,8 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Local harness H2 sync from genesis-template (policies, id-notation, proof molds, software-dev housekeeping skill) — gitignored Pattern A surfaces only.
 - **`tests/test_online_curl_install.sh`** — full **TP-CURL-01…09** (local channel Core; optional public via flag); **TP-U-03** via TP-CURL-04.
-- Domain storage family **TP-STORAGE-01..03** (volatile path, `--persist`, corrupted state) extracted from former **TP-POMO-08/12/13**.
-- Tests aligned to proof molds: **TP-CURL** catalog order + mold-faithful **TP-CURL-04** pipe; **PM-DOMAIN** §4.2.3 **TP-POMO**/**TP-STORAGE** worked catalog; product test-plan mold columns.
+- Shared dual-storage family **TP-STORAGE-01..03** (volatile path, `--persist`, corrupted state) — same family on **timer/countdown/pomo** (not pomo-only); former **TP-POMO-08/12/13**.
+- Tests aligned to proof molds: **TP-CURL** catalog order; **PM-DOMAIN** §4.2 **TP-STORAGE** + §4.3.3 **TP-POMO** ops.
 
 ## [2.0.1] - 2026-07-17
 

@@ -6,7 +6,7 @@ Bootstrap architecture matches the countdown Type 0 harness; this suite is speci
 
 **Product map:** `reviews/test-plan.md` (mold columns + status)  
 **Proof molds:** `PM-SHELL-CLI-TEST-PLAN`, `PM-INSTALL-LIFECYCLE-TEST-PLAN`, `PM-CHECKSUM-TEST-PLAN`, `PM-SET-U-TEST-PLAN`, `PM-ONLINE-CURL-INSTALL-TEST-PLAN`, `PM-DOMAIN-TEST-PLAN` §4.2.3, umbrella `PM-SHELL-CLI-SUITE-TEST-PLAN`  
-**ID notation:** stack **TP-CLI / TP-LC / TP-CSUM / TP-U / TP-CURL**; domain ops **TP-POMO-***; storage **TP-STORAGE-*** → **RQ-DOMAIN-POMO**
+**ID notation:** stack **TP-CLI / TP-LC / TP-CSUM / TP-U / TP-CURL**; shared storage **TP-STORAGE** (timer/countdown/pomo); domain ops **TP-POMO-*** → **RQ-DOMAIN-POMO**
 
 ## Run locally
 

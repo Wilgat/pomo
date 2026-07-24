@@ -1,18 +1,13 @@
 #!/bin/sh
 # =============================================================================
-# tests/run.sh — CI entrypoint for pomo
+# tests/run.sh — CI entrypoint for pomo (PM-SHELL-CLI-SUITE-TEST-PLAN)
 # =============================================================================
+# Order (mold): CLI → install lifecycle → online curl (local) → domain
+# Families: TP-CLI / TP-LC / TP-CSUM / TP-U / TP-CURL / TP-POMO / TP-STORAGE
+# Product map: reviews/test-plan.md
 #
-# GENERAL PURPOSE:
-# Run the product test suite in a non-interactive, network-isolated-friendly
-# way suitable for local development and CI.
-#
-# Usage:
-#   ./tests/run.sh
-#   sh tests/run.sh
-#
+# Usage: ./tests/run.sh
 # Exit 0 when all assertions pass; non-zero when any fail.
-#
 # Requirements: POSIX sh, curl, python3 (local channel), sha256sum, grep, date
 # =============================================================================
 

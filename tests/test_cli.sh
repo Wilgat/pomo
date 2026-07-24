@@ -1,9 +1,9 @@
 # =============================================================================
 # tests/test_cli.sh — Type 0 CLI surface (PM-SHELL-CLI-TEST-PLAN / TP-CLI-*)
 # =============================================================================
-# Portable families: TP-CLI, TP-CSUM-01/05, TP-U-01.
-# Domain help rows also prove TP-POMO-01 (subject family; full domain suite separate).
-# Labels MUST include TP-IDs (policy-harness-id-notation / PM-SHELL-CLI-TEST-PLAN).
+# Mold catalog TP-CLI-01..11 (Core). Product: sh -n not bash -n; TP-CLI-05/10 n/a;
+# TP-CLI-12 product extension (out_json string-key). Cross: TP-CSUM-01/05, TP-U-01/02,
+# TP-POMO-01 (help domain verbs). Labels = TP-IDs (policy-harness-id-notation).
 # =============================================================================
 
 # shellcheck source=helpers.sh

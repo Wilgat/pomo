@@ -1,7 +1,8 @@
 # =============================================================================
 # tests/test_install_lifecycle.sh — install lifecycle (PM-INSTALL-LIFECYCLE-TEST-PLAN)
 # =============================================================================
-# Families: TP-LC-*, TP-CSUM-02..04 (channel). Local HTTP only — no public network.
+# Mold catalog TP-LC-01..09 (Core). Product: Type O → TP-LC-02/03 n/a; extensions
+# TP-LC-05b/10/11/12. Cross: TP-CSUM-02..04. Local HTTP only — no public network.
 # Labels MUST include TP-IDs (policy-harness-id-notation).
 # =============================================================================
 

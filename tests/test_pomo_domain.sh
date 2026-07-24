@@ -1,16 +1,17 @@
 # =============================================================================
-# tests/test_pomo_domain.sh — pomo domain (requirement-domain-pomo / TP-POMO-*)
+# tests/test_pomo_domain.sh — pomo domain (PM-DOMAIN-TEST-PLAN §4.2.3)
 # =============================================================================
-# Domain-subject family TP-POMO-* proves RQ-DOMAIN-POMO (ops/verbs).
-# Storage resolve / persist / state integrity: product-local TP-STORAGE-*
-# (extracted from domain storage pillars — not portable TP-DOM-*).
+# Mold: PM-DOMAIN-TEST-PLAN worked catalog subject=pomo.
+# Ops: TP-POMO-01..07, 09..11 → RQ-DOMAIN-POMO verbs/phases/themes/stats.
+# Storage: TP-STORAGE-01..03 → dual-mode path + integrity (mold §4.2.3 storage).
+# Not TP-DOM-*; not TP-COUNTDOWN-*/TP-TIMER-* (different subjects).
 # =============================================================================
 
 # shellcheck source=helpers.sh
 . "${TESTS_ROOT}/helpers.sh"
 
 run_test_pomo_domain() {
-    t_header "Pomo domain (TP-POMO-*)"
+    t_header "Pomo domain (PM-DOMAIN §4.2.3 / TP-POMO + TP-STORAGE)"
 
     require_cmd date
     require_cmd sh

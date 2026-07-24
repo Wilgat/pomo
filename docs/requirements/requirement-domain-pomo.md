@@ -262,22 +262,22 @@ This requirement is satisfied when all of the following hold:
 ## Design-time verification
 
 **Requirement-ID:** `RQ-DOMAIN-POMO`  
-**Specialized from:** product domain SSOT (no portable domain law mold); design aid **`PM-DOMAIN-TEST-PLAN`** → family **`TP-POMO`** (not `TP-DOM`)  
+**Specialized from:** product domain SSOT (no portable domain **law** mold); proof design aid **`PM-DOMAIN-TEST-PLAN` §4.2.3** → **`TP-POMO`** + **`TP-STORAGE`** (not `TP-DOM`)  
 **Map:** `reviews/test-plan.md`
 
-| TP family / ID | Suite | Status |
-|----------------|-------|--------|
-| **TP-POMO-01** help domain verbs/flags | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-02** start/status/list/stop human | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-03** already-running | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-04** JSON start/status/list/stop | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-05** `no_pomodoro` | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-06** kill / skip | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-07** invalid_name / invalid_duration | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-09** stats + theme | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-10** watch rejects `--json` | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-11** stop `--force` not counted | `tests/test_pomo_domain.sh` | have |
-| **TP-STORAGE-01** volatile storage path | `tests/test_pomo_domain.sh` | have |
-| **TP-STORAGE-02** `--persist` mode | `tests/test_pomo_domain.sh` | have |
-| **TP-STORAGE-03** corrupted state fail-closed | `tests/test_pomo_domain.sh` | have |
-| **TP-PAYLOAD-*** Type O-P scaffold | n/a — not Type O-P payload product | n/a |
+| TP family / ID | Mold §4.2.3 | Suite | Status |
+|----------------|-------------|-------|--------|
+| **TP-POMO-01** help domain verbs/flags | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-02** start/status/list/stop human | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-03** already-running | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-04** JSON start/status/list/stop | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-05** `no_pomodoro` | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-06** kill / skip | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-07** invalid_name / invalid_duration | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-09** stats + theme | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-10** watch rejects `--json` | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-POMO-11** stop `--force` not counted | ops | `tests/test_pomo_domain.sh` | have |
+| **TP-STORAGE-01** volatile storage path | storage (~09) | `tests/test_pomo_domain.sh` | have |
+| **TP-STORAGE-02** `--persist` mode | storage (~08) | `tests/test_pomo_domain.sh` | have |
+| **TP-STORAGE-03** corrupted state fail-closed | storage (~10) | `tests/test_pomo_domain.sh` | have |
+| **TP-PAYLOAD-*** Type O-P scaffold | §4.1 | n/a — not Type O-P | n/a |

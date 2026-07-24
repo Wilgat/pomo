@@ -253,5 +253,6 @@ Mode-related work for pomo is **not done** if any of the following fail:
 | **TP-CLI-09** non-interactive zero-arg fail path | `tests/test_cli.sh` | have |
 | **TP-CLI-11** / **TP-LC-07** uninstall refuse without force | `tests/test_cli.sh` + lifecycle | have |
 | **TP-POMO-10** watch rejects `--json` | `tests/test_pomo_domain.sh` | have |
-| **TP-CURL-01**…**08** local curl\|sh path | `tests/test_online_curl_install.sh` | have |
+| **TP-CURL-01**…**08** local curl\|sh (`PM-ONLINE-CURL-INSTALL-TEST-PLAN` Core) | `tests/test_online_curl_install.sh` | have |
+| **TP-CURL-04** hostile HOME pipe + direct | same (mold Core + **TP-U-03**) | have |
 | **TP-CURL-09** public online | optional flag | optional |

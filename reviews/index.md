@@ -26,7 +26,7 @@
 | POMO-DOC-01 | **bug** (docs/trust) | README CHECKSUM example hash stale vs live companion | **TP-DOC-01** (was TP-21) | **fixed** |
 | POMO-DOC-02 | **suggestion** | README claims in-tree `./countdown` while file absent | **TP-DOC-02** (was TP-22) | **fixed** |
 | POMO-NIT-01 | **nit** | Ship unit header comment still says “APP NAME: countdown” | **TP-HYG-01** (was TP-23) | **fixed** |
-| — | coverage | Online curl\|sh suite (`TP-CURL-*`) not yet ported | **TP-CURL-*** | **todo** |
+
 
 ## Rules
 

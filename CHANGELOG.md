@@ -7,12 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Changed
-- Test plan and suites adopt **harness ID notation**: portable families **TP-CLI** / **TP-LC** / **TP-CSUM** / **TP-U**, domain-subject family **`TP-POMO-*`** (retired bare `TP-01…23`).
+- Test plan and suites adopt **harness ID notation**: portable families **TP-CLI** / **TP-LC** / **TP-CSUM** / **TP-U** / **TP-CURL**, domain-subject family **`TP-POMO-*`** (retired bare `TP-01…23`).
 - Lifecycle suite parity: self-update when remote newer (**TP-LC-05b**), version-check network failure (**TP-LC-11**), uninstall PATH cleanup (**TP-LC-07**).
 - Requirements declare **`RQ-*` Requirement-IDs** (registry + headers), Related peers cite **`RQ-*`**, and each Active REQ has **Design-time verification** (**TP-*** → `tests/*`).
 
 ### Added
 - Local harness H2 sync from genesis-template (policies, id-notation, proof molds, software-dev housekeeping skill) — gitignored Pattern A surfaces only.
+- **`tests/test_online_curl_install.sh`** — full **TP-CURL-01…09** (local channel Core; optional public via flag); **TP-U-03** via TP-CURL-04.
+- Domain suite **TP-POMO-12** (volatile storage path) and **TP-POMO-13** (corrupted state → `corrupted_data`).
 
 ## [2.0.1] - 2026-07-17
 

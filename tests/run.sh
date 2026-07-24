@@ -33,6 +33,8 @@ export APP_NAME SCRIPT
 . "${TESTS_ROOT}/test_cli.sh"
 # shellcheck source=test_install_lifecycle.sh
 . "${TESTS_ROOT}/test_install_lifecycle.sh"
+# shellcheck source=test_online_curl_install.sh
+. "${TESTS_ROOT}/test_online_curl_install.sh"
 # shellcheck source=test_pomo_domain.sh
 . "${TESTS_ROOT}/test_pomo_domain.sh"
 
@@ -61,6 +63,7 @@ fi
 
 run_test_cli
 run_test_install_lifecycle
+run_test_online_curl_install
 run_test_pomo_domain
 
 printf '\n== summary ==\n'

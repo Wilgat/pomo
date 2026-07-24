@@ -4,6 +4,9 @@ POSIX `/bin/sh` CI suite for the Type 0 + pomodoro domain ship unit `./pomo`.
 
 Bootstrap architecture matches the countdown Type 0 harness; this suite is specialized for `APP_NAME=pomo` and covers **pomodoro domain** (work/break, themes, watch, stats, skip).
 
+**Product map:** `reviews/test-plan.md` (TP families + status)  
+**ID notation:** stack **TP-CLI / TP-LC / TP-CSUM / TP-U / TP-CURL**; domain-subject **TP-POMO-*** → **RQ-DOMAIN-POMO**
+
 ## Run locally
 
 ```sh
@@ -12,26 +15,28 @@ Bootstrap architecture matches the countdown Type 0 harness; this suite is speci
 
 Requires: `sh`, `curl`, `python3` (local HTTP channel), `sha256sum`, `grep`, `date`.
 
-Optional override:
+Optional:
 
 ```sh
 APP_NAME=pomo ./tests/run.sh
+RUN_ONLINE_CURL_TESTS=1 ./tests/run.sh   # optional public-channel smoke (TP-CURL-09)
 ```
 
 ## What is covered
 
-| Suite | File | Focus |
-|-------|------|--------|
-| CLI surface | `test_cli.sh` | `sh -n`, companion digest, `version` / `help` / `about` (human + JSON), domain verbs in help (`start`/`status`/`watch`/`skip`/`stop`/`kill`/`list`/`stats`/`theme`), unknown command, quiet, `CHECKSUM` not on help/about, `env -u HOME`, zero-arg install failure exit, uninstall fail-closed JSON |
-| Install lifecycle | `test_install_lifecycle.sh` | Isolated `HOME`/`USER_BIN`, local channel install, idempotent re-install, **Type O** zero-arg already-installed (local + global, not help), version-check JSON keys, self-update already-latest, human integrity transparency, uninstall refuse / `--force`, `CHECKSUM` pin match/mismatch, downgrade refuse / `--force` |
-| Pomo domain | `test_pomo_domain.sh` | `start` / `status` / `list` / `stop` / `kill` / `skip`, `stats`, `theme`, `--json`, `--persist`, `--break`, invalid name path-safe, already-running, `no_pomodoro`, watch rejects `--json` |
+| Suite | File | TP families | Focus |
+|-------|------|-------------|--------|
+| CLI surface | `test_cli.sh` | **TP-CLI**, **TP-CSUM-01/05**, **TP-U-01/02** | syntax, companion, version/help/about, domain help rows, quiet, uninstall refuse, zero-arg fail |
+| Install lifecycle | `test_install_lifecycle.sh` | **TP-LC**, **TP-CSUM-02..04** | local channel install, Type O ensure, self-update, pin, downgrade, PATH cleanup |
+| Online curl\|sh | `test_online_curl_install.sh` | **TP-CURL**, **TP-U-03** | local `curl\|sh` first/second pipe, hostile HOME, bad URL, pipe version |
+| Pomo domain | `test_pomo_domain.sh` | **TP-POMO-01..13** | start/status/list/stop/kill/skip, stats/theme, persist, path-safe, storage path, corrupted state |
 
 ## Mapping (product law)
 
-Type 0 cases map to live `docs/requirements/requirement-shell-*.md` (CLI interface, zero-arguments, output, interactive, idempotency, self-management, automatic-checksum, modular design). Domain cases map to **`requirement-domain-pomo.md`** (work/break, themes, stats, path-safe names, storage).
+Type 0 cases map to **`RQ-SHELL-*`**. Domain cases map to **`RQ-DOMAIN-POMO`**. Proof molds: `PM-SHELL-CLI-TEST-PLAN`, `PM-INSTALL-LIFECYCLE-TEST-PLAN`, `PM-CHECKSUM-TEST-PLAN`, `PM-SET-U-TEST-PLAN`, `PM-ONLINE-CURL-INSTALL-TEST-PLAN`, `PM-DOMAIN-TEST-PLAN` (design aid → **TP-POMO**).
 
 ## Network / safety
 
 - No secrets and no root.
-- Install lifecycle serves the checkout over `127.0.0.1` (does not require public raw GitHub).
-- Domain tests use isolated `HOME` for persistent storage and clean volatile pomo files for the current user after the suite.
+- Install lifecycle + curl suite serve the checkout over `127.0.0.1` (no public raw GitHub required for Core).
+- Domain tests use isolated `HOME` for persistent storage and clean volatile pomo private dirs after the suite.

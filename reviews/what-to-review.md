@@ -65,10 +65,9 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 ## Tests lock-in
 
 - [ ] `./tests/run.sh` PASS with FAIL=0 (or documented environment block)  
-- [ ] Suites: `test_cli.sh` (**TP-CLI**), `test_install_lifecycle.sh` (**TP-LC** / **TP-CSUM**), `test_pomo_domain.sh` (**TP-POMO-***)  
+- [ ] Suites: `test_cli.sh` (**TP-CLI**), `test_install_lifecycle.sh` (**TP-LC** / **TP-CSUM**), `test_online_curl_install.sh` (**TP-CURL**), `test_pomo_domain.sh` (**TP-POMO-***)  
 - [ ] Assert labels include primary **TP-IDs** (id-notation)  
 - [ ] Open bugs mapped in `test-plan.md` (family TP-*)  
-- [ ] Residual: **TP-CURL-*** suite still **todo** (parity with countdown/timer)  
 
 ---
 

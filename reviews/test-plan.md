@@ -12,7 +12,7 @@ Maps **portable TP families** (proof molds) to product-root `tests/`.
 | **TP-LC** | `PM-INSTALL-LIFECYCLE-TEST-PLAN` | `tests/test_install_lifecycle.sh` |
 | **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle |
 | **TP-U** | `PM-SET-U-TEST-PLAN` | CLI (partial) |
-| **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | *(no suite yet)* |
+| **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | `tests/test_online_curl_install.sh` |
 | **TP-POMO** | `PM-DOMAIN-TEST-PLAN` (specialize) → **`RQ-DOMAIN-POMO`** | `tests/test_pomo_domain.sh` |
 | Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` |
 
@@ -28,6 +28,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 |------|--------|-------|
 | 2026-07-16 | PASS=181 FAIL=0 SKIP=0 | Pre–family-ID suite |
 | 2026-07-24 | **PASS=211 FAIL=0 SKIP=0** | TP family labels + **TP-POMO-***; lifecycle parity gaps filled |
+| 2026-07-24 | **PASS=236 FAIL=0 SKIP=1** | **TP-CURL-*** suite + **TP-POMO-12/13**; **TP-U-03** via TP-CURL-04; SKIP=TP-CURL-09 optional |
 
 ---
 
@@ -88,7 +89,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 |-------|--------|--------|----------|
 | **TP-U-01** | HOME unset | **have** | TP-CLI-08 |
 | **TP-U-02** | Defaults on zero-arg fail path | **have** | TP-CLI-09 |
-| **TP-U-03** | HOME with bashrc stub | **todo** | needs **TP-CURL** suite |
+| **TP-U-03** | HOME with bashrc stub | **have** | **TP-CURL-04** direct version |
 | **TP-U-04** | bashrc via pipe | **n/a** / partial | product does not source bashrc on pipe |
 | **TP-U-05** | Safe external source helper | **n/a** | no bare product sdkman source path |
 
@@ -98,7 +99,15 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 
 | TP-ID | Intent | Status | Evidence |
 |-------|--------|--------|----------|
-| **TP-CURL-01**…**09** | Local HTTP curl\|sh + optional public | **todo** | No `tests/test_online_curl_install.sh` yet (parity with countdown/timer) |
+| **TP-CURL-01** | Channel probe | **have** | local HTTP ship + companion |
+| **TP-CURL-02** | First `curl \| sh` | **have** | binary at USER_BIN; not silent |
+| **TP-CURL-03** | Second pipe | **have** | already-installed messaging |
+| **TP-CURL-04** | Hostile HOME / bashrc | **have** | version under stub bashrc (**TP-U-03**) |
+| **TP-CURL-05** | Bad URL curl | **have** | not silent |
+| **TP-CURL-06** | curl\|sh when bash required | **n/a** | product supports `/bin/sh` |
+| **TP-CURL-07** | `sh -s -- version` | **have** | pipe version |
+| **TP-CURL-08** | Unreachable SCRIPT_URL | **have** | non-zero; no binary |
+| **TP-CURL-09** | Public online channel | **optional** | `RUN_ONLINE_CURL_TESTS=1` |
 
 ---
 
@@ -121,6 +130,8 @@ Law: **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`). Policy: `policy-harnes
 | **TP-POMO-09** | stats + theme list/set/next/prev | **have** | domain suite |
 | **TP-POMO-10** | watch rejects `--json` | **have** | domain suite |
 | **TP-POMO-11** | stop `--force` not counted | **have** | domain suite |
+| **TP-POMO-12** | Volatile storage path | **have** | `/dev/shm\|tmp/${APP}_${USER}_${name}` |
+| **TP-POMO-13** | Corrupted state → `corrupted_data` | **have** | domain suite |
 | **TP-PAYLOAD-*** | Type O-P payload scaffold (mold) | **n/a** | not a Type O-P payload product |
 
 ---

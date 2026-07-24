@@ -79,6 +79,16 @@ assert_file_missing() {
     fi
 }
 
+# Silent class: both stdout and stderr empty after a claimed one-liner = fail
+assert_not_silent() {
+    _lab="$1"; _out="$2"; _err="$3"
+    if [ -n "$_out" ] || [ -n "$_err" ]; then
+        t_pass "$_lab"
+    else
+        t_fail "$_lab (0-byte stdout and stderr — silent class fail)"
+    fi
+}
+
 _trunc() {
     printf '%s' "$1" | tr '\n' ' ' | cut -c1-160
 }
@@ -142,11 +152,14 @@ ci_cleanup_env() {
 }
 
 # Remove this user's volatile pomo state files (best-effort; domain suite).
+# Live layout: ${/dev/shm|/tmp}/${APP_NAME}_${USER}_${name}
+# Also clean nested private-dir variant if present.
 ci_cleanup_pomo_domain() {
     _u=$(id -un 2>/dev/null || echo "unknown")
-    rm -f /dev/shm/${APP_NAME}_"${_u}"_* 2>/dev/null || true
-    rm -f /tmp/${APP_NAME}_"${_u}"_* 2>/dev/null || true
-    rm -f /tmp/${APP_NAME}_"${_u}"_persistent/* 2>/dev/null || true
+    for _base in /dev/shm /tmp; do
+        rm -f "${_base}/${APP_NAME}_${_u}"_* 2>/dev/null || true
+        rm -rf "${_base}/${APP_NAME}-${_u}" 2>/dev/null || true
+    done
 }
 
 # Back-compat aliases if suites share countdown/timer names

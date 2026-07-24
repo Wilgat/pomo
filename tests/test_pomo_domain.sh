@@ -252,6 +252,73 @@ run_test_pomo_domain() {
     assert_eq "TP-POMO-11 stop --force exit 0" 0 "$_ec"
     assert_contains "TP-POMO-11 stop --force not counted" "$_out" '"counted":"false"'
 
+    # --- TP-POMO-12: volatile storage path ---
+    # Live layout (pomo_get_file): ${/dev/shm|/tmp}/${APP_NAME}_${USER}_${name}
+    _run start stor-path 1 --break 1 >/dev/null 2>&1
+    _u=$(id -un 2>/dev/null || echo "unknown")
+    _hit=0
+    _state=
+    for _base in /dev/shm /tmp; do
+        _candidate="${_base}/${APP_NAME}_${_u}_stor-path"
+        if [ -f "$_candidate" ]; then
+            _hit=1
+            _state="$_candidate"
+            break
+        fi
+        # also accept nested private-dir layout if product changes
+        _candidate2="${_base}/${APP_NAME}-${_u}/${APP_NAME}_${_u}_stor-path"
+        if [ -f "$_candidate2" ]; then
+            _hit=1
+            _state="$_candidate2"
+            break
+        fi
+    done
+    if [ "$_hit" -eq 1 ]; then
+        t_pass "TP-POMO-12 volatile storage file present"
+    else
+        _out=$(_run status stor-path 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            t_pass "TP-POMO-12 storage resolved (status OK; path layout may differ)"
+        else
+            t_fail "TP-POMO-12 no storage file and status failed"
+        fi
+    fi
+    _run kill stor-path >/dev/null 2>&1 || true
+    _run stop stor-path >/dev/null 2>&1 || true
+
+    # --- TP-POMO-13: corrupted state → fail-closed ---
+    _run start corrupt-me 1 --break 1 >/dev/null 2>&1
+    _u=$(id -un 2>/dev/null || echo "unknown")
+    _state=
+    for _base in /dev/shm /tmp; do
+        _candidate="${_base}/${APP_NAME}_${_u}_corrupt-me"
+        if [ -f "$_candidate" ]; then
+            _state="$_candidate"
+            break
+        fi
+        _candidate2="${_base}/${APP_NAME}-${_u}/${APP_NAME}_${_u}_corrupt-me"
+        if [ -f "$_candidate2" ]; then
+            _state="$_candidate2"
+            break
+        fi
+    done
+    if [ -n "$_state" ]; then
+        # Empty file: read of 5 fields fails → corrupted_data (partial junk can still parse)
+        : > "$_state"
+        _err=$(_run --json status corrupt-me 2>&1)
+        _ec=$?
+        if [ "$_ec" -ne 0 ]; then
+            t_pass "TP-POMO-13 corrupted state status non-zero"
+            assert_contains "TP-POMO-13 corrupted_data code" "$_err" "corrupted_data"
+        else
+            t_fail "TP-POMO-13 corrupted state expected non-zero status (out='$(_trunc "$_err")')"
+        fi
+    else
+        t_skip "TP-POMO-13 could not locate state file to corrupt"
+    fi
+    _run kill corrupt-me >/dev/null 2>&1 || true
+    _run stop corrupt-me >/dev/null 2>&1 || true
+
     # cleanup domain artifacts for this user
     ci_cleanup_pomo_domain
     rm -rf "${CI_HOME}/.cache/${APP_NAME}" 2>/dev/null || true

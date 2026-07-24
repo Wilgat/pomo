@@ -274,10 +274,10 @@ This requirement is satisfied when all of the following hold:
 | **TP-POMO-05** `no_pomodoro` | `tests/test_pomo_domain.sh` | have |
 | **TP-POMO-06** kill / skip | `tests/test_pomo_domain.sh` | have |
 | **TP-POMO-07** invalid_name / invalid_duration | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-08** `--persist` | `tests/test_pomo_domain.sh` | have |
 | **TP-POMO-09** stats + theme | `tests/test_pomo_domain.sh` | have |
 | **TP-POMO-10** watch rejects `--json` | `tests/test_pomo_domain.sh` | have |
 | **TP-POMO-11** stop `--force` not counted | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-12** volatile private-dir storage | `tests/test_pomo_domain.sh` | have |
-| **TP-POMO-13** corrupted state fail-closed | `tests/test_pomo_domain.sh` | have |
+| **TP-STORAGE-01** volatile storage path | `tests/test_pomo_domain.sh` | have |
+| **TP-STORAGE-02** `--persist` mode | `tests/test_pomo_domain.sh` | have |
+| **TP-STORAGE-03** corrupted state fail-closed | `tests/test_pomo_domain.sh` | have |
 | **TP-PAYLOAD-*** Type O-P scaffold | n/a — not Type O-P payload product | n/a |

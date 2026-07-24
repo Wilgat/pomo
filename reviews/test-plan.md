@@ -13,7 +13,8 @@ Maps **portable TP families** (proof molds) to product-root `tests/`.
 | **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle |
 | **TP-U** | `PM-SET-U-TEST-PLAN` | CLI (partial) |
 | **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | `tests/test_online_curl_install.sh` |
-| **TP-POMO** | `PM-DOMAIN-TEST-PLAN` (specialize) → **`RQ-DOMAIN-POMO`** | `tests/test_pomo_domain.sh` |
+| **TP-POMO** | `PM-DOMAIN-TEST-PLAN` (specialize) → **`RQ-DOMAIN-POMO`** ops | `tests/test_pomo_domain.sh` |
+| **TP-STORAGE** | domain storage pillars (product-local) → **`RQ-DOMAIN-POMO`** §2.3 | `tests/test_pomo_domain.sh` |
 | Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` |
 
 Status: **have** = automated · **todo** = needed · **n/a** = not applicable · **optional** = gated
@@ -40,7 +41,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-CLI-02** | Version human + JSON | **have** | version exit/app/version |
 | **TP-CLI-03** | Help Type 0 + domain surface | **have** | install/self-*; domain verbs; no CHECKSUM |
 | **TP-CLI-04** | Help/about JSON purity | **have** | help/about JSON; about no CHECKSUM |
-| **TP-CLI-05** | About shell storage resolve | **n/a** | domain owns storage (**TP-POMO-***) |
+| **TP-CLI-05** | About shell storage resolve | **n/a** | domain owns storage (**TP-STORAGE-***) |
 | **TP-CLI-06** | Unknown command | **have** | human + JSON `out_error` |
 | **TP-CLI-07** | Quiet mode | **have** | `--quiet` and `-q` |
 | **TP-CLI-08** | `env -u HOME` under set -u | **have** | also **TP-U-01** |
@@ -126,13 +127,24 @@ Law: **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`). Policy: `policy-harnes
 | **TP-POMO-05** | `no_pomodoro` error code | **have** | domain suite |
 | **TP-POMO-06** | kill / skip phase transitions | **have** | domain suite |
 | **TP-POMO-07** | `invalid_name` / `invalid_duration` | **have** | domain suite |
-| **TP-POMO-08** | `--persist` start/list/status/stop | **have** | domain suite |
 | **TP-POMO-09** | stats + theme list/set/next/prev | **have** | domain suite |
 | **TP-POMO-10** | watch rejects `--json` | **have** | domain suite |
 | **TP-POMO-11** | stop `--force` not counted | **have** | domain suite |
-| **TP-POMO-12** | Volatile storage path | **have** | `/dev/shm\|tmp/${APP}_${USER}_${name}` |
-| **TP-POMO-13** | Corrupted state → `corrupted_data` | **have** | domain suite |
 | **TP-PAYLOAD-*** | Type O-P payload scaffold (mold) | **n/a** | not a Type O-P payload product |
+
+---
+
+## TP-STORAGE — Domain storage family (`RQ-DOMAIN-POMO` § storage)
+
+Product-local family for **resolve / persist / state integrity** (not portable stack).  
+Extracted from domain storage pillars formerly labeled **TP-POMO-08 / 12 / 13**.  
+Ops verbs stay **TP-POMO-***; storage path modes and file integrity are **TP-STORAGE-***.
+
+| TP-ID | Intent | Status | Evidence | Legacy |
+|-------|--------|--------|----------|--------|
+| **TP-STORAGE-01** | Volatile storage path resolve | **have** | `/dev/shm\|tmp/${APP}_${USER}_${name}` | was **TP-POMO-12** |
+| **TP-STORAGE-02** | `--persist` start/list/status/stop | **have** | domain suite under isolated HOME | was **TP-POMO-08** |
+| **TP-STORAGE-03** | Corrupted state → `corrupted_data` | **have** | empty state file → non-zero + code | was **TP-POMO-13** |
 
 ---
 
@@ -170,8 +182,11 @@ Law: **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`). Policy: `policy-harnes
 | TP-16 | **TP-POMO-07** |
 | TP-17 | **TP-POMO-03** / **TP-POMO-05** |
 | TP-18 | **TP-POMO-10** |
-| TP-19 | **TP-POMO-08** |
+| TP-19 | **TP-STORAGE-02** (was TP-POMO-08) |
 | TP-20 | **TP-POMO-11** |
+| TP-POMO-08 | **TP-STORAGE-02** |
+| TP-POMO-12 | **TP-STORAGE-01** |
+| TP-POMO-13 | **TP-STORAGE-03** |
 | TP-21 | **TP-DOC-01** (closed) |
 | TP-22 | **TP-DOC-02** (closed) |
 | TP-23 | **TP-HYG-01** (closed) |

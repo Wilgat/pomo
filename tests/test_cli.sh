@@ -87,7 +87,7 @@ run_test_cli() {
     # --- TP-CLI-05: shell storage fields n/a (domain owns storage) ---
     _out=$(sh "${SCRIPT}" --json about 2>/dev/null)
     assert_contains "TP-CLI-05 about --json type present (shell storage n/a)" "$_out" '"type":"about"'
-    t_pass "TP-CLI-05 shell storage resolve n/a for pomo (domain owns storage)"
+    t_pass "TP-CLI-05 shell storage resolve n/a for pomo (see TP-STORAGE-*)"
 
     # --- TP-CLI-06: unknown command ---
     _err=$(sh "${SCRIPT}" no-such-command 2>&1 >/dev/null)

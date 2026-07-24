@@ -1,9 +1,9 @@
 # =============================================================================
 # tests/test_pomo_domain.sh — pomo domain (requirement-domain-pomo / TP-POMO-*)
 # =============================================================================
-# Domain-subject family TP-POMO-* proves requirement-domain-pomo
-# (policy-harness-id-notation §5). Not portable TP-DOM-*; not bare TP-01.
-# Type O-P portable payload design tokens (TP-PAYLOAD-*) are n/a for this product.
+# Domain-subject family TP-POMO-* proves RQ-DOMAIN-POMO (ops/verbs).
+# Storage resolve / persist / state integrity: product-local TP-STORAGE-*
+# (extracted from domain storage pillars — not portable TP-DOM-*).
 # =============================================================================
 
 # shellcheck source=helpers.sh
@@ -226,24 +226,25 @@ run_test_pomo_domain() {
         t_fail "TP-POMO-07 --break without value expected non-zero"
     fi
 
-    # --- TP-POMO-08: persistent mode ---
+    # --- TP-STORAGE-02: persistent mode (--persist) ---
+    # (was TP-POMO-08; storage family owns path modes)
     _out=$(_run start --persist persist-t 1 --break 1 2>/dev/null)
     _ec=$?
-    assert_eq "TP-POMO-08 persist start exit 0" 0 "$_ec"
-    assert_contains "TP-POMO-08 persist start success" "$_out" "started"
+    assert_eq "TP-STORAGE-02 persist start exit 0" 0 "$_ec"
+    assert_contains "TP-STORAGE-02 persist start success" "$_out" "started"
 
     _out=$(_run status --persist persist-t 2>/dev/null)
     _ec=$?
-    assert_eq "TP-POMO-08 persist status exit 0" 0 "$_ec"
+    assert_eq "TP-STORAGE-02 persist status exit 0" 0 "$_ec"
 
     _out=$(_run list --persist 2>/dev/null)
     _ec=$?
-    assert_eq "TP-POMO-08 persist list exit 0" 0 "$_ec"
-    assert_contains "TP-POMO-08 persist list name" "$_out" "persist-t"
+    assert_eq "TP-STORAGE-02 persist list exit 0" 0 "$_ec"
+    assert_contains "TP-STORAGE-02 persist list name" "$_out" "persist-t"
 
     _out=$(_run stop --persist persist-t 2>/dev/null)
     _ec=$?
-    assert_eq "TP-POMO-08 persist stop exit 0" 0 "$_ec"
+    assert_eq "TP-STORAGE-02 persist stop exit 0" 0 "$_ec"
 
     # --- TP-POMO-11: stop --force discards without counting ---
     _run start force-me 1 >/dev/null 2>&1
@@ -252,8 +253,9 @@ run_test_pomo_domain() {
     assert_eq "TP-POMO-11 stop --force exit 0" 0 "$_ec"
     assert_contains "TP-POMO-11 stop --force not counted" "$_out" '"counted":"false"'
 
-    # --- TP-POMO-12: volatile storage path ---
+    # --- TP-STORAGE-01: volatile storage path ---
     # Live layout (pomo_get_file): ${/dev/shm|/tmp}/${APP_NAME}_${USER}_${name}
+    # (was TP-POMO-12)
     _run start stor-path 1 --break 1 >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
     _hit=0
@@ -274,19 +276,20 @@ run_test_pomo_domain() {
         fi
     done
     if [ "$_hit" -eq 1 ]; then
-        t_pass "TP-POMO-12 volatile storage file present"
+        t_pass "TP-STORAGE-01 volatile storage file present"
     else
         _out=$(_run status stor-path 2>/dev/null)
         if [ $? -eq 0 ]; then
-            t_pass "TP-POMO-12 storage resolved (status OK; path layout may differ)"
+            t_pass "TP-STORAGE-01 storage resolved (status OK; path layout may differ)"
         else
-            t_fail "TP-POMO-12 no storage file and status failed"
+            t_fail "TP-STORAGE-01 no storage file and status failed"
         fi
     fi
     _run kill stor-path >/dev/null 2>&1 || true
     _run stop stor-path >/dev/null 2>&1 || true
 
-    # --- TP-POMO-13: corrupted state → fail-closed ---
+    # --- TP-STORAGE-03: corrupted state → fail-closed ---
+    # (was TP-POMO-13)
     _run start corrupt-me 1 --break 1 >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
     _state=
@@ -308,13 +311,13 @@ run_test_pomo_domain() {
         _err=$(_run --json status corrupt-me 2>&1)
         _ec=$?
         if [ "$_ec" -ne 0 ]; then
-            t_pass "TP-POMO-13 corrupted state status non-zero"
-            assert_contains "TP-POMO-13 corrupted_data code" "$_err" "corrupted_data"
+            t_pass "TP-STORAGE-03 corrupted state status non-zero"
+            assert_contains "TP-STORAGE-03 corrupted_data code" "$_err" "corrupted_data"
         else
-            t_fail "TP-POMO-13 corrupted state expected non-zero status (out='$(_trunc "$_err")')"
+            t_fail "TP-STORAGE-03 corrupted state expected non-zero status (out='$(_trunc "$_err")')"
         fi
     else
-        t_skip "TP-POMO-13 could not locate state file to corrupt"
+        t_skip "TP-STORAGE-03 could not locate state file to corrupt"
     fi
     _run kill corrupt-me >/dev/null 2>&1 || true
     _run stop corrupt-me >/dev/null 2>&1 || true

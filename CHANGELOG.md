@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Local harness H2 sync from genesis-template (policies, id-notation, proof molds, software-dev housekeeping skill) — gitignored Pattern A surfaces only.
 - **`tests/test_online_curl_install.sh`** — full **TP-CURL-01…09** (local channel Core; optional public via flag); **TP-U-03** via TP-CURL-04.
-- Domain suite **TP-POMO-12** (volatile storage path) and **TP-POMO-13** (corrupted state → `corrupted_data`).
+- Domain storage family **TP-STORAGE-01..03** (volatile path, `--persist`, corrupted state) extracted from former **TP-POMO-08/12/13**.
 
 ## [2.0.1] - 2026-07-17
 

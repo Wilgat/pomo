@@ -5,7 +5,7 @@ POSIX `/bin/sh` CI suite for the Type 0 + pomodoro domain ship unit `./pomo`.
 Bootstrap architecture matches the countdown Type 0 harness; this suite is specialized for `APP_NAME=pomo` and covers **pomodoro domain** (work/break, themes, watch, stats, skip).
 
 **Product map:** `reviews/test-plan.md` (TP families + status)  
-**ID notation:** stack **TP-CLI / TP-LC / TP-CSUM / TP-U / TP-CURL**; domain-subject **TP-POMO-*** → **RQ-DOMAIN-POMO**
+**ID notation:** stack **TP-CLI / TP-LC / TP-CSUM / TP-U / TP-CURL**; domain ops **TP-POMO-***; domain storage **TP-STORAGE-*** → **RQ-DOMAIN-POMO**
 
 ## Run locally
 
@@ -29,7 +29,7 @@ RUN_ONLINE_CURL_TESTS=1 ./tests/run.sh   # optional public-channel smoke (TP-CUR
 | CLI surface | `test_cli.sh` | **TP-CLI**, **TP-CSUM-01/05**, **TP-U-01/02** | syntax, companion, version/help/about, domain help rows, quiet, uninstall refuse, zero-arg fail |
 | Install lifecycle | `test_install_lifecycle.sh` | **TP-LC**, **TP-CSUM-02..04** | local channel install, Type O ensure, self-update, pin, downgrade, PATH cleanup |
 | Online curl\|sh | `test_online_curl_install.sh` | **TP-CURL**, **TP-U-03** | local `curl\|sh` first/second pipe, hostile HOME, bad URL, pipe version |
-| Pomo domain | `test_pomo_domain.sh` | **TP-POMO-01..13** | start/status/list/stop/kill/skip, stats/theme, persist, path-safe, storage path, corrupted state |
+| Pomo domain | `test_pomo_domain.sh` | **TP-POMO-01..11**, **TP-STORAGE-01..03** | ops/verbs/theme/stats; storage path, `--persist`, corrupted state |
 
 ## Mapping (product law)
 

@@ -85,6 +85,15 @@ obj/
 # --- shell / local run debris ---
 *.YYYYMMDD-*.bak
 
+# --- harness transfer safety backups (H1/H2; not payload) ---
+.harness-transfer-bak-*/
+.harness-sync-*-bak-*/
+.harness-*-bak-*/
+.harness-backup-*/
+.h1-backup-*/
+.h2-backup-*/
+.h2-backup-from-ram-genesis-*/
+
 # --- agent harness (root) — local only (avoid-expose-agents) ---
 AGENTS.md
 CLAUDE.md

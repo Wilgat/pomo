@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 - Local harness H2 sync from genesis-template (policies, id-notation, proof molds, software-dev housekeeping skill) — gitignored Pattern A surfaces only.
+- Software-dev housekeeping (2026-08-11): re-pull portable harness from RAM `GENESIS_SSOT`, dest-SSOT map rebind (9 Active REQs recognized), H1/H2 backup ignore patterns on product `.gitignore`.
 - **`tests/test_online_curl_install.sh`** — full **TP-CURL-01…09** (local channel Core; optional public via flag); **TP-U-03** via TP-CURL-04.
 - Shared dual-storage family **TP-STORAGE-01..03** (volatile path, `--persist`, corrupted state) — same family on **timer/countdown/pomo** (not pomo-only); former **TP-POMO-08/12/13**.
 - Tests aligned to proof molds: **TP-CURL** catalog order; **PM-DOMAIN** §4.2 **TP-STORAGE** + §4.3.3 **TP-POMO** ops.

@@ -5,7 +5,7 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the pomo POSIX `/bin/sh` Type 0 CLI.
+This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the pomo POSIX `/bin/sh` CLI.
 
 ### 1.0 Product type (template dual-model)
 
@@ -13,6 +13,8 @@ This requirement is the **project Single Source of Truth** for **zero-argument (
 |-------|------------------------|
 | **Empty-argv type** | **Type O — Online-install** (not Type N) |
 | **Rationale** | Product advertises `curl … \| sh` one-liner install; empty argv is install-ensure, not help |
+
+**Letter O vs digit 0:** letter **O** means “no arguments → install or re-check install.” Digit **0** means “you run as yourself.” They are different words.
 
 Type N (non-online-install → empty argv = help) does **not** apply to this product.
 
@@ -32,6 +34,31 @@ Empty argv means **install-ensure** for three detect cases:
 
 **Scope:** Empty-argv routing, detect cases (global / local / absent), messages, force boundary, exit status, interaction with TTY / quiet / json.  
 **Out of scope (own requirements):** Full command catalog (`requirement-shell-cli-interface.md`); download/checksum detail (`requirement-shell-automatic-checksum.md`); full self-update/uninstall lifecycle (`requirement-shell-self-management.md`); output function catalog (`requirement-shell-output-requirements.md`); general idempotency matrix beyond empty-argv rows (`requirement-shell-idempotency.md`).
+
+### 1.1 Human-facing
+
+**In one sentence:** Running the program with no arguments installs it (or confirms it is already installed); it does **not** print help.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Pipe or run the script with no command | `curl -fsSL …/pomo \| sh` |
+| The other role | Already-installed no-op vs first-time place | local `~/.local/bin/pomo` or global `/usr/local/bin/pomo` |
+| Not this file | The help listing; timer start | `pomo help`, `pomo start` |
+
+| Includes | Excludes |
+|----------|----------|
+| Not installed → install; already installed → success no-op | Empty argv = help |
+| TTY may confirm; pipe / `--quiet` / `--json` auto-install | Hanging on stdin in `curl \| sh` |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | empty-argv install-ensure |
+| `pomo help` | command | verbs (not the no-arg path) |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| First install | No command means “place the binary.” | `curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo \| sh` |
+| Already installed | Same command succeeds without reinstalling (unless `--force`). | `pomo` with no arguments |
 
 ---
 

@@ -1,12 +1,14 @@
 # Requirements index
 
 **Product:** pomo (POSIX `/bin/sh` Type 0 self-install / self-maintenance CLI + pomodoro domain)  
-**Workspace state:** Specialized product law (not blank genesis); **software-development** class shape (no separate class REQ file yet).  
+**Workspace state:** Specialized product law (not blank genesis); **software-development** with Active class file.  
 **Domain SSOT:** `requirement-domain-pomo` / **`RQ-DOMAIN-POMO`**.  
-**Updated:** 2026-07-24
+**Updated:** 2026-09-06
 
 | Requirement-ID | Key | Title | Area | Status | Path | Updated |
 |----------------|-----|-------|------|--------|------|---------|
+| `RQ-CLASS-SOFTWARE-DEV` | requirement-class-software-dev | Software-development class residual (posix-sh; coding-style MUST; no dest approver/fences) | class | Active | `requirement-class-software-dev.md` | 2026-09-06 |
+| `RQ-SHELL-SCRIPT-CODING` | requirement-shell-script-coding | POSIX `/bin/sh` coding-style specialize-in home (own-or-point) | shell | Active | `requirement-shell-script-coding.md` | 2026-09-06 |
 | `RQ-SHELL-AUTOMATIC-CHECKSUM` | requirement-shell-automatic-checksum | Automatic companion-digest integrity (transparent link/value/result; CHECKSUM not help/about) | shell | Active | `requirement-shell-automatic-checksum.md` | 2026-07-24 |
 | `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes) | shell | Active | `requirement-shell-cli-interface.md` | 2026-07-24 |
 | `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments | Empty argv Type O install-ensure (not installed / local / global) | shell | Active | `requirement-shell-cli-zero-arguments.md` | 2026-07-24 |
@@ -34,4 +36,4 @@ When adding a requirement: append a row (with `RQ-*`), create the file under `do
 
 ## Law-mold alignment (product)
 
-Each Active shell requirement **specializes** a portable law mold-ID (cited as **`LM-*`** on DTV, not as a template path). Domain SSOT **`RQ-DOMAIN-POMO`** has no portable domain law mold; proof design aid is **`PM-DOMAIN-TEST-PLAN`** → product family **`TP-POMO`**.
+Each Active shell requirement **specializes** a portable law mold-ID (cited as **`LM-*`** on DTV, not as a template path). Class **`RQ-CLASS-SOFTWARE-DEV`** specializes **`LM-REQUIREMENT-CLASS-SOFTWARE-DEV`**. Coding-style **`RQ-SHELL-SCRIPT-CODING`** specializes **`LM-SHELL-SCRIPT-CODING`** (own-or-point). Domain SSOT **`RQ-DOMAIN-POMO`** has no portable domain law mold; proof design aid is **`PM-DOMAIN-TEST-PLAN`** → product family **`TP-POMO`**.

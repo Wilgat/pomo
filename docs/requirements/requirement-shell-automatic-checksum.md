@@ -12,6 +12,31 @@ This requirement is the **project Single Source of Truth** for **automatic compa
 
 **Must not confuse with:** Embedding a hash of `./pomo` *inside* `./pomo`; requiring operators to set `CHECKSUM` for every install; claiming independent host authenticity from same-channel SHA-256 alone.
 
+### 1.1 Human-facing
+
+**In one sentence:** When you install or update, the program downloads a SHA-256 companion itself and shows you the link, the expected value, and whether it matched — you do not have to set an environment pin for a normal install.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Run the one-liner; read the three lines (link / value / result) | `curl … \| sh` |
+| The other role | CI that freezes a pin | optional `CHECKSUM=…` |
+| Not this file | Timer commands; help listing of env pins | `pomo start`; `help` must **not** list `CHECKSUM` |
+
+| Includes | Excludes |
+|----------|----------|
+| Program fetches `${SCRIPT_URL}.sha256`; mismatch aborts | Same-origin pin as “higher trust” than automatic fetch |
+| Missing sidecar: warn and continue | Hash of `./pomo` stored inside `./pomo` |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | install/update verify |
+| `pomo.sha256` | companion file | published digest |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Normal install | No pin. The program curls the companion. | `curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo \| sh` |
+| Pin (CI only) | Strict match against a digest you already trust. | `CHECKSUM=<hex> sh pomo` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)

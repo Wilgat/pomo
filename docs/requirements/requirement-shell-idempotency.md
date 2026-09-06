@@ -14,6 +14,31 @@ It defines re-run safety for ensure-style shell lifecycle commands (install, PAT
 
 **Informal formula:** for ensure-style operation *f* and system state *x*, **f(f(x)) ≈ f(x)** for the **desired outcome** (logs and timestamps may differ).
 
+### 1.1 Human-facing
+
+**In one sentence:** Running install or update again when the job is already done must succeed without wrecking the previous result.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Re-run the one-liner or `install` | second `curl \| sh` → already installed |
+| The other role | `--force` / reinstall when you **mean** to replace | `pomo install --force` |
+| Not this file | Timer already-running (domain fail-closed) | `pomo start` twice — owned by domain law |
+
+| Includes | Excludes |
+|----------|----------|
+| Install no-op when already placed; update no-op when already latest | Silent overwrite of a running pomodoro |
+| PATH line not duplicated on re-entry | Fake success when the previous run only half-finished |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | ensure-style ops |
+| `pomo` (no args) | empty argv | already-installed no-op |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Install twice | Second run reports already installed and exits 0. | `pomo` with no arguments, twice |
+| Update when current | Already-latest is success, not an error. | `pomo self-update` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)

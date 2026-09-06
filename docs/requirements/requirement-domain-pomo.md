@@ -5,14 +5,39 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for the **pomodoro domain surface** of the pomo POSIX `/bin/sh` Type 0 CLI: named work/break timers, storage modes, themes, statistics, path-safe names, phase transitions, and stable machine error codes.
+This requirement is the **project Single Source of Truth** for the **pomodoro domain surface** of the pomo POSIX `/bin/sh` CLI: named work/break timers, storage modes, themes, statistics, path-safe names, phase transitions, and stable machine error codes.
 
-It **does not** re-own Type 0 install/self-management, empty-argv install-ensure, output SSOT primitives, or automatic checksum — those remain under peer `requirement-shell-*.md` files. Domain commands are still **Type 0 invoker privilege** (not Type 1 host bootstrap, not Type 2 system-user app ops).
+You run these commands **as yourself** (your own login; no root, no dedicated system account). This file **does not** re-own install, empty-argv install-ensure, output primitives, or automatic checksum — those remain under peer `requirement-shell-*.md` files.
 
 **Scope:** Domain commands (`start`, `status`, `watch`, `skip`, `stop`, `kill`, `list`, `stats`, `theme`), domain flags (`--persist`, `--break`), state format, storage resolution, themes, daily stats, path-safe names, domain JSON codes, **domain help items**, **domain about items**.  
 **Out of scope:** Install channel, self-update/uninstall, companion digest, global quiet/json contracts (cited from peers).
 
 **Bootstrap note:** Architecture lineage from **countdown** (A → B only). Domain specialty from **pomo 1.7.0** oracle. An in-tree `./countdown` bootstrap ship unit is **optional** (present only if that file exists on disk — never invent or assume it).
+
+### 1.1 Human-facing
+
+**In one sentence:** You start, watch, skip, and stop named work/break timers from your own login; this file says how those timers behave.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Run the timer commands as yourself | `pomo start focus 25` |
+| The other role | Installing or updating the program itself | Peer self-management / checksum files |
+| Not this file | Host setup, dedicated system accounts, or install one-liners | `curl \| sh`, `self-update` |
+
+| Includes | Excludes |
+|----------|----------|
+| Work/break in **whole minutes**; shortest work is **1 minute** | Seconds as the user-facing unit; `start 0` as success |
+| Named timers, themes, watch, stats, `--persist` | Install channel, companion digest, empty-argv install |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | live timer behavior |
+| `pomo help` | command | listed domain verbs |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Start work | Duration is minutes. `0` is rejected. A second start of the same name fails closed. | `pomo start writing 25 --break 5` |
+| Stop vs kill | Stop counts today's stats. Kill discards the session. | `pomo stop` / `pomo kill` |
 
 ---
 

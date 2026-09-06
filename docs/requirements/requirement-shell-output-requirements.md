@@ -12,7 +12,32 @@ It implements **CIAO Principle 5 — Single Source of Output** (cloudgen/ciao **
 **Scope:** Central `out_*` system, mode contracts, channel rules, JSON purity, quiet filtering, TTY colors, fatal error emission, pipeline-SSOT remarks.  
 **Out of scope (cited, not re-owned):** Command catalog (`requirement-shell-cli-interface.md`); self-management semantics; modular prefix table (except that output owns `out_*`); interactive prompt logic beyond prompt output hooks.
 
-### 1.1 SSOT family (do not confuse)
+### 1.1 Human-facing
+
+**In one sentence:** Every message you see (or a script parses) comes from one output family, not scattered `echo` lines.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Human lines on a terminal | `pomo status` progress text |
+| The other role | A script reading JSON | `pomo status --json` |
+| Not this file | Which commands exist | CLI interface peer |
+
+| Includes | Excludes |
+|----------|----------|
+| `out_*` only; `--json` keeps stdout pure | Ad-hoc `echo` / `printf` for user messages |
+| `--quiet` hides chatter; errors still show | Mixing a banner with JSON on success |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | `out_*` printers |
+| `pomo --json version` | command | machine object |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Human status | Prefixed lines; colors only on a real terminal. | `pomo status` |
+| Script status | One JSON object; no human banner on stdout. | `pomo status --json` |
+
+### 1.2 SSOT family (do not confuse)
 
 | Concept | Role in this product |
 |---------|----------------------|

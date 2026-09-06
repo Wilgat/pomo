@@ -14,6 +14,31 @@ It defines modular function organization for a **monolithic yet modular** single
 
 **Core idea:** Modularity is achieved through **clear function boundaries, consistent prefixes, and full CIAO documentation** — **not** by splitting the main CLI into multiple shipped files.
 
+### 1.1 Human-facing
+
+**In one sentence:** The whole program ships as one file, but functions are grouped by prefix so a change stays in one zone.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Still run one `pomo` binary | `./pomo` |
+| The other role | Maintainers editing a prefix family | `out_*`, `inst_*`, `pomo_*` |
+| Not this file | What each command **does** | CLI interface / domain peers |
+
+| Includes | Excludes |
+|----------|----------|
+| Prefixes, Protection Zones, single-file `curl \| sh` shape | Splitting the published CLI into many shipped files |
+| Domain ops under `pomo_*` | Generic help/about under `pomo_*` (those stay `app_*`) |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | prefix families |
+| `pomo help` | command | live verbs, not function names |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Change output | Edit `out_*` only; do not add a new `echo`. | (edit `./pomo`; then `./tests/run.sh`) |
+| Change a timer | Edit `pomo_*` domain functions, not `inst_*`. | `pomo start` after the edit |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)

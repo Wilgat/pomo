@@ -7,13 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Changed
+- Product **README** rewritten for people first (who runs what; minutes unit; automatic SHA-256 link/value/result). Grammar fix (“Please refer to”). Section order matches the product kit (Features → Quick Installation → Usage → Examples → Platform Compatibility → Related Projects → Contributing → License → Last Update). Defensive-style and historical Grok notes folded into Contributing / Related Projects.
+- Every Active requirement now has **§1.1 Human-facing** (one sentence, three boxes, includes/excludes, practice). Catalog codes are no longer the only Purpose lead.
 - Domain law **`RQ-DOMAIN-POMO`**: lock-in finding that CLI duration unit is **whole minutes**, shortest valid work duration is **1 minute** (not 1 second); `0` → `invalid_duration` (§2.2.1).
 - Test plan and suites adopt **harness ID notation**: portable families **TP-CLI** / **TP-LC** / **TP-CSUM** / **TP-U** / **TP-CURL**, domain-subject family **`TP-POMO-*`** (retired bare `TP-01…23`).
 - Lifecycle suite parity: self-update when remote newer (**TP-LC-05b**), version-check network failure (**TP-LC-11**), uninstall PATH cleanup (**TP-LC-07**).
 - Requirements declare **`RQ-*` Requirement-IDs** (registry + headers), Related peers cite **`RQ-*`**, and each Active REQ has **Design-time verification** (**TP-*** → `tests/*`).
 
 ### Added
+- Class law **`RQ-CLASS-SOFTWARE-DEV`** (`requirement-class-software-dev.md`): software-development residual (POSIX `/bin/sh`, no dest approver, no dest fences); coding-style **MUST** pointer.
+- Coding-style **`RQ-SHELL-SCRIPT-CODING`** (`requirement-shell-script-coding.md`): specialize-in home; own-or-point to existing shell REQs.
+- `reviews/requirement-test-matrix.md` — `RQ-*` → TP families; coverage report `reviews/reports/2026-09-06-readme-req-coverage.md`.
+- Software-dev housekeeping (2026-08-24): H2 rematch NEW=0 UPDATE=4 (dest maps only, rebound), DEST_ONLY=3; dest-SSOT map rebind (9 Active REQs recognized); tests PASS=239 FAIL=0 SKIP=1; no product-source change so no auto-commit/push.
+- Local harness H2 (2026-08-24): from RAM `GENESIS_SSOT` (NEW=58 UPDATE=176 DEST_ONLY=3), dest-SSOT map rebind (9 Active REQs recognized); no product-source change.
+- Software-dev housekeeping (2026-08-19): H2 rematch NEW=0 UPDATE=4 (dest maps only, rebound), DEST_ONLY=3; dest-SSOT map rebind (9 Active REQs recognized); tests PASS=239 FAIL=0 SKIP=1; no product-source change so no auto-commit/push.
+- Local harness H2 (2026-08-19): from RAM `GENESIS_SSOT` (NEW=75 UPDATE=81 DEST_ONLY=3), dest-SSOT map rebind (9 Active REQs recognized); no product-source change.
 - Local harness H2 sync from genesis-template (policies, id-notation, proof molds, software-dev housekeeping skill) — gitignored Pattern A surfaces only.
+- Software-dev housekeeping (2026-08-13): H2 from RAM `GENESIS_SSOT` (NEW=73 UPDATE=67 DEST_ONLY=2), dest-SSOT map rebind (9 Active REQs recognized), tests PASS=239 FAIL=0 SKIP=1; no product-source change so no auto-commit/push.
 - Software-dev housekeeping (2026-08-11): re-pull portable harness from RAM `GENESIS_SSOT`, dest-SSOT map rebind (9 Active REQs recognized), H1/H2 backup ignore patterns on product `.gitignore`.
 - **`tests/test_online_curl_install.sh`** — full **TP-CURL-01…09** (local channel Core; optional public via flag); **TP-U-03** via TP-CURL-04.
 - Shared dual-storage family **TP-STORAGE-01..03** (volatile path, `--persist`, corrupted state) — same family on **timer/countdown/pomo** (not pomo-only); former **TP-POMO-08/12/13**.

@@ -24,7 +24,7 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 
 | Surface | Check |
 |---------|--------|
-| Registry | 9 Active rows; Area `shell` vs `domain` correct |
+| Registry | 11 Active rows; Area `class` / `shell` / `domain` correct |
 | Type 0 REQs | CLI, zero-arg Type O, output, self-mgmt, checksum, interactive, idempotency, modular |
 | Domain REQ | Four pillars: subcommands, features, help, about; basename `requirement-domain-*` |
 | ALIGNMENT | Ship unit cites only registered requirement basenames |

@@ -1,45 +1,60 @@
-# pomo – Simple & Beautiful Pomodoro Timer
+# pomo - Simple & Beautiful Pomodoro Timer
 
 ![Version](https://img.shields.io/badge/Version-2.0.1-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
+[![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
 [![Made with ❤️](https://img.shields.io/badge/Made%20with%20❤️-CIAO-00AEEF?style=flat-square)](https://github.com/cloudgen/ciao)
 [![GrokRec](https://img.shields.io/badge/GrokRec-Reviewed-0A66C2?logo=ai&logoColor=white)](https://github.com/Wilgat/pomo/blob/main/RECOMMENDATION.md)
-[![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
 
-Official Recommendation from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refers to the [downloaded copy](https://github.com/Wilgat/pomo/blob/main/RECOMMENDATION.md) .
+**pomo is a Pomodoro timer you run in your own terminal:** start a named work session, watch the remaining time, skip to a break, and stop when you are done — no extra packages, no root, no dedicated system account.
 
-**A lightweight, themeable Pomodoro timer for the terminal.**  
-Supports named timers, volatile (RAM) or persistent storage, beautiful themes, live watch mode, daily statistics, and full self-management (install/update/uninstall).  
+| Box | Meaning |
+|-----|---------|
+| **You** | Install the program for yourself, then run `pomo start`, `status`, `watch`, `stop`, and `theme` as your own login. |
+| **Someone else** | A root one-liner can place the same script in `/usr/local/bin` for every user on the machine. Day-to-day timers still run as each person. |
+| **Not this** | This is not a GUI app, not a phone widget, and not a host-setup tool. It does not create system users or change `/etc`. |
 
-Zero external dependencies. Written in pure POSIX `sh` for maximum portability.
+| Includes | Excludes |
+|----------|----------|
+| Named timers, work/break phases (minutes), themes, live watch, daily stats, JSON for status bars | Seconds as the user-facing unit; 0-minute work; hanging prompts inside `curl \| sh` |
+| Volatile RAM storage (default) or `--persist` under your cache | A second copy of the script under `src/` as the published install file |
+| One-liner install that checks a SHA-256 companion by itself | Requiring you to paste a checksum into the environment for a normal install |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Install | The program downloads itself, checks the companion digest when it can, and puts `pomo` on your user `PATH`. Restart the terminal (or `source ~/.bashrc`) so the new path is seen. | `curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo \| sh` |
+| Start a session | Work is **whole minutes**. Default is 25 minutes of work and 5 minutes of break. `0` is rejected. | `pomo start` |
+| Watch | The line refreshes until you press Ctrl+C. JSON is not a watch mode. | `pomo watch` |
+| Stop | A normal stop counts the work toward today's stats. `kill` discards it. | `pomo stop` |
+
+Official recommendation from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refer to the [downloaded copy](./RECOMMENDATION.md).
+
+Zero external dependencies. Written in POSIX `sh` so it still runs on dash, BusyBox ash, Git Bash, Alpine, and containers.
 
 This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2** (Caution • Intentional • Anti-fragile • Over-engineered) and [CIAO-Lite](https://github.com/cloudgen/ciao-lite) (Simplicity but Safety).
 
-**Architecture (v2.0.1):** Type 0 self-management and install channel inherited from the **countdown** bootstrap lineage (A→B only — **do not reverse-copy**). An in-tree `./countdown` reference ship unit is **optional** (only if that file exists on disk; never assumed). Pomodoro domain features (work/break, themes, watch, stats) ported from **pomo 1.7.0** onto that architecture.
-
-
 ---
 
-## ✨ Features
+## Features
 
-- **Per-user named pomodoros** (`default`, `focus`, `meeting`, `writing`, etc.)
+- **Named timers** (`default`, `focus`, `meeting`, `writing`, …) isolated per login
 - **Two storage modes**:
-  - **Volatile** (default): Fast in-memory storage in `/dev/shm`
-  - **Persistent** (`--persist`): Survives reboots (`~/.cache/pomo/`)
-- Smart fallbacks for missing `/dev/shm`, `$HOME`, containers, and restricted environments
-- **Three beautiful themes** (`default`, `energetic`, `minimal`) with custom icons, colors, and UTF-8 progress bars
-- Automatic work → break phase transition with terminal bell
-- `watch` mode for live refreshing view
+  - **Volatile** (default): in-memory when `/dev/shm` is writable, with a temp fallback
+  - **Persistent** (`--persist`): survives reboot under `~/.cache/pomo/`
+- Fallbacks when `/dev/shm`, `$HOME`, or a container is missing or restricted
+- **Three themes** (`default`, `energetic`, `minimal`) with icons, colors, and UTF-8 progress bars
+- Automatic work → break transition with a terminal bell
+- `watch` for a live refreshing view (Ctrl+C to leave)
 - Daily statistics (completed pomodoros + total minutes today)
-- Strict `--json` mode for scripting and status bars
-- One-liner install, self-update, self-uninstall, and diagnostics
-- Extremely robust across minimal shells (`dash`, BusyBox `ash`), Git Bash, Alpine, and containers
+- Strict `--json` for scripts and status bars (`watch --json` is refused)
+- One-liner install, self-update, self-uninstall, and `about` diagnostics
+- Worked on dash, BusyBox ash, Git Bash, Alpine, and containers
 
 ---
 
-## 🚀 Quick Installation
+## Quick Installation
 
 **Recommended one-liner (most users):**
 
@@ -53,10 +68,19 @@ curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
 ```
 
+After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`) so `~/.local/bin` is on your `$PATH`.
+
+> **How verification works** (SHA-256 companion):
+> - **Default (recommended one-liner):** no `CHECKSUM` environment variable. The program **downloads** `${SCRIPT_URL}.sha256` itself and, in human mode, shows the companion **link**, expected **value**, and **result** (match / mismatch / missing).
+> - **Match** → install continues.
+> - **Mismatch** → install **aborts** (no silent failure).
+> - **Missing companion** → **warn and continue** (best-effort). Do not treat this as a signed release.
+> - In-repo companion: [`pomo.sha256`](./pomo.sha256) next to `./pomo`.
+> - **Optional pin (Advanced / CI only):** `CHECKSUM=…` set → strict verify against that digest. Same-origin pin is **not** higher assurance than automatic companion fetch. `help` / `about` do **not** list `CHECKSUM`.
+
 **Optional pin install (secondary / CI — not higher trust than automatic companion):**
 
 ```sh
-# Download the script
 curl -fsSL -O https://raw.githubusercontent.com/Wilgat/pomo/main/pomo
 
 # Pin to the published companion for this release (do not hard-code an old hash from docs)
@@ -64,17 +88,11 @@ CHECKSUM=$(curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo.sh
   sh pomo
 ```
 
-After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`) so `~/.local/bin` is added to your `$PATH`.
-
-> **How verification works** (install integrity):
-> - **Default (recommended one-liner):** no `CHECKSUM` → automatic companion fetch of `${SCRIPT_URL}.sha256` with transparent link / value / result (best-effort if companion missing).
-> - **Optional pin:** `CHECKSUM=…` set → strict verify against that digest (secondary path; same-origin pin is **not** higher assurance than automatic companion).
-> - **Mismatch** → installation aborts (no silent failure).
-> - Publish rule: after changing `./pomo`, regenerate companion `pomo.sha256` so channel and pin stay aligned.
+Publish rule: after changing `./pomo`, regenerate companion `pomo.sha256` so the channel and the pin stay aligned.
 
 ---
 
-## 📖 Usage
+## Usage
 
 ### Basic Commands
 
@@ -122,14 +140,16 @@ pomo self-uninstall
 - `--quiet`, `-q`   Suppress all non-error output
 - `--json`          Machine-readable JSON output (implies `--quiet`)
 
-**Defaults**: 25 min work • 5 min break
+**Defaults**: 25 min work • 5 min break. Shortest valid work duration is **1 minute**. `pomo start 0` is invalid.
+
+Running `pomo` with **no arguments** installs or re-checks the install. It does **not** print help. Use `pomo help` for the command list.
 
 ---
 
-### Examples
+## Examples
 
 ```sh
-# Named persistent pomodoro with custom durations
+# Named persistent pomodoro with custom durations (minutes)
 pomo start deep-work 55 --break 10 --persist
 
 # Live watch mode
@@ -141,21 +161,6 @@ pomo status --json
 # Switch to a more energetic theme
 pomo theme set energetic
 ```
-
----
-
-## Why the Defensive Style?
-
-This script is **intentionally verbose** and heavily commented.  
-The prominent `!!! DO NOT MODIFY OR SIMPLIFY !!!` warnings exist because this tool is designed to survive harsh environments where most shell scripts break:
-
-- `curl | sh` in non-interactive shells
-- Minimal systems (`dash`, BusyBox `ash` on Alpine)
-- Missing `$HOME`, no `/dev/shm`, containers, Git Bash
-
-The same **CIAO** philosophy (Caution • Intentional • Anti-fragile • Over-engineered, **v2.10.2**) is used in other Wilgat tools.
-
-It may look over-engineered at first, but this approach has proven extremely reliable in real-world use.
 
 ---
 
@@ -171,27 +176,6 @@ It may look over-engineered at first, but this approach has proven extremely rel
 
 ---
 
-## Grok's Code Review
-
-**Historical endorsement (v1.7.0, April 2026)** — full text: [`RECOMMENDATION.md`](./RECOMMENDATION.md).
-
-**Current product (v2.0.1)** keeps that defensive spirit under **[CIAO](https://github.com/cloudgen/ciao) v2.10.2** / [CIAO-Lite](https://github.com/cloudgen/ciao-lite): countdown Type 0 architecture (`out_*`, `inst_*`, `app_main`, Type O install-ensure, automatic companion checksum) plus the full pomodoro domain (work/break, themes, watch, stats).
-
-It deliberately stays verbose and heavily protected with explicit "DO NOT MODIFY OR SIMPLIFY" zones, centralized single-source-of-truth output, defensive storage resolution, and transparent install integrity. That design survives harsh runtimes (dash/ash, missing `/dev/shm`, `curl | sh`) and resists AI-assisted over-simplification.
-
-**Key strengths (v2.0.1)**:
-- Pure POSIX `sh` with no bashisms
-- CIAO v2.10.2 / CIAO-Lite compliance on lifecycle and domain paths
-- Path-safe names, safe storage fallbacks, and centralized `out_*` output
-- `inst_*` install with automatic companion SHA-256 + optional `CHECKSUM` pin
-- `ver_gt` + downgrade protection on `self-update`
-- Theming and UX without sacrificing portability or safety
-- Automated suite: `./tests/run.sh` (CLI, install lifecycle, domain)
-
-Vulnerability reporting: [`SECURITY.md`](./SECURITY.md).
-
----
-
 ## Related Projects
 
 All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github.com/cloudgen/ciao): Caution • Intentional • Anti-fragile • Over-engineered) and defensive coding style.
@@ -201,19 +185,28 @@ All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github
 - **[CIAO-Lite](https://github.com/cloudgen/ciao-lite)** — Agent contract (Simplicity but Safety)
 
 ### Other Tools by Wilgat
-- **[countdown](https://github.com/Wilgat/countdown)** — Bootstrap architecture for pomo 2.0.0 (named duration countdowns)
-- **[timer](https://github.com/Wilgat/timer)** — Count-up elapsed timers with similar Type 0 design
+- **[countdown](https://github.com/Wilgat/countdown)** — Named duration countdowns; architecture pomo 2.x is specialized from
+- **[timer](https://github.com/Wilgat/timer)** — Count-up elapsed timers with similar self-install design
 - **[springboot2](https://github.com/Wilgat/springboot2)** — Production-ready Spring Boot 2 templates
 - **[springboot3](https://github.com/Wilgat/springboot3)** — Production-ready Spring Boot 3 templates
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
 - **[mariadb-galera](https://github.com/Wilgat/mariadb-galera)** — MariaDB Galera Cluster deployment scripts
 
+Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.0.1** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, and `ver_gt` downgrade protection on `self-update`.
+
 ---
 
 ## Contributing
 
-Contributions are welcome!  
-Please **preserve the defensive style** and existing safety comments — especially around installation, storage fallbacks, output functions, and edge-case handling.
+Contributions are welcome.
+
+Please **preserve the defensive style** and existing safety comments — especially around installation, storage fallbacks, output functions, and edge-case handling. The prominent `!!! DO NOT MODIFY OR SIMPLIFY !!!` warnings exist because this tool is designed to survive:
+
+- `curl | sh` in non-interactive shells
+- Minimal systems (`dash`, BusyBox `ash` on Alpine)
+- Missing `$HOME`, no `/dev/shm`, containers, Git Bash
+
+It may look over-engineered at first; that is intentional.
 
 ### Tests
 
@@ -235,6 +228,8 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ---
 
-**Made with care and a healthy dose of paranoia.** 🍅
+## Last Update
 
-*Last updated: 2026-07-17 for version 2.0.1 — aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.*
+2026-09-06 — README rewritten for people first (who runs what, minutes unit, automatic SHA-256). Product version remains **2.0.1**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+
+**Made with care and a healthy dose of paranoia.** 🍅

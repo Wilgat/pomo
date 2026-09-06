@@ -1,7 +1,7 @@
 # Reviews registry (pomo)
 
 **Product:** pomo  
-**Updated:** 2026-07-24  
+**Updated:** 2026-09-06  
 
 ## Plans (living)
 
@@ -9,6 +9,7 @@
 |----------|------|--------|
 | `what-to-review.md` | Living checklist / review plan | Active |
 | `test-plan.md` | Family TP-* → tests/ (**TP-POMO-*** domain) | Active |
+| `requirement-test-matrix.md` | `RQ-*` → TP families | Active |
 | `lessons.md` | L-* prior failure modes | Active |
 | `README.md` | Surface rules | Active |
 
@@ -18,6 +19,7 @@
 |------|-------|------|---------|------------|
 | 2026-07-16 | full-product | `reports/2026-07-16-full-product.md` | **Revise** → fixed same day | none (see fix note) |
 | 2026-07-16 | full-product-fix | `reports/2026-07-16-full-product-fix.md` | **Pass** (docs remediated) | none |
+| 2026-09-06 | readme-req-coverage | `reports/2026-09-06-readme-req-coverage.md` | **Pass** (README voice + §1.1 + class/coding-style) | none |
 
 ## Open-item summary
 

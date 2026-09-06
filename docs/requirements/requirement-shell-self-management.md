@@ -10,9 +10,34 @@ This requirement is the **project Single Source of Truth** for **CLI self-manage
 It defines lifecycle capabilities and safety rules for this shell project’s self-management commands.
 
 **Scope:** Lifecycle capabilities and safety rules for `version-check`, `self-update`, `self-uninstall`, and `about` (plus reuse of install primitives).  
-**Out of scope (cited, not re-owned):** Full CLI dispatcher catalog (`requirement-shell-cli-interface.md`); pure re-run matrix (`requirement-shell-idempotency.md`); full online-install algorithm depth; Type 1 host bootstrap / Type 2 system-user app ops.
+**Out of scope (cited, not re-owned):** Full CLI dispatcher catalog (`requirement-shell-cli-interface.md`); pure re-run matrix (`requirement-shell-idempotency.md`); full online-install algorithm depth; host-bootstrap / dedicated-system-account app ops.
 
 **Must not confuse with:** OS package managers, domain product start/stop ops, dedicated system-user policy, or non-CLI “self-management.”
+
+### 1.1 Human-facing
+
+**In one sentence:** You can check for a newer version, update, uninstall, and print diagnostics without a separate package manager.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Manage the copy installed for you | `pomo self-update`, `pomo about` |
+| The other role | Global binary may need root to remove | `sudo` only if the file lives in `/usr/local/bin` |
+| Not this file | Starting a pomodoro; checksum algorithm | `pomo start`; automatic-checksum peer |
+
+| Includes | Excludes |
+|----------|----------|
+| `version-check`, `self-update`, `self-uninstall`, `about` | OS `apt`/`apk` packages as the primary path |
+| Non-interactive uninstall requires `--force` | Silent fake cancel success |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | lifecycle verbs |
+| `pomo about` | command | diagnostics |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Update | Compare remote version; refuse a downgrade unless `--force`. | `pomo self-update` |
+| Uninstall without a TTY | Must pass `--force` or the command fails closed. | `pomo self-uninstall --force` |
 
 ---
 

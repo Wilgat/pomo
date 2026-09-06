@@ -5,12 +5,37 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for the **POSIX shell CLI interface** of the pomo tool: command surface, privilege typing, global flags, dispatcher behavior, output modes, and interactive vs non-interactive rules.
+This requirement is the **project Single Source of Truth** for the **POSIX shell CLI interface** of the pomo tool: command surface, who may run each command, global flags, dispatcher behavior, output modes, and interactive vs non-interactive rules.
 
-It defines a **Type 0–centric self-managed shell CLI** (install / update / uninstall of the tool itself). It does **not** invent Type 1 host-bootstrap or Type 2 system-user app-ops commands unless a future requirement adds them.
+It defines a self-managed shell CLI you run **as yourself** (install / update / uninstall of the tool itself). It does **not** invent host-bootstrap (change-the-computer) or dedicated-system-account commands unless a future requirement adds them. Catalog: Type 0 / Type 1 / Type 2.
 
 **Scope:** User-facing command names, flags, dispatch, privilege labels, and mode contracts.  
 **Out of scope (own requirements when specialized):** Online-install checksum mechanics detail, self-management safety beyond the command surface, shell coding style, full output-function catalog, and pomodoro domain semantics detail (`requirement-domain-pomo.md` — cited, not re-owned here beyond routing).
+
+### 1.1 Human-facing
+
+**In one sentence:** This file lists the commands and flags you type, and how they are routed — not how a timer counts minutes, and not how a download is checksummed.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Type `pomo <command>` as yourself | `pomo help`, `pomo start`, `pomo self-update` |
+| The other role | Root one-liner only to place the binary globally | `curl … \| sudo sh` |
+| Not this file | Timer semantics; SHA-256 companion detail | `requirement-domain-pomo.md`, automatic-checksum |
+
+| Includes | Excludes |
+|----------|----------|
+| Every live command name, global flags, unknown-command error | Domain duration unit; checksum algorithm |
+| Empty argv means install-ensure (see zero-arguments peer) | Help as the no-argument behavior |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | dispatcher |
+| `pomo help` | command | listed verbs |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| See the list | Help prints every supported command. No arguments does **not** print help. | `pomo help` |
+| Unknown verb | The program fails loudly and points you at help. | `pomo not-a-command` |
 
 ---
 

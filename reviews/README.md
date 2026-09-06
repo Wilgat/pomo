@@ -9,12 +9,13 @@ Public, git-tracked **product review surface** (peer of `tests/`). Holds living 
 
 ```text
 reviews/
-  README.md           # this file
-  index.md            # registry of plans + reports
-  what-to-review.md   # living checklist (review plan)
-  test-plan.md        # TP-* → tests/
-  lessons.md          # L-* prior failure modes (mandatory load)
-  reports/            # durable run reports
+  README.md                    # this file
+  index.md                     # registry of plans + reports
+  what-to-review.md            # living checklist (review plan)
+  test-plan.md                 # TP-* → tests/
+  requirement-test-matrix.md   # RQ-* → TP families
+  lessons.md                   # L-* prior failure modes (mandatory load)
+  reports/                     # durable run reports
 ```
 
 ## Agent rules

@@ -12,6 +12,31 @@ It defines interactive vs non-interactive behavior for this shell project (globa
 **Scope:** Mode detection signals, prompt policy, auto-install vs confirm, force/skip rules, interaction with quiet/json/debug and output SSOT.  
 **Out of scope (cited, not re-owned):** Full command catalog (`requirement-shell-cli-interface.md`); output function catalog (`requirement-shell-output-requirements.md`); self-update integrity (`requirement-shell-self-management.md`); idempotency matrix (`requirement-shell-idempotency.md`).
 
+### 1.1 Human-facing
+
+**In one sentence:** On a real terminal the program may ask you; in a pipe or script it must never hang waiting for an answer.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | A real terminal (`TTY`) | `pomo self-uninstall` may confirm |
+| The other role | A pipe, CI, or `--json` | `curl … \| sh` auto-installs |
+| Not this file | What the prompt text looks like in `out_*` | output-requirements peer |
+
+| Includes | Excludes |
+|----------|----------|
+| Measure interactive capability **once** outside functions; helpers read `TTY` | Live `[ -t` inside `prompt_*` as policy |
+| Non-interactive uninstall without `--force` fails closed | Fake “cancelled” success |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./pomo` | ship unit | prompt / auto paths |
+| `pomo --json …` | mode | never a TTY question |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Pipe install | No question appears; install proceeds. | `curl -fsSL …/pomo \| sh` |
+| Uninstall in a script | Must pass `--force` or the command fails. | `pomo self-uninstall --force` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)

@@ -3,7 +3,7 @@
 # =============================================================================
 # Mold catalog TP-CLI-01..11 (Core). Product: sh -n not bash -n; TP-CLI-05/10 n/a;
 # TP-CLI-12 product extension (out_json string-key). Cross: TP-CSUM-01/05, TP-U-01/02,
-# TP-POMO-01 (help domain verbs). Labels = TP-IDs (policy-harness-id-notation).
+# TP-POMO-01 (help domain verbs); TP-CLI-13 Termux/Git Bash target. Labels = TP-IDs.
 # =============================================================================
 
 # shellcheck source=helpers.sh
@@ -82,6 +82,7 @@ run_test_cli() {
     assert_eq "TP-CLI-04 about --json exit 0" 0 "$_ec"
     assert_contains "TP-CLI-04 about --json type" "$_out" '"type":"about"'
     assert_contains "TP-CLI-04 about --json app" "$_out" "\"app\":\"${APP_NAME}\""
+    assert_contains "TP-CLI-04 about --json target field" "$_out" '"target":'
     assert_not_contains "TP-CLI-04 TP-CSUM-05 about --json must not include CHECKSUM" "$_out" "CHECKSUM"
 
     # --- TP-CLI-05: shell storage fields n/a (domain owns storage) ---
@@ -190,4 +191,34 @@ run_test_cli() {
     assert_contains "TP-CLI-12 out_json plain string key" "$_out" '"plain":"v"'
     assert_contains "TP-CLI-12 out_json name field" "$_out" '"name":"ci-smoke"'
     t_pass "TP-CLI-12 @key raw nested n/a (pomo out_json string-escapes all pairs)"
+
+    # --- TP-CLI-13: Termux / Git Bash as command line for normal user only ---
+    _out=$(sh "${SCRIPT}" --json about 2>/dev/null)
+    assert_contains "TP-CLI-13 default about --json target posix (this host)" "$_out" '"target":"posix"'
+    assert_contains "TP-CLI-13 default about --json normal_user_only false" "$_out" '"normal_user_only":"false"'
+
+    _out=$(TERMUX_VERSION=test sh "${SCRIPT}" --json about 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-13 Termux about --json exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-13 Termux about --json target termux" "$_out" '"target":"termux"'
+    assert_contains "TP-CLI-13 Termux about --json normal_user_only true" "$_out" '"normal_user_only":"true"'
+
+    _out=$(TERMUX_VERSION=test sh "${SCRIPT}" help 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-13 Termux help exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-13 Termux help names Termux" "$_out" "Termux"
+    assert_contains "TP-CLI-13 Termux help this login" "$_out" "this login"
+    assert_not_contains "TP-CLI-13 Termux help must not recommend sudo curl" "$_out" "sudo curl"
+
+    _out=$(PREFIX="/data/data/com.termux/files/usr" sh "${SCRIPT}" help 2>/dev/null)
+    assert_contains "TP-CLI-13 PREFIX com.termux help names Termux" "$_out" "Termux"
+    assert_not_contains "TP-CLI-13 PREFIX com.termux help must not recommend sudo curl" "$_out" "sudo curl"
+
+    _out=$(MSYSTEM=MINGW64 sh "${SCRIPT}" --json about 2>/dev/null)
+    assert_contains "TP-CLI-13 Git Bash about --json target git-bash" "$_out" '"target":"git-bash"'
+    assert_contains "TP-CLI-13 Git Bash about --json normal_user_only true" "$_out" '"normal_user_only":"true"'
+
+    _out=$(MSYSTEM=MINGW64 sh "${SCRIPT}" help 2>/dev/null)
+    assert_contains "TP-CLI-13 Git Bash help names Git Bash" "$_out" "Git Bash"
+    assert_not_contains "TP-CLI-13 Git Bash help must not recommend sudo curl" "$_out" "sudo curl"
 }

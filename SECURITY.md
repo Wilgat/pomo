@@ -4,8 +4,9 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.0.1 (current) | Yes |
-| 2.0.0 | Yes (please upgrade to **2.0.1+** when possible) |
+| 2.0.2 (current) | Yes |
+| 2.0.1 | Yes (please upgrade to **2.0.2+** when possible) |
+| 2.0.0 | Yes (please upgrade to **2.0.2+** when possible) |
 | 1.x releases | Best-effort only; please upgrade to **2.0.x+** when possible |
 
 ## Reporting a Vulnerability
@@ -74,4 +75,4 @@ Domain product law: `docs/requirements/requirement-domain-pomo.md` (when present
 
 ---
 
-*Last updated: 2026-07-17 (pomo 2.0.1 · CIAO v2.10.2).*
+*Last updated: 2026-09-06 (pomo 2.0.2 · CIAO v2.10.2).*

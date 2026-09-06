@@ -229,6 +229,20 @@ Align with SSOT-of-stdout and SSOT-of-stderr terms:
 
 ---
 
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Human `help` / `about` still go through `out_*`; Termux target lines are ordinary info | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** output SSOT. Target-system lines use `out_info` / `out_plain`; JSON `about` may add `target` without mixing human banners.
+
+---
+
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - **Caution:** Never assume raw prints are “just temporary.”  

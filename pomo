@@ -45,8 +45,8 @@ set -u  # Treat unset variables as error (defensive)
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
 # Product version SSOT (specialized from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
-VERSION="2.0.1"
-: "${VERSION:=2.0.1}"
+VERSION="2.0.2"
+: "${VERSION:=2.0.2}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -461,6 +461,153 @@ out_json_error() {
 }
 
 # =============================================================================
+# pomo_is_termux() / pomo_is_git_bash() / pomo_is_windows_cmd()
+# pomo_is_normal_user_only_cli() / pomo_target_system() / pomo_apply_target_paths()
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Detect Termux, Git Bash, and Windows cmd as a command line for normal user
+# only: this login, no admin privilege, no dedicated system user. On Termux,
+# retarget USER_BIN / GLOBAL_BIN to $PREFIX/bin when still POSIX defaults,
+# and volatile storage to TMPDIR or $PREFIX/tmp when /dev/shm is missing.
+#
+# ALIGNMENT (live requirements only):
+# - requirement-shell-cli-interface.md
+# - requirement-shell-self-management.md
+# - requirement-domain-pomo.md
+# - requirement-shell-script-coding.md
+#
+# PRINTF EXCEPTION (class B – function return-via-stdout):
+# pomo_target_system prints termux|git-bash|windows-cmd|posix for capture
+# by app_about / app_help — not a product message.
+#
+# CIAO PRINCIPLES APPLIED:
+# - Caution: Do not treat Linux uname as Windows cmd; exclude Git Bash first.
+# - Intentional: Detect is runtime, not a Type 1/2 switch.
+# - Anti-fragile: Termux has no /usr/local/bin and often no /dev/shm.
+# - Over-protect: Never recommend sudo curl | sh on this class.
+#
+# Last updated: 2026-09-06
+# =============================================================================
+
+pomo_is_termux() {
+    : "${PREFIX:=}"
+    if [ -n "${PREFIX}" ]; then
+        case "${PREFIX}" in
+            *com.termux*) return 0 ;;
+        esac
+    fi
+    if [ -n "${TERMUX_VERSION-}" ]; then
+        return 0
+    fi
+    if [ -d /data/data/com.termux/files/usr ]; then
+        return 0
+    fi
+    return 1
+}
+
+pomo_is_git_bash() {
+    case "${MSYSTEM-}" in
+        MINGW*|MSYS*|UCRT*|CLANG*) return 0 ;;
+    esac
+    _uname=$(uname -s 2>/dev/null || true)
+    case "${_uname}" in
+        MINGW*|MSYS*) return 0 ;;
+    esac
+    return 1
+}
+
+pomo_is_windows_cmd() {
+    if pomo_is_git_bash; then
+        return 1
+    fi
+    if [ -n "${WSL_DISTRO_NAME-}" ]; then
+        return 1
+    fi
+    _uname=$(uname -s 2>/dev/null || true)
+    case "${_uname}" in
+        CYGWIN*|Linux|Darwin) return 1 ;;
+    esac
+    case "${OS-}" in
+        Windows_NT) return 0 ;;
+    esac
+    case "${ComSpec-}${COMSPEC-}" in
+        *[Cc][Mm][Dd].[Ee][Xx][Ee]*) return 0 ;;
+    esac
+    return 1
+}
+
+pomo_is_normal_user_only_cli() {
+    if pomo_is_termux; then
+        return 0
+    fi
+    if pomo_is_git_bash; then
+        return 0
+    fi
+    if pomo_is_windows_cmd; then
+        return 0
+    fi
+    return 1
+}
+
+pomo_target_system() {
+    if pomo_is_termux; then
+        printf '%s' "termux"
+        return 0
+    fi
+    if pomo_is_git_bash; then
+        printf '%s' "git-bash"
+        return 0
+    fi
+    if pomo_is_windows_cmd; then
+        printf '%s' "windows-cmd"
+        return 0
+    fi
+    printf '%s' "posix"
+}
+
+pomo_apply_target_paths() {
+    : "${HOME:=/tmp}"
+    : "${PREFIX:=}"
+    : "${USER_BIN:=${HOME}/.local/bin}"
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    : "${VOLATILE_DIR:=/dev/shm}"
+    : "${TMPDIR:=}"
+
+    if ! pomo_is_termux; then
+        return 0
+    fi
+
+    if [ -z "${PREFIX}" ]; then
+        PREFIX="/data/data/com.termux/files/usr"
+    fi
+
+    _default_user_bin="${HOME}/.local/bin"
+    if [ "${USER_BIN}" = "${_default_user_bin}" ]; then
+        if [ -d "${PREFIX}/bin" ]; then
+            USER_BIN="${PREFIX}/bin"
+        fi
+    fi
+
+    _default_global="/usr/local/bin"
+    if [ "${GLOBAL_BIN}" = "${_default_global}" ]; then
+        if [ -d "${PREFIX}/bin" ]; then
+            GLOBAL_BIN="${PREFIX}/bin"
+        fi
+    fi
+
+    if [ ! -d "${VOLATILE_DIR}" ] || [ ! -w "${VOLATILE_DIR}" ]; then
+        if [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
+            VOLATILE_DIR="${TMPDIR}"
+        elif [ -d "${PREFIX}/tmp" ] && [ -w "${PREFIX}/tmp" ]; then
+            VOLATILE_DIR="${PREFIX}/tmp"
+        fi
+    fi
+    unset _default_user_bin _default_global
+    return 0
+}
+
+# =============================================================================
 # inst_perform_install() - Perform the actual installation (v2 with checksum)
 # =============================================================================
 #
@@ -507,6 +654,7 @@ out_json_error() {
 
 inst_perform_install() {
     # --- Safe Variable Defaults ---
+    : "${HOME:=/tmp}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${INSTALL_PATH:=${GLOBAL_BIN}/${APP_NAME}}"
@@ -514,8 +662,12 @@ inst_perform_install() {
     : "${CHECKSUM:=}"
     : "${SCRIPT_URL:=}"
     : "${REMOTE_VERSION:=}"
+    pomo_apply_target_paths
 
-    if [ "$(id -u)" -eq 0 ]; then
+    if pomo_is_normal_user_only_cli; then
+        IS_ROOT=0
+        INSTALL_PATH="${USER_BIN}/${APP_NAME}"
+    elif [ "$(id -u)" -eq 0 ]; then
         IS_ROOT=1
         INSTALL_PATH="${GLOBAL_BIN}/${APP_NAME}"
     else
@@ -894,9 +1046,17 @@ inst_perform_install_atomic_install() {
         return 1
     fi
 
-    # Add ~/.local/bin to PATH for normal user installs
+    # Add USER_BIN to PATH for normal user installs.
+    # Termux $PREFIX/bin is already on PATH — do not edit rc files there.
     if [ "$IS_ROOT" -eq 0 ]; then
-        path_add_shell
+        if pomo_is_termux; then
+            : "${PREFIX:=}"
+            if [ -z "${PREFIX}" ] || [ "${USER_BIN}" != "${PREFIX}/bin" ]; then
+                path_add_shell
+            fi
+        else
+            path_add_shell
+        fi
     fi
     
     if [ "${JSON}" -eq 1 ]; then
@@ -937,8 +1097,11 @@ inst_maybe_install() {
     : "${FORCE_REINSTALL:=0}"
     : "${SCRIPT_URL:=}"
     : "${SH:=sh}"
+    pomo_apply_target_paths
     # Privilege for recommended install command (set -u safe; same rule as inst_perform_install)
-    if [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
+    if pomo_is_normal_user_only_cli; then
+        IS_ROOT=0
+    elif [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
         IS_ROOT=1
     else
         IS_ROOT=0
@@ -958,7 +1121,9 @@ inst_maybe_install() {
     out_plain "Recommended installation command:"
     out_empty_line
 
-    if [ "$IS_ROOT" -eq 1 ]; then
+    if pomo_is_normal_user_only_cli; then
+        out_plain "     curl -fsSL ${SCRIPT_URL} | ${SH}"
+    elif [ "$IS_ROOT" -eq 1 ]; then
         out_plain "     sudo curl -fsSL ${SCRIPT_URL} | sudo ${SH}"
     else
         out_plain "     curl -fsSL ${SCRIPT_URL} | ${SH}"
@@ -1404,8 +1569,10 @@ inst_get_version() {
     # Defensive defaults - never assume globals are set
     : "${APP_NAME:=app}"
     : "${IS_ROOT:=0}"
+    : "${HOME:=/tmp}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
+    pomo_apply_target_paths
 
     local bin_path
     if [ "$IS_ROOT" -eq 1 ] || [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
@@ -1866,6 +2033,7 @@ util_get_install_bin_path() {
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${HOME:=/tmp}"
     : "${USER_BIN:=${HOME}/.local/bin}"
+    pomo_apply_target_paths
 
     local bin_path=""
 
@@ -2027,8 +2195,20 @@ util_resolve_storage() {
     : "${HOME:=/tmp}"
     : "${XDG_CACHE_HOME:=${HOME}/.cache}"
 
+    : "${TMPDIR:=}"
+    : "${PREFIX:=}"
+    pomo_apply_target_paths
+
     if [ -d "/dev/shm" ] && [ -w "/dev/shm" ]; then
         echo "/dev/shm/${APP_NAME}-${USERNAME}"
+        return 0
+    fi
+    if [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
+        echo "${TMPDIR}/${APP_NAME}-${USERNAME}"
+        return 0
+    fi
+    if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/tmp" ] && [ -w "${PREFIX}/tmp" ]; then
+        echo "${PREFIX}/tmp/${APP_NAME}-${USERNAME}"
         return 0
     fi
     if [ -w "/tmp" ]; then
@@ -2264,10 +2444,25 @@ pomo_resolve_base_dir() {
     : "${QUIET:=0}"
     : "${JSON:=0}"
     : "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME}}"
+    : "${TMPDIR:=}"
+    : "${PREFIX:=}"
+    pomo_apply_target_paths
 
     if [ "$requested_mode" = "volatile" ]; then
         if [ -d "$VOLATILE_DIR" ] && [ -w "$VOLATILE_DIR" ]; then
             base_dir="$VOLATILE_DIR"
+        elif [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
+            actual_mode="fallback"
+            base_dir="${TMPDIR}"
+            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
+                out_warn "Volatile storage (/dev/shm) not available. Falling back to TMPDIR."
+            fi
+        elif [ -n "${PREFIX}" ] && [ -d "${PREFIX}/tmp" ] && [ -w "${PREFIX}/tmp" ]; then
+            actual_mode="fallback"
+            base_dir="${PREFIX}/tmp"
+            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
+                out_warn "Volatile storage (/dev/shm) not available. Falling back to \$PREFIX/tmp."
+            fi
         elif [ -d "/tmp" ] && [ -w "/tmp" ]; then
             actual_mode="fallback"
             base_dir="/tmp"
@@ -2277,7 +2472,7 @@ pomo_resolve_base_dir() {
         else
             base_dir="/tmp/${APP_NAME}_${USERNAME}"
             if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
-                out_die "No writable temporary storage available (/dev/shm, /tmp). ${APP_NAME} cannot start."
+                out_die "No writable temporary storage available (/dev/shm, TMPDIR, \$PREFIX/tmp, /tmp). ${APP_NAME} cannot start."
             fi
             actual_mode="fallback"
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
@@ -3050,11 +3245,13 @@ app_about() {
     : "${JSON:=0}"
     : "${QUIET:=0}"
     : "${APP_NAME:=pomo}"
-    # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=2.0.0}"
+    : "${HOME:=/tmp}"
+    # Version comes from global SSOT (VERSION near top); default only if unset
+    : "${VERSION:=2.0.2}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
+    pomo_apply_target_paths
 
     if [ "${JSON}" -eq 1 ]; then
         # === JSON MODE - Clean, machine-friendly output ===
@@ -3080,6 +3277,13 @@ app_about() {
         local current_user
         current_user="$(id -un 2>/dev/null || echo "unknown")"
 
+        local target_system
+        target_system=$(pomo_target_system)
+        local normal_user_only="false"
+        if pomo_is_normal_user_only_cli; then
+            normal_user_only="true"
+        fi
+
         out_json "about" "" \
             "app" "${APP_NAME}" \
             "version" "${VERSION}" \
@@ -3088,7 +3292,9 @@ app_about() {
             "local_version" "${local_ver}" \
             "shell" "${current_shell}" \
             "interactive" "${interactive}" \
-            "user" "${current_user}"
+            "user" "${current_user}" \
+            "target" "${target_system}" \
+            "normal_user_only" "${normal_user_only}"
         return 0
     fi
 
@@ -3146,6 +3352,23 @@ app_about() {
 
     out_info "Current shell:     ${current_shell}"
 
+    _about_target=$(pomo_target_system)
+    case "${_about_target}" in
+        termux)
+            out_info "Target system:     Termux (this login only; \$PREFIX/bin)"
+            ;;
+        git-bash)
+            out_info "Target system:     Git Bash (this login only)"
+            ;;
+        windows-cmd)
+            out_info "Target system:     Windows cmd (this login only)"
+            ;;
+        *)
+            out_info "Target system:     POSIX"
+            ;;
+    esac
+    unset _about_target
+
     if [ -t 1 ]; then
         out_info "TTY / Interactive: yes"
     else
@@ -3170,7 +3393,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=pomo}"
-    : "${VERSION:=2.0.0}"
+    : "${VERSION:=2.0.2}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path
@@ -3181,21 +3404,29 @@ app_version() {
 }
 
 # =============================================================================
-# app_help() - Display help for countdown
+# app_help() - Display help for pomo
 # =============================================================================
 #
-# Shows usage, available commands, and global flags.
-# Fully respects --quiet and --json modes.
+# GENERAL PURPOSE:
+# Shows usage, every routed command, privilege (this login), global flags,
+# start examples, and the live install channel. Termux / Git Bash / Windows
+# cmd stay this-login only: help MUST NOT advertise sudo curl | sh there.
 #
+# Fully respects --quiet and --json modes.
 # In --json mode: returns a minimal success object instead of long text.
 # In --quiet mode: prints nothing (silent).
 #
-# Keep in sync with requirement-shell-cli-interface.md command table.
+# Keep in sync with requirement-shell-cli-interface.md command table
+# and requirement-domain-pomo.md help pillar.
+#
+# Last updated: 2026-09-06
 # =============================================================================
 
 app_help() {
+    : "${HOME:=/tmp}"
     : "${SHORT_DESCRIPTION:=${APP_DESC:-Simple & Beautiful Pomodoro Timer (volatile or persistent, themed)}}"
     : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
+    pomo_apply_target_paths
 
     if [ "${JSON}" -eq 1 ]; then
         out_json "success" "Help text available in human-readable mode. Run without --json." \
@@ -3212,11 +3443,28 @@ app_help() {
     out_plain "${DESCRIPTION}"
     out_empty_line
 
+    _help_target=$(pomo_target_system)
+    case "${_help_target}" in
+        termux)
+            out_info "Target: Termux (this login only). Install goes to \$PREFIX/bin. No sudo."
+            ;;
+        git-bash)
+            out_info "Target: Git Bash (this login only). No root pipe install."
+            ;;
+        windows-cmd)
+            out_info "Target: Windows cmd (this login only). No root pipe install."
+            ;;
+        *)
+            out_info "Target: POSIX. You run these commands as your own login."
+            ;;
+    esac
+    out_empty_line
+
     out_info "Usage:"
     out_plain "  ${APP_NAME} [command] [options]"
     out_empty_line
 
-    out_info "Pomodoro commands:"
+    out_info "Pomodoro commands (this login):"
     out_plain "  start [--persist] [name] [minutes] [--break N]"
     out_plain "                                  Start work phase (default: 25 min work, 5 min break)"
     out_plain "  status [name]                    Show themed status and progress bar"
@@ -3235,10 +3483,16 @@ app_help() {
     out_plain "  ${APP_NAME} start focus 50 --break 10 --persist"
     out_empty_line
 
-    out_info "Self-Management (Type 0 - any user):"
-    out_plain "  install              Install ${APP_NAME} (root→global, user→~/.local/bin)"
+    out_info "Self-management (this login):"
+    if [ "${_help_target}" = "termux" ]; then
+        out_plain "  install              Install ${APP_NAME} for this login (\$PREFIX/bin)"
+    elif pomo_is_normal_user_only_cli; then
+        out_plain "  install              Install ${APP_NAME} for this login (~/.local/bin)"
+    else
+        out_plain "  install              Install ${APP_NAME} (root→/usr/local/bin, user→~/.local/bin)"
+    fi
     out_plain "  version              Show current version"
-    out_plain "  about                Show detailed diagnostics"
+    out_plain "  about                Show detailed diagnostics (includes target system)"
     out_plain "  version-check        Compare local vs remote version (needs SCRIPT_URL)"
     out_plain "  self-update          Update ${APP_NAME} to a newer remote version"
     out_plain "  self-uninstall       Remove ${APP_NAME} (safe PATH cleanup)"
@@ -3271,11 +3525,24 @@ app_help() {
         out_plain "  SCRIPT_URL           (not set)"
     fi
     out_plain "                       Canonical install channel (override via env; needed for version-check/self-update)"
+    if [ "${_help_target}" = "termux" ]; then
+        out_plain "  PREFIX               ${PREFIX:-}"
+        out_plain "                       Termux prefix (install bin is \$PREFIX/bin)"
+    fi
     out_empty_line
 
-    out_info "Note:"
-    out_plain "  'pomo' is separate from 'timer' and 'countdown'. Use 'countdown' for plain duration timers."
-    out_empty_line
+    if pomo_is_normal_user_only_cli; then
+        out_info "Note:"
+        out_plain "  On Termux, Git Bash, and Windows cmd this program stays this login only."
+        out_plain "  It does not recommend a root pipe install and does not wrap apt or pkg."
+        out_plain "  '${APP_NAME}' is separate from 'timer' and 'countdown'."
+        out_empty_line
+    else
+        out_info "Note:"
+        out_plain "  'pomo' is separate from 'timer' and 'countdown'. Use 'countdown' for plain duration timers."
+        out_empty_line
+    fi
+    unset _help_target
 }
 
 # =============================================================================

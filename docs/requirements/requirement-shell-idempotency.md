@@ -144,6 +144,22 @@ Force **MUST NOT** be used as a silent way to skip integrity verification.
 
 ---
 
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Re-run install-ensure / already-installed as this login | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`. Dual mention: `requirement-shell-cli-interface`.
+
+**This requirement:** re-run safety stays this-login on this class; do not invent a root reinstall path because Termux was detected.
+
+---
+
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - **Caution:** Prefer detect-before-create; fail closed on integrity and network when action is required.  

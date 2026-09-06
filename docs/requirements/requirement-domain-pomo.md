@@ -168,14 +168,14 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 | **Minimum work duration** | **1 minute** (not 1 second); `0` or non-positive → **`invalid_duration`** |
 | **State file format** | `start_time target_time phase work_dur break_dur` (epoch seconds; phase `work`\|`break`; **stored** durations in seconds = minutes×60) |
 | **State path pattern** | `${base}/${APP_NAME}_${USERNAME}_${name}` |
-| **Volatile base** | `/dev/shm` → `/tmp` → `/tmp/${APP_NAME}_${USERNAME}` |
+| **Volatile base** | `/dev/shm` → `TMPDIR` → `$PREFIX/tmp` (Termux) → `/tmp` → `/tmp/${APP_NAME}_${USERNAME}` |
 | **Persistent base** | `${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}` (fallback under `/tmp/..._persistent`) |
 | **Stats path** | `${persistent_base}/stats_YYYY-MM-DD` (`count total_min`) |
 | **Theme path** | `${persistent_base}/theme` |
 | **Themes** | `default`, `energetic`, `minimal` |
 | **Bootstrap A (lineage)** | **countdown** architecture parent (A→B only; not domain law). In-tree `./countdown` **only if present on disk** — optional reference, never assumed |
 | **Domain oracle** | `./pomo-1.7.0-domain-ref` when present (behavior reference; not ship unit) |
-| **Help (domain)** | `app_help` must list domain verbs + `--persist` / `--break` (see §2.8) |
+| **Help (domain)** | `app_help` must list domain verbs + `--persist` / `--break` (see §2.8); on Termux/Git Bash/Windows cmd help stays this-login and **MUST NOT** advertise `sudo curl \| sh` |
 | **About (domain)** | Type 0 only — no domain about fields (see §2.9) |
 | **Tests** | `tests/test_pomo_domain.sh` (+ CLI/help coverage in `tests/test_cli.sh`) |
 
@@ -236,6 +236,22 @@ Numbers match [cloudgen/ciao](https://github.com/cloudgen/ciao) **v2.10.2** / ha
 - **CIAO Principle 17 – Encouraging User Help Functions**: Domain help items (§2.8) keep verbs/flags discoverable.  
 - **CIAO Principle 18 – Input Pattern Checking**: Path-safe names and duration/break validation.  
 - **CIAO Principle 19 – Defensive Storage Location Handling**: Resolve volatile/persistent paths; never hardcode only `~/.cache/pomo` without resolution.
+
+---
+
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Start/status/watch/stop as this login; volatile fallback may use `TMPDIR` or `$PREFIX/tmp` | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+Helpers (this product): `pomo_is_termux`, `pomo_apply_target_paths`. Dual mention: `requirement-shell-cli-interface`.
+
+**This requirement:** domain timers stay this-login files; do not move state into `/var` or `/etc` because Termux was detected.
 
 ---
 

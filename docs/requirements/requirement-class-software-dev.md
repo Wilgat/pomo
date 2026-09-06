@@ -116,7 +116,7 @@ This file is **class law + residual SSOT**. It is not a second copy of the pomod
 | **Lockfile policy** | not used |
 | **Test runner** | `./tests/run.sh` (POSIX `sh`) |
 | **Linter/formatter** | `sh -n` in **TP-CLI-01**; no separate formatter law |
-| **Primary runtime / OS family** | POSIX Linux (Alpine/dash primary); macOS sh; Git Bash |
+| **Primary runtime / OS family** | POSIX Linux (Alpine/dash primary); macOS sh; Git Bash; **Termux** (this login only) |
 | **Architectures supported** | any userspace that has `/bin/sh` (not ISA-pinned) |
 | **Git surface** | used for product publish (`Wilgat/pomo`) |
 | **Ship unit / install** | `./pomo` at repo root (online-installable; `curl \| sh`) |
@@ -138,6 +138,19 @@ This file is **class law + residual SSOT**. It is not a second copy of the pomod
 | Coding-style related REQ | `requirement-shell-script-coding` / **`RQ-SHELL-SCRIPT-CODING`** | **MUST**; residual **points** only |
 | Actor / role / subject / approver | **considered — no dest approver and no approval subject** | No dest review product |
 | Dest fence conditions | **considered — no dest fence conditions** | No dest JSON queue |
+| Termux / Git Bash / Windows cmd | `requirement-shell-cli-interface` (detect) + peers | Class residual **points**; Type 1/2 unused on that class |
+
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Point detect and help at CLI-interface | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** class residual. Termux is a supported runtime family; privilege freeze lives on CLI-interface and peers.
 
 ## 3. Why This Requirement Exists (Direct CIAO Alignment)
 

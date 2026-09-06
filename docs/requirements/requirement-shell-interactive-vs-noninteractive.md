@@ -205,6 +205,22 @@ Detail: `requirement-domain-pomo.md`.
 
 ---
 
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| TTY confirm for first install as this login; recommended one-liner is `curl \| sh` | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`. Dual mention: `requirement-shell-cli-interface`.
+
+**This requirement:** prompts and pipe auto-install stay this-login; `inst_maybe_install` must not print a sudo one-liner on this class.
+
+---
+
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - **Caution:** Prefer cancel over destructive auto-action when intent is ambiguous; prefer auto-install for classic one-liner when not installed.  

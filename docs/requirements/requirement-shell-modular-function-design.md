@@ -184,7 +184,7 @@ function_name() {
 | `path_` | `path_add_bashrc`, `path_add_zshrc`, `path_add_fish`, `path_add_shell` |
 | `util_` | `util_json_escape`, `util_sha256_file`, `util_fetch_remote_version`, `util_get_install_bin_path`, `util_backup`, `util_resolve_storage`, `util_get_current_shell` |
 | `prompt_` | `prompt_ask`, `prompt_yes_no` |
-| `pomo_` | `pomo_resolve_base_dir`, `pomo_get_file`, `pomo_sanitize_name`, `pomo_domain_fail`, `pomo_parse_duration`, `pomo_start`, `pomo_show_status`, `pomo_watch`, `pomo_skip`, `pomo_stop`, `pomo_list`, `pomo_list_scan_dir`, `pomo_stats`, `pomo_theme`, `pomo_get_icon` / bar helpers (domain law: `requirement-domain-pomo.md`) |
+| `pomo_` | `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`, `pomo_target_system`, `pomo_apply_target_paths`, `pomo_resolve_base_dir`, `pomo_get_file`, `pomo_sanitize_name`, `pomo_domain_fail`, `pomo_parse_duration`, `pomo_start`, `pomo_show_status`, `pomo_watch`, `pomo_skip`, `pomo_stop`, `pomo_list`, `pomo_list_scan_dir`, `pomo_stats`, `pomo_theme`, `pomo_get_icon` / bar helpers (domain law: `requirement-domain-pomo.md`) |
 | `app_` | `app_about`, `app_version` (dispatcher routes `version` here), `app_help`, `app_main` |
 
 #### Structural notes (implementation status)
@@ -217,6 +217,20 @@ When adding a function to `./pomo`:
 - **CIAO Principle 7 – General Purpose requirement** (https://github.com/cloudgen/ciao): Public helpers document GENERAL PURPOSE.  
 - **CIAO Principle 8 – Reusable function protection** (https://github.com/cloudgen/ciao): DO NOT MODIFY on reusable helpers.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Protection Zones and prefix table defend against AI “cleanup” regressions.
+
+---
+
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Detect helpers stay under `pomo_*` (`pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`, `pomo_target_system`, `pomo_apply_target_paths`) | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** detect helpers use the domain prefix; do not add a `sudo_` / Type 1 helper because Termux was detected.
 
 ---
 

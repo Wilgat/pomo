@@ -139,7 +139,8 @@ Root may write global install path; non-root uses user path. Do not assume root 
 | **Uninstall steps** | `inst_self_uninstall_determine_bin` → `inst_self_uninstall_confirm_and_remove` → `inst_self_uninstall_cleanup_path` |
 | **PATH ensure** | `path_add_shell` / bash / zsh / fish helpers on user install |
 | **Privilege** | Type 0 only for self-management surface; no dedicated system user |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.0"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.2"`) |
+| **Termux paths** | `pomo_apply_target_paths` retargets `USER_BIN`/`GLOBAL_BIN` to `$PREFIX/bin` when POSIX defaults still apply; skip rc PATH edit when install is `$PREFIX/bin` |
 
 #### Normative acceptance behaviors (this project)
 
@@ -150,7 +151,7 @@ Root may write global install path; non-root uses user path. Do not assume root 
    - If remote is **older** than local and force off → **refuse** (no silent downgrade).  
    - If remote is newer (or force policy allows reinstall) → set reinstall and call `inst_perform_install` with integrity + atomic replace.  
 3. **`self-uninstall`:** Resolve binary; confirm when interactive and force off; without force under quiet/json/non-TTY → fail closed (`confirm_required`), never fake cancel success; with force → remove without confirm; clean PATH only if `~/.local/bin` empty (non-root); never delete unrelated trees.  
-4. **`about`:** Human diagnostics + JSON about object; no secrets; **no `CHECKSUM` name/value**.  
+4. **`about`:** Human diagnostics + JSON about object including `target` / `normal_user_only`; no secrets; **no `CHECKSUM` name/value**.  
 5. **Shared install path:** Self-update **must not** introduce a parallel curl-to-final-path overwrite outside `inst_perform_install*`.
 
 #### Compliance notes (implementation status)
@@ -171,6 +172,22 @@ Root may write global install path; non-root uses user path. Do not assume root 
 - **CIAO Principle 10 – Least privilege** (https://github.com/cloudgen/ciao): Type 0 invoker default for CLI lifecycle.  
 - **CIAO Principle 11 – Safe temp files** (https://github.com/cloudgen/ciao): `mktemp`, cleanup on error.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Digest, atomicity, PATH empty-dir check are sacred.
+
+---
+
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| `about` / `self-update` / `self-uninstall` as this login; Termux install to `$PREFIX/bin` | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`. Dual mention: `requirement-shell-cli-interface`.
+
+**This requirement:** self-management lifecycle. Update and uninstall stay this-login operations on this class.
 
 ---
 

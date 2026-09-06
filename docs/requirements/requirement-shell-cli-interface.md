@@ -109,8 +109,9 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./pomo` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.0"`) |
-| **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin` |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.2"`) |
+| **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin`. **Termux:** `pomo_apply_target_paths` retargets both to `$PREFIX/bin` when those POSIX defaults are still in force |
+| **Target detect** | `pomo_is_termux` (`PREFIX` contains `com.termux`, `TERMUX_VERSION`, Termux usr tree); `pomo_is_git_bash`; `pomo_is_windows_cmd`; union `pomo_is_normal_user_only_cli`; name via `pomo_target_system` (`termux` / `git-bash` / `windows-cmd` / `posix`) |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `pomo`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/pomo/main/pomo`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
 | **Type 1 / Type 2 commands** | **None** — Type 0 lifecycle + Type 0 domain (pomodoro); no elevated host/system-user ops |
 | **Dedicated system user** | **Not required** for Type 0 CLI self-management |
@@ -122,7 +123,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | *(no args — empty argv)* | Type 0 | `app_main` → `inst_maybe_install` / `inst_perform_install` | **Type O install-ensure** (not Type N help): not-installed / local / global; never help; see `requirement-shell-cli-zero-arguments.md` |
 | `install` | Type 0 | `inst_perform_install` | Install binary for current privilege (root→global, user→local); idempotent unless force reinstall |
 | `version` | Type 0 | `app_main` / `app_version` | Print local version; JSON object when `--json` |
-| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY; JSON when `--json`; **no `CHECKSUM` field** |
+| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**; JSON when `--json` includes `target` and `normal_user_only`; **no `CHECKSUM` field** |
 | `version-check` | Type 0 | `ver_check` | Compare local vs remote `VERSION` from `SCRIPT_URL`; fail clearly if URL unset/unreachable |
 | `self-update` | Type 0 | `inst_self_update` | Fetch remote version; reinstall when policy allows; reuse install primitives |
 | `self-uninstall` | Type 0 | `inst_self_uninstall` | Remove managed binary; PATH cleanup only if `~/.local/bin` empty (user installs) |
@@ -135,7 +136,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `list` | Type 0 domain | `pomo_list` | List running pomodoros (volatile and/or persistent) |
 | `stats` | Type 0 domain | `pomo_stats` | Daily completed count + total minutes |
 | `theme` | Type 0 domain | `pomo_theme` | `list` / `set` / `next` / `prev` (default, energetic, minimal) |
-| `help` | Type 0 | `app_help` | Full usage in human mode; short JSON note in JSON mode; Environment lists channel vars only — **not** `CHECKSUM` |
+| `help` | Type 0 | `app_help` | Full usage in human mode; short JSON note in JSON mode; Environment lists channel vars only — **not** `CHECKSUM`. On Termux/Git Bash/Windows cmd: this-login install path; **MUST NOT** list `sudo curl \| sh` |
 
 #### Global flags (normative wiring for this project)
 
@@ -173,6 +174,20 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 - **CIAO Principle 10 – Least-Privilege User** (https://github.com/cloudgen/ciao): Type 0 default for CLI self-care; no invented system-user requirement for binary lifecycle.  
 - **CIAO Principle 16 – Interactive vs non-interactive** (https://github.com/cloudgen/ciao): No hang in non-interactive; prompts only when appropriate.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Protection Rule below blocks privilege and UX regressions.
+
+---
+
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Detect via `pomo_is_termux` / `pomo_is_git_bash` / `pomo_is_windows_cmd`; union `pomo_is_normal_user_only_cli`; `help` names the target and this-login install | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** privilege labels, dispatch, and detect. Type 1 / Type 2 stay **unused** on this class. Help **MUST NOT** advertise `sudo curl | sh` as the path for Termux / Git Bash / Windows cmd.
 
 ---
 
@@ -260,4 +275,5 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | **TP-CLI-10** bashrc+sdkman | n/a — no product sdkman path | n/a |
 | **TP-CLI-11** self-uninstall refuse | `tests/test_cli.sh` | have |
 | **TP-CLI-12** out_json string-key contract | `tests/test_cli.sh` | have |
+| **TP-CLI-13** Termux / Git Bash target detect + help no `sudo curl` | `tests/test_cli.sh` | have |
 | **TP-POMO-01** domain help verbs | `tests/test_pomo_domain.sh` | have |

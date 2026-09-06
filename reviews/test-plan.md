@@ -30,6 +30,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | 2026-07-16 | PASS=181 FAIL=0 SKIP=0 | Pre–family-ID suite |
 | 2026-07-24 | **PASS=236 FAIL=0 SKIP=1** | CURL + domain storage; SKIP=TP-CURL-09 optional |
 | 2026-07-24 | **PASS=239 FAIL=0 SKIP=1** | Mold-aligned CURL-04 pipe; shared **TP-STORAGE**; re-check green |
+| 2026-09-06 | **PASS=255 FAIL=0 SKIP=1** | Termux/Git Bash **TP-CLI-13**; version 2.0.2 |
 
 ---
 
@@ -49,6 +50,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-CLI-10** | bashrc+sdkman under set -u | **n/a** | No product sdkman source path |
 | **TP-CLI-11** | self-uninstall refuse without force | **have** | `confirm_required`; binary remains |
 | **TP-CLI-12** | *(product extension)* out_json string-key | **have** | beyond mold; string-escape contract (`@key` raw n/a) |
+| **TP-CLI-13** | *(product)* Termux / Git Bash target detect | **have** | about `target`; help no `sudo curl` on that class |
 
 ---
 

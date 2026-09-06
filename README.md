@@ -1,6 +1,6 @@
 # pomo - Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.0.1-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.2-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
@@ -31,7 +31,7 @@
 
 Official recommendation from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refer to the [downloaded copy](./RECOMMENDATION.md).
 
-Zero external dependencies. Written in POSIX `sh` so it still runs on dash, BusyBox ash, Git Bash, Alpine, and containers.
+Zero external dependencies. Written in POSIX `sh` so it still runs on dash, BusyBox ash, Git Bash, Alpine, Termux, and containers.
 
 This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2** (Caution • Intentional • Anti-fragile • Over-engineered) and [CIAO-Lite](https://github.com/cloudgen/ciao-lite) (Simplicity but Safety).
 
@@ -50,7 +50,7 @@ This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**
 - Daily statistics (completed pomodoros + total minutes today)
 - Strict `--json` for scripts and status bars (`watch --json` is refused)
 - One-liner install, self-update, self-uninstall, and `about` diagnostics
-- Worked on dash, BusyBox ash, Git Bash, Alpine, and containers
+- Worked on dash, BusyBox ash, Git Bash, Alpine, Termux, and containers
 
 ---
 
@@ -62,11 +62,19 @@ This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
 ```
 
-**System-wide (root):**
+**System-wide (root on a POSIX host with `/usr/local/bin`):**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
 ```
+
+**Termux (this login only — do not use `sudo`):**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
+```
+
+On Termux the binary lands in `$PREFIX/bin` (already on `PATH`). Git Bash and Windows cmd use the same this-login ceiling: no `sudo curl | sh`.
 
 After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`) so `~/.local/bin` is on your `$PATH`.
 
@@ -169,10 +177,13 @@ pomo theme set energetic
 | Platform              | Shell                | Status     | Notes                              |
 |-----------------------|----------------------|------------|------------------------------------|
 | Alpine Linux          | BusyBox ash          | Excellent  | Primary target for minimalism      |
-| Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | Full fallback support              |
+| Termux (Android)      | dash / bash          | Excellent  | This login only; `$PREFIX/bin`     |
+| Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | This login only; full fallback     |
 | Rocky / RHEL / CentOS | Bash                 | Excellent  | Enterprise environments            |
 | macOS                 | Bash / zsh           | Excellent  | Fully supported                    |
 | Debian / Ubuntu       | dash / bash          | Excellent  | Broad compatibility                |
+
+This program is written to run **as your login**. On Termux, Git Bash, and Windows cmd it does not turn on admin or dedicated-account paths.
 
 ---
 
@@ -192,7 +203,7 @@ All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
 - **[mariadb-galera](https://github.com/Wilgat/mariadb-galera)** — MariaDB Galera Cluster deployment scripts
 
-Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.0.1** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, and `ver_gt` downgrade protection on `self-update`.
+Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.0.2** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target, and `ver_gt` downgrade protection on `self-update`.
 
 ---
 
@@ -204,7 +215,7 @@ Please **preserve the defensive style** and existing safety comments — especia
 
 - `curl | sh` in non-interactive shells
 - Minimal systems (`dash`, BusyBox `ash` on Alpine)
-- Missing `$HOME`, no `/dev/shm`, containers, Git Bash
+- Missing `$HOME`, no `/dev/shm`, containers, Git Bash, Termux (`$PREFIX/tmp`)
 
 It may look over-engineered at first; that is intentional.
 
@@ -230,6 +241,6 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ## Last Update
 
-2026-09-06 — README rewritten for people first (who runs what, minutes unit, automatic SHA-256). Product version remains **2.0.1**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+2026-09-06 — Termux is a first-class target (this login only; `$PREFIX/bin`). Product version **2.0.2**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
 
 **Made with care and a healthy dose of paranoia.** 🍅

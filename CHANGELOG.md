@@ -6,7 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-09-06
+
+### Added
+- **Termux as a target system:** detect helpers `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`; `pomo_target_system` names `termux` / `git-bash` / `windows-cmd` / `posix`.
+- On Termux, install uses `$PREFIX/bin` (already on `PATH`) instead of `/usr/local/bin`; volatile storage falls back through `TMPDIR` and `$PREFIX/tmp` when `/dev/shm` is missing.
+- `about` reports the target (human + JSON `target` / `normal_user_only`).
+- Related shell requirements include **Under command line for normal user only** (Type 1/2 unused on Termux / Git Bash / Windows cmd).
+- **TP-CLI-13:** Termux and Git Bash detect; help must not recommend `sudo curl`.
+
 ### Changed
+- **Help review:** leftover “help for countdown” header removed; help names the live target; install line is this-login on Termux/Git Bash/Windows cmd; **MUST NOT** advertise `sudo curl | sh` on that class; `inst_maybe_install` uses the same ceiling.
+- README Platform Compatibility lists Termux; system-wide `sudo` one-liner is POSIX-host only.
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.0.2 ship-unit bytes.
+
+### Docs (folded from post-2.0.1 Unreleased)
 - Product **README** rewritten for people first (who runs what; minutes unit; automatic SHA-256 link/value/result). Grammar fix (“Please refer to”). Section order matches the product kit (Features → Quick Installation → Usage → Examples → Platform Compatibility → Related Projects → Contributing → License → Last Update). Defensive-style and historical Grok notes folded into Contributing / Related Projects.
 - Every Active requirement now has **§1.1 Human-facing** (one sentence, three boxes, includes/excludes, practice). Catalog codes are no longer the only Purpose lead.
 - Domain law **`RQ-DOMAIN-POMO`**: lock-in finding that CLI duration unit is **whole minutes**, shortest valid work duration is **1 minute** (not 1 second); `0` → `invalid_duration` (§2.2.1).

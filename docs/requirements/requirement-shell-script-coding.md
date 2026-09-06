@@ -70,7 +70,8 @@ It owns coding rules that are **not** already owned by a peer requirement. Slice
 
 | Field | Value |
 |-------|--------|
-| Ship unit | `./pomo` (VERSION 2.0.1) |
+| Ship unit | `./pomo` (VERSION 2.0.2) |
+| **Termux / Git Bash / Windows cmd** | Same ceiling as § Under command line for normal user only |
 | Interpreter | `/bin/sh` |
 | `set -u` | yes (with HOME/USER safe defaults) |
 | `set -e` | no (global) |
@@ -80,8 +81,22 @@ It owns coding rules that are **not** already owned by a peer requirement. Slice
 ## 3. Why This Requirement Exists (Direct CIAO Alignment)
 
 - **CIAO Principle 2 – Intentional**: Coding lessons have a specialize-in home; they do not arrive raw.  
-- **CIAO Principle 13 – Multi environment**: dash/ash/Git Bash are first-class.  
+- **CIAO Principle 13 – Multi environment**: dash/ash/Git Bash/Termux are first-class.  
 - **CIAO Principle 20 / Over-protect**: Protection Zones stay; do not “simplify” them away.
+
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| POSIX `/bin/sh` detect helpers; no bashisms | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`. Dual mention: `requirement-shell-cli-interface`.
+
+**This requirement:** coding of detect helpers. Do not add an in-tool sudo wrapper because Termux was detected.
 
 ## 4. Design Principles (CIAO / CIAO-Lite)
 

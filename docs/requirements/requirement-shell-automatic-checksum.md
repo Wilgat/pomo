@@ -184,6 +184,20 @@ Numbers match [cloudgen/ciao](https://github.com/cloudgen/ciao) **v2.10.2** / ha
 
 ---
 
+## Under command line for normal user only
+
+When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Automatic companion SHA-256 as this login | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** checksum verify is this-login; do not wrap a package manager to obtain `sha256sum`.
+
+---
+
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - **Caution:** Mismatch aborts; no corrupt binary.  

@@ -3,21 +3,21 @@
 **Product:** pomo (POSIX `/bin/sh` Type 0 self-install / self-maintenance CLI + pomodoro domain)  
 **Workspace state:** Specialized product law (not blank genesis); **software-development** with Active class file.  
 **Domain SSOT:** `requirement-domain-pomo` / **`RQ-DOMAIN-POMO`**.  
-**Updated:** 2026-09-06
+**Updated:** 2026-09-08
 
 | Requirement-ID | Key | Title | Area | Status | Path | Updated |
 |----------------|-----|-------|------|--------|------|---------|
 | `RQ-CLASS-SOFTWARE-DEV` | requirement-class-software-dev | Software-development class residual (posix-sh; Termux/Git Bash this-login; coding-style MUST; no dest approver/fences) | class | Active | `requirement-class-software-dev.md` | 2026-09-06 |
-| `RQ-SHELL-SCRIPT-CODING` | requirement-shell-script-coding | POSIX `/bin/sh` coding-style specialize-in home (own-or-point) | shell | Active | `requirement-shell-script-coding.md` | 2026-09-06 |
+| `RQ-SHELL-SCRIPT-CODING` | requirement-shell-script-coding | POSIX `/bin/sh` coding-style specialize-in home (own-or-point; Termux this-login helpers) | shell | Active | `requirement-shell-script-coding.md` | 2026-09-08 |
 | `RQ-SHELL-AUTOMATIC-CHECKSUM` | requirement-shell-automatic-checksum | Automatic companion-digest integrity (transparent link/value/result; CHECKSUM not help/about) | shell | Active | `requirement-shell-automatic-checksum.md` | 2026-07-24 |
-| `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes; Termux/Git Bash detect) | shell | Active | `requirement-shell-cli-interface.md` | 2026-09-06 |
+| `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes; Termux/Git Bash detect; **TP-TX**) | shell | Active | `requirement-shell-cli-interface.md` | 2026-09-08 |
 | `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments | Empty argv Type O install-ensure (not installed / local / global) | shell | Active | `requirement-shell-cli-zero-arguments.md` | 2026-07-24 |
 | `RQ-SHELL-IDEMPOTENCY` | requirement-shell-idempotency | Shell idempotency / re-run safety for ensure-style ops | shell | Active | `requirement-shell-idempotency.md` | 2026-07-24 |
 | `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE` | requirement-shell-interactive-vs-noninteractive | Interactive vs non-interactive / `curl\|sh` behavior | shell | Active | `requirement-shell-interactive-vs-noninteractive.md` | 2026-07-24 |
 | `RQ-SHELL-MODULAR-FUNCTION-DESIGN` | requirement-shell-modular-function-design | Single-file modular function design (prefixes, zones) | shell | Active | `requirement-shell-modular-function-design.md` | 2026-07-24 |
-| `RQ-DOMAIN-POMO` | requirement-domain-pomo | Pomodoro domain (work/break, **minutes unit + 1-min minimum**, themes, stats, path-safe names, storage; help + about pillars) | domain | Active | `requirement-domain-pomo.md` | 2026-07-24 |
+| `RQ-DOMAIN-POMO` | requirement-domain-pomo | Pomodoro domain (work/break, **minutes unit + 1-min minimum**, themes, stats, path-safe names, storage; Termux `$PREFIX/tmp`) | domain | Active | `requirement-domain-pomo.md` | 2026-09-08 |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements | Central `out_*` output SSOT (stdout/stderr, modes) | shell | Active | `requirement-shell-output-requirements.md` | 2026-07-24 |
-| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about; Termux `$PREFIX/bin`) | shell | Active | `requirement-shell-self-management.md` | 2026-09-06 |
+| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about; Termux `$PREFIX/bin`) | shell | Active | `requirement-shell-self-management.md` | 2026-09-08 |
 
 **Rules for agents:**
 

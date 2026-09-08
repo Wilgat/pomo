@@ -45,8 +45,8 @@ set -u  # Treat unset variables as error (defensive)
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
 # Product version SSOT (specialized from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
-VERSION="2.0.2"
-: "${VERSION:=2.0.2}"
+VERSION="2.0.3"
+: "${VERSION:=2.0.3}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -114,6 +114,8 @@ else
     IS_ROOT=0
 fi
 : "${IS_ROOT:=0}"
+: "${IS_TERMUX:=0}"
+: "${FORCE_GLOBAL:=0}"
 : "${SH:=sh}"
 # =============================================================================
 # out_text() - SINGLE SOURCE OF TRUTH FOR ALL OUTPUT
@@ -461,6 +463,47 @@ out_json_error() {
 }
 
 # =============================================================================
+# util_ensure_writable_dir() - mkdir -p then test the directory is writable
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Shared probe for Termux/Android tmp and cache fallbacks. Creates the path
+# when missing, then returns 0 only if it is a writable directory.
+#
+# CIAO PRINCIPLES APPLIED:
+# - Caution: never treat a missing or read-only mount as usable storage.
+# - Intentional: one mkdir+writable check instead of copy-pasted probes.
+# - Anti-fragile: mkdir failure is not enough — re-test -d and -w.
+# - Over-protect: empty path is fail-closed (return 1).
+#
+# ALIGNMENT (live requirements only — never template-*.md or skill-*.md):
+# - requirement-domain-pomo.md
+# - requirement-shell-cli-interface.md
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+#
+# Lessons Learned (CIAO Reflection):
+# 2026-09-08: Termux $PREFIX/tmp is the userspace /tmp; Android /tmp is often
+#             missing or read-only. Shared probe so domain + scratch agree.
+#
+# Last updated: 2026-09-08
+# =============================================================================
+util_ensure_writable_dir() {
+    _uw_dir="${1-}"
+    if [ -z "${_uw_dir}" ]; then
+        unset _uw_dir
+        return 1
+    fi
+    mkdir -p "${_uw_dir}" 2>/dev/null
+    if [ -d "${_uw_dir}" ] && [ -w "${_uw_dir}" ]; then
+        unset _uw_dir
+        return 0
+    fi
+    unset _uw_dir
+    return 1
+}
+
+# =============================================================================
 # pomo_is_termux() / pomo_is_git_bash() / pomo_is_windows_cmd()
 # pomo_is_normal_user_only_cli() / pomo_target_system() / pomo_apply_target_paths()
 # =============================================================================
@@ -468,8 +511,9 @@ out_json_error() {
 # GENERAL PURPOSE:
 # Detect Termux, Git Bash, and Windows cmd as a command line for normal user
 # only: this login, no admin privilege, no dedicated system user. On Termux,
-# retarget USER_BIN / GLOBAL_BIN to $PREFIX/bin when still POSIX defaults,
-# and volatile storage to TMPDIR or $PREFIX/tmp when /dev/shm is missing.
+# freeze install to $PREFIX/bin (this login), force IS_ROOT=0, and retarget
+# volatile storage to $PREFIX/tmp when /dev/shm is missing. Android /tmp is
+# often read-only — create $PREFIX/tmp instead of assuming it exists.
 #
 # ALIGNMENT (live requirements only):
 # - requirement-shell-cli-interface.md
@@ -487,7 +531,12 @@ out_json_error() {
 # - Anti-fragile: Termux has no /usr/local/bin and often no /dev/shm.
 # - Over-protect: Never recommend sudo curl | sh on this class.
 #
-# Last updated: 2026-09-06
+# Lessons Learned (CIAO Reflection):
+# 2026-09-08: timer start died on Termux when VOLATILE_DIR=/dev/shm and /tmp
+#             were both unusable; empty base wrote /APP_NAME_<user>_name on
+#             the read-only root. Create $PREFIX/tmp; refuse empty/root files.
+#
+# Last updated: 2026-09-08
 # =============================================================================
 
 pomo_is_termux() {
@@ -567,27 +616,37 @@ pomo_target_system() {
 }
 
 pomo_apply_target_paths() {
+    : "${APP_NAME:=pomo}"
     : "${HOME:=/tmp}"
     : "${PREFIX:=}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${VOLATILE_DIR:=/dev/shm}"
-    : "${TMPDIR:=}"
-
+    : "${FORCE_GLOBAL:=0}"
+    IS_TERMUX=0
     if ! pomo_is_termux; then
+        : "${IS_TERMUX:=0}"
         return 0
     fi
+
+    IS_TERMUX=1
+    IS_ROOT=0
+    FORCE_GLOBAL=0
 
     if [ -z "${PREFIX}" ]; then
         PREFIX="/data/data/com.termux/files/usr"
     fi
 
     _default_user_bin="${HOME}/.local/bin"
-    if [ "${USER_BIN}" = "${_default_user_bin}" ]; then
-        if [ -d "${PREFIX}/bin" ]; then
-            USER_BIN="${PREFIX}/bin"
-        fi
+    if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/bin" ]; then
+        case "${USER_BIN-}" in
+            ""|"${_default_user_bin}")
+                USER_BIN="${PREFIX}/bin"
+                ;;
+        esac
     fi
+    : "${USER_BIN:=${_default_user_bin}}"
+    INSTALL_PATH="${USER_BIN}/${APP_NAME}"
 
     _default_global="/usr/local/bin"
     if [ "${GLOBAL_BIN}" = "${_default_global}" ]; then
@@ -596,16 +655,22 @@ pomo_apply_target_paths() {
         fi
     fi
 
-    if [ ! -d "${VOLATILE_DIR}" ] || [ ! -w "${VOLATILE_DIR}" ]; then
-        if [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
-            VOLATILE_DIR="${TMPDIR}"
-        elif [ -d "${PREFIX}/tmp" ] && [ -w "${PREFIX}/tmp" ]; then
-            VOLATILE_DIR="${PREFIX}/tmp"
+    # Domain volatile: Android has no usable /dev/shm; /tmp is often RO.
+    # Termux scratch is $PREFIX/tmp (also the usual Termux TMPDIR).
+    if [ -n "${PREFIX}" ]; then
+        if [ ! -d "${VOLATILE_DIR}" ] || [ ! -w "${VOLATILE_DIR}" ]; then
+            if util_ensure_writable_dir "${PREFIX}/tmp"; then
+                VOLATILE_DIR="${PREFIX}/tmp"
+            fi
         fi
     fi
     unset _default_user_bin _default_global
+    : "${IS_TERMUX:=0}"
+    : "${IS_ROOT:=0}"
     return 0
 }
+
+pomo_apply_target_paths
 
 # =============================================================================
 # inst_perform_install() - Perform the actual installation (v2 with checksum)
@@ -2184,8 +2249,10 @@ util_backup() {
 # 2026-07-13: STORAGE_DIR was bare/unset on third fallback (INC-20260713-001 P1).
 # 2026-07-14: Third fallback uses XDG_CACHE_HOME / HOME/.cache / /tmp with
 #             per-user ${APP_NAME}-${USERNAME} isolation under set -u.
+# 2026-09-08: Termux $PREFIX/tmp before Linux /tmp (Android /tmp is often RO).
+#             Create chosen tier before echo (fail-closed).
 #
-# Last reviewed: 2026-07-14
+# Last updated: 2026-09-08
 # =============================================================================
 util_resolve_storage() {
     # --- Safe Variable Defaults ----
@@ -2194,33 +2261,28 @@ util_resolve_storage() {
     : "${APP_NAME:=app}"
     : "${HOME:=/tmp}"
     : "${XDG_CACHE_HOME:=${HOME}/.cache}"
-
-    : "${TMPDIR:=}"
+    : "${IS_TERMUX:=0}"
     : "${PREFIX:=}"
     pomo_apply_target_paths
 
+    # Pick first available tier, then create root (all tiers fail-closed)
+    _storage_candidate=""
     if [ -d "/dev/shm" ] && [ -w "/dev/shm" ]; then
-        echo "/dev/shm/${APP_NAME}-${USERNAME}"
-        return 0
+        _storage_candidate="/dev/shm/${APP_NAME}-${USERNAME}"
+    elif [ "${IS_TERMUX}" -eq 1 ] && [ -n "${PREFIX-}" ] && util_ensure_writable_dir "${PREFIX}/tmp"; then
+        _storage_candidate="${PREFIX}/tmp/${APP_NAME}-${USERNAME}"
+    elif [ -w "/tmp" ]; then
+        _storage_candidate="/tmp/${APP_NAME}-${USERNAME}"
+    else
+        : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
+        _storage_candidate="${STORAGE_DIR}"
     fi
-    if [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
-        echo "${TMPDIR}/${APP_NAME}-${USERNAME}"
-        return 0
+
+    if ! mkdir -p "${_storage_candidate}" 2>/dev/null; then
+        out_die "Cannot create storage directory ${_storage_candidate}. Next: mkdir -p \"\${PREFIX}/tmp\" or \"\${HOME}/.cache/${APP_NAME}\""
     fi
-    if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/tmp" ] && [ -w "${PREFIX}/tmp" ]; then
-        echo "${PREFIX}/tmp/${APP_NAME}-${USERNAME}"
-        return 0
-    fi
-    if [ -w "/tmp" ]; then
-        echo "/tmp/${APP_NAME}-${USERNAME}"
-        return 0
-    fi
-    # XDG-style per-user cache isolation (set -u safe)
-    : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
-    if ! mkdir -p "${STORAGE_DIR}" 2>/dev/null; then
-        out_die "Cannot create storage directory ${STORAGE_DIR}"
-    fi
-    echo "${STORAGE_DIR}"
+    echo "${_storage_candidate}"
+    unset _storage_candidate
     return 0
 }
 
@@ -2431,6 +2493,14 @@ util_get_current_shell() {
 # Oracle domain behavior: pomo-1.7.0-domain-ref (work/break, themes, watch, stats, skip).
 #
 # !!! DO NOT SIMPLIFY fallback chains, phase transitions, or name sanitization !!!
+#
+# Lessons Learned (CIAO Reflection):
+# 2026-09-08: Termux has no writable /dev/shm or /tmp. Chain is now
+#             VOLATILE_DIR → $PREFIX/tmp → TMPDIR → /tmp → XDG cache. out_die
+#             inside $(pomo_resolve_base_dir) only exits the subshell — parent
+#             must refuse an empty base so we never write /pomo_<user>_<name>.
+#
+# Last updated: 2026-09-08
 # =============================================================================
 
 pomo_resolve_base_dir() {
@@ -2443,7 +2513,8 @@ pomo_resolve_base_dir() {
     : "${HOME:=/tmp}"
     : "${QUIET:=0}"
     : "${JSON:=0}"
-    : "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME}}"
+    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
+    : "${PERSISTENT_DIR:=${XDG_CACHE_HOME}/${APP_NAME}}"
     : "${TMPDIR:=}"
     : "${PREFIX:=}"
     pomo_apply_target_paths
@@ -2451,42 +2522,52 @@ pomo_resolve_base_dir() {
     if [ "$requested_mode" = "volatile" ]; then
         if [ -d "$VOLATILE_DIR" ] && [ -w "$VOLATILE_DIR" ]; then
             base_dir="$VOLATILE_DIR"
-        elif [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
-            actual_mode="fallback"
-            base_dir="${TMPDIR}"
-            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
-                out_warn "Volatile storage (/dev/shm) not available. Falling back to TMPDIR."
-            fi
-        elif [ -n "${PREFIX}" ] && [ -d "${PREFIX}/tmp" ] && [ -w "${PREFIX}/tmp" ]; then
-            actual_mode="fallback"
-            base_dir="${PREFIX}/tmp"
-            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
-                out_warn "Volatile storage (/dev/shm) not available. Falling back to \$PREFIX/tmp."
-            fi
-        elif [ -d "/tmp" ] && [ -w "/tmp" ]; then
-            actual_mode="fallback"
-            base_dir="/tmp"
-            if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
-                out_warn "Volatile storage (/dev/shm) not available. Falling back to /tmp."
-            fi
         else
-            base_dir="/tmp/${APP_NAME}_${USERNAME}"
-            if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
-                out_die "No writable temporary storage available (/dev/shm, TMPDIR, \$PREFIX/tmp, /tmp). ${APP_NAME} cannot start."
+            base_dir=""
+            # Termux userspace tmp (Android /tmp is often missing or read-only)
+            if [ -n "${PREFIX-}" ]; then
+                if util_ensure_writable_dir "${PREFIX}/tmp"; then
+                    base_dir="${PREFIX}/tmp"
+                fi
+            fi
+            if [ -z "$base_dir" ] && [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
+                base_dir="${TMPDIR}"
+            fi
+            if [ -z "$base_dir" ] && [ -d "/tmp" ] && [ -w "/tmp" ]; then
+                base_dir="/tmp"
+            fi
+            if [ -z "$base_dir" ]; then
+                if util_ensure_writable_dir "${XDG_CACHE_HOME}/${APP_NAME}"; then
+                    base_dir="${XDG_CACHE_HOME}/${APP_NAME}"
+                fi
+            fi
+            if [ -z "$base_dir" ]; then
+                out_die "No writable temporary storage available (/dev/shm, \$PREFIX/tmp, TMPDIR, /tmp, or cache). ${APP_NAME} cannot start. Next: mkdir -p \"\${PREFIX}/tmp\" or ${APP_NAME} start --persist"
+                return 1
             fi
             actual_mode="fallback"
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
-                out_warn "Volatile storage unavailable. Using fallback directory: $base_dir"
+                out_warn "Volatile storage (/dev/shm) not available. Using: $base_dir"
             fi
         fi
     else
         if [ -n "${HOME-}" ] && [ -d "${HOME}" ] && [ -w "${HOME}" ]; then
             base_dir="${PERSISTENT_DIR}"
-            mkdir -p "$base_dir" 2>/dev/null || true
+            mkdir -p "$base_dir" 2>/dev/null
+            if [ ! -d "$base_dir" ] || [ ! -w "$base_dir" ]; then
+                base_dir=""
+            fi
         else
-            base_dir="/tmp/${APP_NAME}_${USERNAME}_persistent"
-            if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
-                out_die "No writable location for persistent storage (no usable \$HOME and cannot write to /tmp). ${APP_NAME} cannot continue."
+            base_dir=""
+        fi
+        if [ -z "$base_dir" ]; then
+            if [ -n "${PREFIX-}" ] && util_ensure_writable_dir "${PREFIX}/tmp/${APP_NAME}_${USERNAME}_persistent"; then
+                base_dir="${PREFIX}/tmp/${APP_NAME}_${USERNAME}_persistent"
+            elif util_ensure_writable_dir "/tmp/${APP_NAME}_${USERNAME}_persistent"; then
+                base_dir="/tmp/${APP_NAME}_${USERNAME}_persistent"
+            else
+                out_die "No writable location for persistent storage (home cache, \$PREFIX/tmp, and /tmp are unusable). Next: mkdir -p \"\${HOME}/.cache/${APP_NAME}\" or export PERSISTENT_DIR to a writable folder."
+                return 1
             fi
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
                 out_warn "No usable \$HOME detected. Persistent pomodoros will use fallback directory: $base_dir"
@@ -2503,8 +2584,30 @@ pomo_get_file() {
     local base_dir
     : "${APP_NAME:=pomo}"
     : "${USERNAME:=unknown}"
-    base_dir=$(pomo_resolve_base_dir "$requested_mode")
+    base_dir=$(pomo_resolve_base_dir "$requested_mode") || true
+    if [ -z "$base_dir" ] || [ "$base_dir" = "/" ]; then
+        return 1
+    fi
     printf '%s\n' "${base_dir}/${APP_NAME}_${USERNAME}_${name}"
+}
+
+# Resolve APP_FILE in THIS shell. out_die inside $(pomo_get_file) only exits
+# the subshell — empty/root paths would write /pomo_<user>_<name> on Termux.
+pomo_require_file() {
+    : "${POMO_NAME:=default}"
+    : "${APP_NAME:=pomo}"
+    _req_mode="${1-volatile}"
+    APP_FILE=$(pomo_get_file "$POMO_NAME" "$_req_mode") || true
+    if [ -z "${APP_FILE}" ]; then
+        unset _req_mode
+        out_die "Cannot create the pomodoro file path (no writable storage). Next: mkdir -p \"\${PREFIX}/tmp\" or ${APP_NAME} start --persist"
+    fi
+    _tf_dir=$(dirname "${APP_FILE}")
+    if [ "${_tf_dir}" = "/" ]; then
+        unset _req_mode _tf_dir
+        out_die "Cannot create the pomodoro file path (resolved to filesystem root). Next: mkdir -p \"\${PREFIX}/tmp\" or ${APP_NAME} start --persist"
+    fi
+    unset _req_mode _tf_dir
 }
 
 pomo_sanitize_name() {
@@ -2679,7 +2782,7 @@ pomo_start() {
     [ "${POMO_PERSIST:-0}" -eq 1 ] && mode="persistent"
     local APP_FILE
     : "${POMO_NAME:=default}"
-    APP_FILE=$(pomo_get_file "$POMO_NAME" "$mode")
+    pomo_require_file "$mode"
 
     if [ -n "${POMO_CUSTOM_WORK-}" ]; then
         # Custom work: plain minutes number (1.7.0 contract) or h/m/s string
@@ -2759,7 +2862,7 @@ pomo_stop() {
     : "${POMO_NAME:=default}"
     : "${FORCE:=0}"
     : "${COMMAND:=stop}"
-    APP_FILE=$(pomo_get_file "$POMO_NAME" "$mode")
+    pomo_require_file "$mode"
 
     if [ ! -f "$APP_FILE" ]; then
         pomo_domain_fail "No pomodoro '${POMO_NAME}' running." "no_pomodoro"
@@ -2808,7 +2911,7 @@ pomo_show_status() {
     local mode="${1-volatile}"
     local APP_FILE
     : "${POMO_NAME:=default}"
-    APP_FILE=$(pomo_get_file "$POMO_NAME" "$mode")
+    pomo_require_file "$mode"
 
     if [ ! -f "$APP_FILE" ]; then
         if [ "${JSON}" -eq 1 ]; then
@@ -2966,7 +3069,7 @@ pomo_skip() {
     local mode="${1-volatile}"
     local APP_FILE
     : "${POMO_NAME:=default}"
-    APP_FILE=$(pomo_get_file "$POMO_NAME" "$mode")
+    pomo_require_file "$mode"
 
     if [ ! -f "$APP_FILE" ]; then
         pomo_domain_fail "No pomodoro '${POMO_NAME}' running to skip." "no_pomodoro"
@@ -3247,7 +3350,7 @@ app_about() {
     : "${APP_NAME:=pomo}"
     : "${HOME:=/tmp}"
     # Version comes from global SSOT (VERSION near top); default only if unset
-    : "${VERSION:=2.0.2}"
+    : "${VERSION:=2.0.3}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -3283,6 +3386,8 @@ app_about() {
         if pomo_is_normal_user_only_cli; then
             normal_user_only="true"
         fi
+        local termux_flag="false"
+        [ "${IS_TERMUX:-0}" -eq 1 ] && termux_flag="true"
 
         out_json "about" "" \
             "app" "${APP_NAME}" \
@@ -3294,7 +3399,10 @@ app_about() {
             "interactive" "${interactive}" \
             "user" "${current_user}" \
             "target" "${target_system}" \
-            "normal_user_only" "${normal_user_only}"
+            "normal_user_only" "${normal_user_only}" \
+            "termux" "${termux_flag}" \
+            "user_bin" "${USER_BIN}" \
+            "prefix" "${PREFIX-}"
         return 0
     fi
 
@@ -3339,11 +3447,40 @@ app_about() {
     current_user="$(id -un 2>/dev/null || echo "unknown")"
     out_info "Current user:      ${current_user}"
 
-    if [ "$(id -u)" -eq 0 ]; then
-        out_success "Execution context: root (global install path available)"
-    else
-        out_info "Execution context: normal user (Type 0 CLI self-management)"
-    fi
+    _about_target=$(pomo_target_system)
+    case "${_about_target}" in
+        termux)
+            out_info "Target system:     Termux (this login only — no sudo install)"
+            out_info "Termux prefix:     ${PREFIX:-unset}"
+            out_info "User install dir:  ${USER_BIN}"
+            out_info "Execution context: this login (no admin or dedicated-account path)"
+            ;;
+        git-bash)
+            out_info "Target system:     Git Bash (this login only)"
+            if [ "$(id -u)" -eq 0 ]; then
+                out_success "Execution context: root (global install path available)"
+            else
+                out_info "Execution context: this login (user install path)"
+            fi
+            ;;
+        windows-cmd)
+            out_info "Target system:     Windows cmd (this login only)"
+            if [ "$(id -u)" -eq 0 ]; then
+                out_success "Execution context: root (global install path available)"
+            else
+                out_info "Execution context: this login (user install path)"
+            fi
+            ;;
+        *)
+            out_info "Target system:     POSIX"
+            if [ "$(id -u)" -eq 0 ]; then
+                out_success "Execution context: root (global install path available)"
+            else
+                out_info "Execution context: normal user (Type 0 CLI self-management)"
+            fi
+            ;;
+    esac
+    unset _about_target
 
     out_empty_line
 
@@ -3351,23 +3488,6 @@ app_about() {
     current_shell=$(util_get_current_shell)
 
     out_info "Current shell:     ${current_shell}"
-
-    _about_target=$(pomo_target_system)
-    case "${_about_target}" in
-        termux)
-            out_info "Target system:     Termux (this login only; \$PREFIX/bin)"
-            ;;
-        git-bash)
-            out_info "Target system:     Git Bash (this login only)"
-            ;;
-        windows-cmd)
-            out_info "Target system:     Windows cmd (this login only)"
-            ;;
-        *)
-            out_info "Target system:     POSIX"
-            ;;
-    esac
-    unset _about_target
 
     if [ -t 1 ]; then
         out_info "TTY / Interactive: yes"
@@ -3393,7 +3513,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=pomo}"
-    : "${VERSION:=2.0.2}"
+    : "${VERSION:=2.0.3}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path
@@ -3584,8 +3704,14 @@ app_help() {
 #     Cases A/B/C (not installed / local / global). --force only for deliberate
 #     re-download/replace — not required for a second one-liner run.
 #     SSOT: requirement-shell-cli-zero-arguments.md (selfmanaged = Type O).
+# 2026-09-08:
+#   - APP_FILE=$(pomo_get_file) must fail closed: out_die in the resolver
+#     only exits the command-substitution subshell; empty/root paths wrote
+#     /pomo_<user>_<name> on a read-only filesystem (Termux).
+#   - Scratch resolve + TMPDIR export so install mktemp lands under isolated
+#     storage (Termux $PREFIX/tmp when /dev/shm and Android /tmp are unusable).
 #
-# Last reviewed: 2026-07-14
+# Last updated: 2026-09-08
 # =============================================================================
 
 app_main() {
@@ -3596,6 +3722,21 @@ app_main() {
     : "${DEBUG:=0}"
     : "${FORCE:=0}"
     : "${FORCE_REINSTALL:=0}"
+
+    # Termux: this login only. Scratch: /dev/shm → $PREFIX/tmp → /tmp → cache.
+    # Resolver creates root fail-closed. Export TMPDIR so mktemp -t (install
+    # download stage) lands under the isolated product root.
+    pomo_apply_target_paths
+    : "${USERNAME:=unknown}"
+    : "${HOME:=/tmp}"
+    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
+    : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
+    EFFECTIVE_STORAGE_DIR=$(util_resolve_storage) || true
+    if [ -z "${EFFECTIVE_STORAGE_DIR}" ]; then
+        out_die "Cannot create storage directory. Next: mkdir -p \"\${PREFIX}/tmp\" or \"\${HOME}/.cache/${APP_NAME}\""
+    fi
+    export EFFECTIVE_STORAGE_DIR STORAGE_DIR
+    export TMPDIR="${EFFECTIVE_STORAGE_DIR}"
 
     # === ZERO-ARG = Type O install-ensure (curl | sh contract) ===
     # Product type: Type O (online-install) — not Type N help-default.

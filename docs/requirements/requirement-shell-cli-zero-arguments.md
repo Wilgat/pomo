@@ -280,3 +280,4 @@ This requirement is satisfied when all of the following hold:
 | **TP-CLI-09** / **TP-LC-09** / **TP-U-02** zero-arg bad channel | `tests/test_cli.sh` | have |
 | **TP-LC-01** empty-argv ensure first + already local/global | `tests/test_install_lifecycle.sh` | have |
 | **TP-LC-12** explicit `install --json` | `tests/test_install_lifecycle.sh` | have |
+| **TP-TX-03** Termux empty-argv recommend has no `sudo curl` | `tests/test_cli.sh` | have |

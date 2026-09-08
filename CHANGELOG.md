@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-09-08
+
+### Added
+- **Full Termux parity with sibling timer:** `util_ensure_writable_dir` creates `$PREFIX/tmp` when `/dev/shm` is missing (Android `/tmp` is often read-only).
+- `about --json` fields `termux`, `user_bin`, and `prefix` (keeps `target` / `normal_user_only`).
+- **TP-TX-01..05** (off/on detect, no `sudo curl`, `$PREFIX/bin` dest, stub `pkg` never invoked) and **TP-TX-08** (volatile records under `$PREFIX/tmp`).
+- Proof mold **`PM-SHELL-TERMUX-ISH-TEST-PLAN`** specialized into product maps.
+
+### Changed
+- Domain volatile chain: `/dev/shm` → `$PREFIX/tmp` (create) → `TMPDIR` → `/tmp` → cache. `pomo_require_file` refuses empty/root paths so a failed resolve cannot write `/pomo_<user>_<name>`.
+- Install scratch: `util_resolve_storage` prefers Termux `$PREFIX/tmp` before Linux `/tmp` and creates the chosen tier; `app_main` exports `TMPDIR` from that root.
+- Termux detect freezes `IS_ROOT=0` and `FORCE_GLOBAL=0`; `pomo_apply_target_paths` runs at load.
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.0.3 ship-unit bytes.
+
 ## [2.0.2] - 2026-09-06
 
 ### Added

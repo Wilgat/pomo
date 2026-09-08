@@ -1,7 +1,7 @@
 # Reviews registry (pomo)
 
 **Product:** pomo  
-**Updated:** 2026-09-06  
+**Updated:** 2026-09-08  
 
 ## Plans (living)
 

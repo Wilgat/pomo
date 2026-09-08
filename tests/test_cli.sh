@@ -3,14 +3,15 @@
 # =============================================================================
 # Mold catalog TP-CLI-01..11 (Core). Product: sh -n not bash -n; TP-CLI-05/10 n/a;
 # TP-CLI-12 product extension (out_json string-key). Cross: TP-CSUM-01/05, TP-U-01/02,
-# TP-POMO-01 (help domain verbs); TP-CLI-13 Termux/Git Bash target. Labels = TP-IDs.
+# TP-POMO-01 (help domain verbs); TP-CLI-13 Git Bash/target; TP-TX-01..05 + TP-TX-08
+# Termux this-login dest + $PREFIX/tmp. Labels = TP-IDs.
 # =============================================================================
 
 # shellcheck source=helpers.sh
 . "${TESTS_ROOT}/helpers.sh"
 
 run_test_cli() {
-    t_header "CLI surface (TP-CLI / TP-CSUM / TP-U)"
+    t_header "CLI surface (TP-CLI / TP-CSUM / TP-U / TP-TX)"
 
     require_cmd sh
     require_cmd sha256sum
@@ -221,4 +222,74 @@ run_test_cli() {
     _out=$(MSYSTEM=MINGW64 sh "${SCRIPT}" help 2>/dev/null)
     assert_contains "TP-CLI-13 Git Bash help names Git Bash" "$_out" "Git Bash"
     assert_not_contains "TP-CLI-13 Git Bash help must not recommend sudo curl" "$_out" "sudo curl"
+
+    # --- TP-TX-*: Termux target (command line for this login only) ---
+    _stub=$(mktemp -d "${TMPDIR:-/tmp}/tm-pkgstub.XXXXXX")
+    printf '#!/bin/sh\necho pkg-called >> "%s/pkg.log"\nexit 0\n' "${_stub}" > "${_stub}/pkg"
+    chmod +x "${_stub}/pkg"
+    _out=$(env -u PREFIX -u TERMUX_VERSION PATH="${_stub}:${PATH}" \
+        sh "${SCRIPT}" --json about 2>/dev/null)
+    assert_contains "TP-TX-01 about termux false off detect" "$_out" '"termux":"false"'
+    assert_file_missing "TP-TX-01 TP-LC-15 pkg stub not invoked off Termux" "${_stub}/pkg.log"
+
+    ci_isolated_env
+    _tx_prefix="${CI_HOME}/data/com.termux/files/usr"
+    mkdir -p "${_tx_prefix}/bin" "${_tx_prefix}/tmp"
+    _out=$(
+        HOME="${CI_HOME}" PREFIX="${_tx_prefix}" TERMUX_VERSION="0.118.0" \
+        PATH="${_stub}:${PATH}" \
+        env -u USER_BIN sh "${SCRIPT}" --json about 2>/dev/null
+    )
+    assert_contains "TP-TX-02 about termux true on PREFIX detect" "$_out" '"termux":"true"'
+    assert_contains "TP-TX-02 about prefix field" "$_out" "com.termux"
+    assert_contains "TP-TX-04 user_bin is PREFIX/bin" "$_out" "${_tx_prefix}/bin"
+    assert_file_missing "TP-TX-05 pkg stub not invoked on Termux (no pkg companion)" "${_stub}/pkg.log"
+    _help=$(
+        HOME="${CI_HOME}" PREFIX="${_tx_prefix}" TERMUX_VERSION="0.118.0" \
+        env -u USER_BIN sh "${SCRIPT}" help 2>/dev/null
+    )
+    assert_not_contains "TP-TX-03 help must not recommend sudo on Termux" "$_help" "sudo curl"
+    assert_contains "TP-TX-03 help install names this login" "$_help" "this login"
+
+    # --- TP-TX-08: Termux volatile records use $PREFIX/tmp when /dev/shm is unusable ---
+    # Real Termux: /dev/shm missing, Android /tmp often read-only. Simulate by
+    # pointing VOLATILE_DIR at a missing path; apply_target_paths retargets to PREFIX/tmp.
+    _tx_name="tx-pref-tmp"
+    _u=$(id -un 2>/dev/null || echo "unknown")
+    _tx_file="${_tx_prefix}/tmp/${APP_NAME}_${_u}_${_tx_name}"
+    _errf="${CI_HOME}/tx-stor.err"
+    rm -f "${_tx_file}"
+    _out=$(
+        HOME="${CI_HOME}" PREFIX="${_tx_prefix}" TERMUX_VERSION="0.118.0" \
+        VOLATILE_DIR="${CI_HOME}/no-such-shm" \
+        env -u USER_BIN sh "${SCRIPT}" start "${_tx_name}" 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    _all="${_out}${_err}"
+    assert_eq "TP-TX-08 termux start with unusable VOLATILE_DIR exit 0" 0 "$_ec"
+    assert_not_contains "TP-TX-08 must not die on missing /dev/shm /tmp" "$_all" "No writable temporary storage"
+    assert_not_contains "TP-TX-08 must not write pomo file at filesystem root" "$_all" "cannot create /${APP_NAME}_"
+    assert_file_exists "TP-TX-08 volatile file under PREFIX/tmp" "${_tx_file}"
+    _stop=$(
+        HOME="${CI_HOME}" PREFIX="${_tx_prefix}" TERMUX_VERSION="0.118.0" \
+        VOLATILE_DIR="${CI_HOME}/no-such-shm" \
+        env -u USER_BIN sh "${SCRIPT}" stop "${_tx_name}" 2>/dev/null
+    )
+    _sec=$?
+    assert_eq "TP-TX-08 termux stop of PREFIX/tmp pomo exit 0" 0 "$_sec"
+    rm -f "${_tx_file}"
+
+    _errf="${CI_HOME}/tx-zero-arg.err"
+    _out=$(
+        HOME="${CI_HOME}" PREFIX="${_tx_prefix}" TERMUX_VERSION="0.118.0" \
+        SCRIPT_URL="http://127.0.0.1:1/pomo-unreachable" \
+        env -u USER_BIN sh "${SCRIPT}" </dev/null 2>"${_errf}"
+    )
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    _all="${_out}${_err}"
+    assert_not_contains "TP-TX-03 empty-argv recommend has no sudo curl" "$_all" "sudo curl"
+    assert_contains "TP-TX-03 empty-argv still shows curl | sh" "$_all" "curl -fsSL"
+    ci_cleanup_env
+    rm -rf "${_stub}"
 }

@@ -1,6 +1,6 @@
 # What to review (pomo) — living checklist
 
-**Product:** pomo v2.0.1  
+**Product:** pomo v2.0.3  
 **Ship unit:** `./pomo`  
 **Domain SSOT:** **`RQ-DOMAIN-POMO`** (`docs/requirements/requirement-domain-pomo.md`)  
 **Domain TP family:** **`TP-POMO-*`** (not `TP-DOM-*`; policy-harness-id-notation §5)  
@@ -12,7 +12,7 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 
 ## Pre-flight
 
-- [ ] Load `reviews/lessons.md` (L-01…L-14)  
+- [ ] Load `reviews/lessons.md` (L-01…L-14, L-TX-01, L-TX-02)  
 - [ ] Load `docs/requirements/index.md` (registry-only law; confirm no foreign orphans)  
 - [ ] Confirm scope: full product / domain / Type 0 / docs / origin  
 - [ ] Note ship unit version (`VERSION` in `./pomo`) vs README badge  
@@ -46,6 +46,8 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 | Domain stats count rules | — | stop counts; kill does not |
 | Watch vs JSON | — | `watch --json` non-zero |
 | Reverse-copy | L-10 | No domain write-back to countdown |
+| Termux detect / sudo recommend | L-TX-01 | `sudo curl` or `/usr/local/bin` on Termux |
+| Termux volatile tmp | L-TX-02 | `/dev/shm`+`/tmp` only; write `/pomo_*` on RO root |
 
 ---
 
@@ -65,7 +67,7 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 ## Tests lock-in
 
 - [ ] `./tests/run.sh` PASS with FAIL=0 (or documented environment block)  
-- [ ] Suites: `test_cli.sh` (**TP-CLI**), `test_install_lifecycle.sh` (**TP-LC** / **TP-CSUM**), `test_online_curl_install.sh` (**TP-CURL**), `test_pomo_domain.sh` (**TP-POMO-***)  
+- [ ] Suites: `test_cli.sh` (**TP-CLI**, **TP-TX**), `test_install_lifecycle.sh` (**TP-LC** / **TP-CSUM**), `test_online_curl_install.sh` (**TP-CURL**), `test_pomo_domain.sh` (**TP-POMO-***)  
 - [ ] Assert labels include primary **TP-IDs** (id-notation)  
 - [ ] Open bugs mapped in `test-plan.md` (family TP-*)  
 

@@ -1,6 +1,6 @@
 # pomo - Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.0.2-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.0.3-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
@@ -41,7 +41,7 @@ This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**
 
 - **Named timers** (`default`, `focus`, `meeting`, `writing`, …) isolated per login
 - **Two storage modes**:
-  - **Volatile** (default): in-memory when `/dev/shm` is writable, with a temp fallback
+  - **Volatile** (default): in-memory when `/dev/shm` is writable; Termux falls back to `$PREFIX/tmp` then cache
   - **Persistent** (`--persist`): survives reboot under `~/.cache/pomo/`
 - Fallbacks when `/dev/shm`, `$HOME`, or a container is missing or restricted
 - **Three themes** (`default`, `energetic`, `minimal`) with icons, colors, and UTF-8 progress bars
@@ -74,7 +74,7 @@ curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
 ```
 
-On Termux the binary lands in `$PREFIX/bin` (already on `PATH`). Git Bash and Windows cmd use the same this-login ceiling: no `sudo curl | sh`.
+On Termux the binary lands in `$PREFIX/bin` (already on `PATH`). Volatile timers use `$PREFIX/tmp` when `/dev/shm` is missing and Android `/tmp` is not writable. Git Bash and Windows cmd use the same this-login ceiling: no `sudo curl | sh`.
 
 After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`) so `~/.local/bin` is on your `$PATH`.
 
@@ -177,7 +177,7 @@ pomo theme set energetic
 | Platform              | Shell                | Status     | Notes                              |
 |-----------------------|----------------------|------------|------------------------------------|
 | Alpine Linux          | BusyBox ash          | Excellent  | Primary target for minimalism      |
-| Termux (Android)      | dash / bash          | Excellent  | This login only; `$PREFIX/bin`     |
+| Termux (Android)      | dash / bash          | Excellent  | This login only; `$PREFIX/bin`. `/dev/shm` usually missing; Android `/tmp` often read-only → `$PREFIX/tmp` then cache. |
 | Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | This login only; full fallback     |
 | Rocky / RHEL / CentOS | Bash                 | Excellent  | Enterprise environments            |
 | macOS                 | Bash / zsh           | Excellent  | Fully supported                    |
@@ -203,7 +203,7 @@ All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
 - **[mariadb-galera](https://github.com/Wilgat/mariadb-galera)** — MariaDB Galera Cluster deployment scripts
 
-Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.0.2** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target, and `ver_gt` downgrade protection on `self-update`.
+Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.0.3** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), and `ver_gt` downgrade protection on `self-update`.
 
 ---
 
@@ -241,6 +241,6 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ## Last Update
 
-2026-09-06 — Termux is a first-class target (this login only; `$PREFIX/bin`). Product version **2.0.2**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+2026-09-08 — Full Termux support: `$PREFIX/bin` install, `$PREFIX/tmp` volatile fallback, refuse root-path writes. Product version **2.0.3**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
 
 **Made with care and a healthy dose of paranoia.** 🍅

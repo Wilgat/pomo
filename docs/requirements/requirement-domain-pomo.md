@@ -168,7 +168,7 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 | **Minimum work duration** | **1 minute** (not 1 second); `0` or non-positive → **`invalid_duration`** |
 | **State file format** | `start_time target_time phase work_dur break_dur` (epoch seconds; phase `work`\|`break`; **stored** durations in seconds = minutes×60) |
 | **State path pattern** | `${base}/${APP_NAME}_${USERNAME}_${name}` |
-| **Volatile base** | `/dev/shm` → `TMPDIR` → `$PREFIX/tmp` (Termux) → `/tmp` → `/tmp/${APP_NAME}_${USERNAME}` |
+| **Volatile base** | `/dev/shm` (or `VOLATILE_DIR`) → `$PREFIX/tmp` (create if needed on Termux) → `TMPDIR` → `/tmp` → cache `${XDG_CACHE_HOME}/${APP_NAME}`. Fail closed if none are writable. **MUST NOT** write `/${APP_NAME}_*` at filesystem root. |
 | **Persistent base** | `${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}` (fallback under `/tmp/..._persistent`) |
 | **Stats path** | `${persistent_base}/stats_YYYY-MM-DD` (`count total_min`) |
 | **Theme path** | `${persistent_base}/theme` |
@@ -246,7 +246,7 @@ When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login
 | MUST | MUST NOT |
 |------|----------|
 | Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
-| Start/status/watch/stop as this login; volatile fallback may use `TMPDIR` or `$PREFIX/tmp` | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Start/status/watch/stop as this login; volatile fallback **creates** `$PREFIX/tmp` when `/dev/shm` is unusable (Android `/tmp` is often read-only) | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
 | Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
 
 Helpers (this product): `pomo_is_termux`, `pomo_apply_target_paths`. Dual mention: `requirement-shell-cli-interface`.
@@ -279,7 +279,8 @@ Helpers (this product): `pomo_is_termux`, `pomo_apply_target_paths`. Dual mentio
 7. Drop `--persist` or theme persistence without an explicit requirement change.  
 8. Treat `watch` as a JSON API (must remain human live view; refuse `--json`).  
 9. Reverse-copy pomo domain into the countdown bootstrap ship unit (or any bootstrap A).  
-10. Claim domain help/about pillars are complete while §2.8 / §2.9 are empty or contradicted by live `help`/`about`.
+10. Claim domain help/about pillars are complete while §2.8 / §2.9 are empty or contradicted by live `help`/`about`.  
+11. Treat empty `$(pomo_resolve_base_dir)` / `$(pomo_get_file)` as success and write `/${APP_NAME}_*` at filesystem root (Termux read-only `/`).
 
 **Violating this rule is a critical pomodoro domain regression.**
 
@@ -343,4 +344,5 @@ This requirement is satisfied when all of the following hold:
 | **TP-STORAGE-01** volatile storage path | §4.2 shared | `tests/test_pomo_domain.sh` | have |
 | **TP-STORAGE-02** `--persist` mode | §4.2 shared | `tests/test_pomo_domain.sh` | have |
 | **TP-STORAGE-03** corrupted state fail-closed | §4.2 shared | `tests/test_pomo_domain.sh` | have |
+| **TP-TX-08** Termux `$PREFIX/tmp` when `VOLATILE_DIR` unusable | product Termux | `tests/test_cli.sh` | have |
 | **TP-PAYLOAD-*** Type O-P scaffold | §4.1 | n/a — not Type O-P | n/a |

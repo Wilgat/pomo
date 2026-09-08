@@ -18,6 +18,8 @@
 | **L-12** | Stale published CHECKSUM pin in README vs live `pomo.sha256` | README pin examples match current companion or document regenerate | product review 2026-07-16 |
 | **L-13** | Docs claim in-tree `./countdown` when file absent | Stay-honest: optional if present; no invent | product review 2026-07-16 |
 | **L-14** | Review only in chat /tmp without `reviews/` plan | Maintain what-to-review + test-plan + report under `reviews/` | skill-product-review |
+| **L-TX-01** | Claim Termux / Git Bash support while recommending `sudo curl \| sh` or `/usr/local/bin` | Detect + user dest + about `termux`; **TP-TX-01..05** | 2026-09-08 |
+| **L-TX-02** | Termux `pomo start` dies: only `/dev/shm` + `/tmp`; empty `$(resolve)` writes `/pomo_*` on RO root | `$PREFIX/tmp` then cache; refuse empty/root `APP_FILE`; **TP-TX-08** | 2026-09-08 |
 
 ## How to add a lesson
 

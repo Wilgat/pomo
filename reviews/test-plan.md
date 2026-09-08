@@ -2,7 +2,7 @@
 
 Maps **portable proof molds (`PM-*`)** to product-root `tests/` with status.  
 **Suite entry:** `./tests/run.sh` (`PM-SHELL-CLI-SUITE-TEST-PLAN` order: CLI → LC → CURL → domain)  
-**Last update:** 2026-07-24 (suite re-check PASS=239; mold § refs; shared TP-STORAGE)
+**Last update:** 2026-09-08 (Termux **TP-TX-01..05** + **TP-TX-08** `$PREFIX/tmp`; version 2.0.3)
 
 **Proof molds (cite by PM-ID):**
 
@@ -15,6 +15,7 @@ Maps **portable proof molds (`PM-*`)** to product-root `tests/` with status.
 | **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | `tests/test_online_curl_install.sh` | Full 01–09; sh not bash |
 | **TP-POMO** | `PM-DOMAIN-TEST-PLAN` §4.3.3 | `tests/test_pomo_domain.sh` | Subject `pomo` **ops** only |
 | **TP-STORAGE** | `PM-DOMAIN-TEST-PLAN` §4.2 **shared** dual-storage | same | Shared with **timer · countdown · peers** (not pomo-only) |
+| **TP-TX** | `PM-SHELL-TERMUX-ISH-TEST-PLAN` (detect/ceiling; pkg n/a) | `tests/test_cli.sh` | **RQ-SHELL-CLI-INTERFACE** · **RQ-SHELL-SELF-MANAGEMENT** · **RQ-SHELL-SCRIPT-CODING** · **RQ-DOMAIN-POMO** |
 | Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` | |
 
 Status: **have** = automated · **todo** = needed · **n/a** = not applicable · **optional** = gated  
@@ -31,6 +32,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | 2026-07-24 | **PASS=236 FAIL=0 SKIP=1** | CURL + domain storage; SKIP=TP-CURL-09 optional |
 | 2026-07-24 | **PASS=239 FAIL=0 SKIP=1** | Mold-aligned CURL-04 pipe; shared **TP-STORAGE**; re-check green |
 | 2026-09-06 | **PASS=255 FAIL=0 SKIP=1** | Termux/Git Bash **TP-CLI-13**; version 2.0.2 |
+| 2026-09-08 | **PASS=270 FAIL=0 SKIP=1** | Termux **TP-TX-01..05** + **TP-TX-08**; version **2.0.3** |
 
 ---
 
@@ -51,6 +53,21 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-CLI-11** | self-uninstall refuse without force | **have** | `confirm_required`; binary remains |
 | **TP-CLI-12** | *(product extension)* out_json string-key | **have** | beyond mold; string-escape contract (`@key` raw n/a) |
 | **TP-CLI-13** | *(product)* Termux / Git Bash target detect | **have** | about `target`; help no `sudo curl` on that class |
+
+---
+
+## TP-TX — Termux target (`PM-SHELL-TERMUX-ISH-TEST-PLAN` detect/ceiling; no pkg companion)
+
+| TP-ID | Intent | Status | Evidence / specialize |
+|-------|--------|--------|------------------------|
+| **TP-TX-01** | Off detect: `about` `termux=false`; stub `pkg` not called | **have** | `tests/test_cli.sh` |
+| **TP-TX-02** | PREFIX/`TERMUX_VERSION` detect: `about` `termux=true` | **have** | `tests/test_cli.sh` |
+| **TP-TX-03** | Termux: no `sudo curl` in help / empty-argv recommend | **have** | `tests/test_cli.sh` |
+| **TP-TX-04** | Termux: `user_bin` is `$PREFIX/bin` when that dir exists | **have** | `tests/test_cli.sh` |
+| **TP-TX-05** | Termux: stub `pkg` still not invoked (no companion list) | **have** | `tests/test_cli.sh` |
+| **TP-TX-06** | One-shot `proot` reaper | **n/a** | No guest/proot dispatch |
+| **TP-TX-07** | One-shot without `proot` | **n/a** | No guest/proot dispatch |
+| **TP-TX-08** | Termux: unusable `VOLATILE_DIR` → file under `$PREFIX/tmp`; no `/pomo_*` root write | **have** | `tests/test_cli.sh` |
 
 ---
 

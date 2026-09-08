@@ -70,7 +70,7 @@ It owns coding rules that are **not** already owned by a peer requirement. Slice
 
 | Field | Value |
 |-------|--------|
-| Ship unit | `./pomo` (VERSION 2.0.2) |
+| Ship unit | `./pomo` (VERSION 2.0.3) |
 | **Termux / Git Bash / Windows cmd** | Same ceiling as § Under command line for normal user only |
 | Interpreter | `/bin/sh` |
 | `set -u` | yes (with HOME/USER safe defaults) |
@@ -143,6 +143,12 @@ Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_c
 |----------------|-------|--------|
 | **TP-CLI-01** `sh -n` + companion | `tests/test_cli.sh` | have |
 | **TP-CITE-01** ALIGNMENT cites live REQs | static (`./pomo` headers) | have |
+| **TP-TX-01** off-Termux detect | `tests/test_cli.sh` | have |
+| **TP-TX-02** Termux PREFIX detect | `tests/test_cli.sh` | have |
+| **TP-TX-03** no `sudo curl` on Termux | `tests/test_cli.sh` | have |
+| **TP-TX-04** `$PREFIX/bin` dest | `tests/test_cli.sh` | have |
+| **TP-TX-05** `pkg` not invoked | `tests/test_cli.sh` | have |
+| **TP-TX-08** Termux `$PREFIX/tmp` volatile records | `tests/test_cli.sh` | have |
 
 ## 8. Status history
 

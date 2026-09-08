@@ -109,7 +109,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./pomo` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.2"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.3"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin`. **Termux:** `pomo_apply_target_paths` retargets both to `$PREFIX/bin` when those POSIX defaults are still in force |
 | **Target detect** | `pomo_is_termux` (`PREFIX` contains `com.termux`, `TERMUX_VERSION`, Termux usr tree); `pomo_is_git_bash`; `pomo_is_windows_cmd`; union `pomo_is_normal_user_only_cli`; name via `pomo_target_system` (`termux` / `git-bash` / `windows-cmd` / `posix`) |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `pomo`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/pomo/main/pomo`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
@@ -123,7 +123,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | *(no args — empty argv)* | Type 0 | `app_main` → `inst_maybe_install` / `inst_perform_install` | **Type O install-ensure** (not Type N help): not-installed / local / global; never help; see `requirement-shell-cli-zero-arguments.md` |
 | `install` | Type 0 | `inst_perform_install` | Install binary for current privilege (root→global, user→local); idempotent unless force reinstall |
 | `version` | Type 0 | `app_main` / `app_version` | Print local version; JSON object when `--json` |
-| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**; JSON when `--json` includes `target` and `normal_user_only`; **no `CHECKSUM` field** |
+| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**; JSON when `--json` includes `target`, `normal_user_only`, `termux`, `user_bin`, `prefix`; **no `CHECKSUM` field** |
 | `version-check` | Type 0 | `ver_check` | Compare local vs remote `VERSION` from `SCRIPT_URL`; fail clearly if URL unset/unreachable |
 | `self-update` | Type 0 | `inst_self_update` | Fetch remote version; reinstall when policy allows; reuse install primitives |
 | `self-uninstall` | Type 0 | `inst_self_uninstall` | Remove managed binary; PATH cleanup only if `~/.local/bin` empty (user installs) |
@@ -276,4 +276,10 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | **TP-CLI-11** self-uninstall refuse | `tests/test_cli.sh` | have |
 | **TP-CLI-12** out_json string-key contract | `tests/test_cli.sh` | have |
 | **TP-CLI-13** Termux / Git Bash target detect + help no `sudo curl` | `tests/test_cli.sh` | have |
+| **TP-TX-01** Termux off-detect (`termux=false`; stub `pkg` not called) | `tests/test_cli.sh` | have |
+| **TP-TX-02** Termux PREFIX detect (`termux=true` + prefix) | `tests/test_cli.sh` | have |
+| **TP-TX-03** no `sudo curl` on Termux (help + empty-argv) | `tests/test_cli.sh` | have |
+| **TP-TX-04** `$PREFIX/bin` dest | `tests/test_cli.sh` | have |
+| **TP-TX-05** `pkg` not invoked | `tests/test_cli.sh` | have |
+| **TP-TX-08** Termux `$PREFIX/tmp` volatile records | `tests/test_cli.sh` | have |
 | **TP-POMO-01** domain help verbs | `tests/test_pomo_domain.sh` | have |

@@ -70,7 +70,7 @@ It owns coding rules that are **not** already owned by a peer requirement. Slice
 
 | Field | Value |
 |-------|--------|
-| Ship unit | `./pomo` (VERSION 2.0.3) |
+| Ship unit | `./pomo` (VERSION 2.1.0) |
 | **Termux / Git Bash / Windows cmd** | Same ceiling as § Under command line for normal user only |
 | Interpreter | `/bin/sh` |
 | `set -u` | yes (with HOME/USER safe defaults) |

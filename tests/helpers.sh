@@ -171,6 +171,60 @@ ci_cleanup_timer_domain() {
     ci_cleanup_pomo_domain
 }
 
+# Run SCRIPT under a PTY. Sends PTY_IN (default "99"). The two-character
+# sequence \n in PTY_IN becomes a real newline (so PTY_IN="1\\n" is choice 1
+# then Enter). A trailing newline is added when missing. Kills the child after
+# PTY_TIMEOUT seconds (default 6). Prints child output.
+ci_pty_capture() {
+    python3 - "$@" <<'PY'
+import os, pty, select, signal, sys, time
+script = sys.argv[1]
+cmd = sys.argv[2:]
+raw = os.environ.get("PTY_IN", "99").replace("\\n", "\n")
+payload = (raw + "\n").encode()
+timeout = float(os.environ.get("PTY_TIMEOUT", "6"))
+pid, fd = pty.fork()
+if pid == 0:
+    os.execv("/bin/sh", ["sh", script] + cmd)
+time.sleep(0.2)
+try:
+    os.write(fd, payload)
+except OSError:
+    pass
+out = bytearray()
+end = time.time() + timeout
+exited = False
+while time.time() < end:
+    r, _, _ = select.select([fd], [], [], 0.2)
+    if fd in r:
+        try:
+            chunk = os.read(fd, 4096)
+        except OSError:
+            break
+        if not chunk:
+            break
+        out += chunk
+    wpid, _st = os.waitpid(pid, os.WNOHANG)
+    if wpid:
+        exited = True
+        break
+if not exited:
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError:
+        pass
+try:
+    os.waitpid(pid, 0)
+except OSError:
+    pass
+try:
+    os.close(fd)
+except OSError:
+    pass
+sys.stdout.buffer.write(out)
+PY
+}
+
 ci_run() {
     sh "${SCRIPT}" "$@"
 }

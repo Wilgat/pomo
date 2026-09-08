@@ -130,6 +130,7 @@ This file is **class law + residual SSOT**. It is not a second copy of the pomod
 | Primary language / toolchain / package tool | **this file** | POSIX `/bin/sh`; no lockfile |
 | Online install / self-management | `requirement-shell-self-management` / zero-arguments / automatic-checksum | Do not duplicate |
 | CLI surface | `requirement-shell-cli-interface` | Do not duplicate |
+| TTY main menu | `requirement-shell-cli-default-interaction` | Do not duplicate |
 | Domain features / help / about | `requirement-domain-pomo` | Do not duplicate |
 | Output SSOT | `requirement-shell-output-requirements` | Do not duplicate |
 | Modular prefixes | `requirement-shell-modular-function-design` | Do not duplicate |

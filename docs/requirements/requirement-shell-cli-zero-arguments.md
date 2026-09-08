@@ -1,6 +1,6 @@
 **file**: docs/requirements/requirement-shell-cli-zero-arguments.md  
 **Requirement-ID**: `RQ-SHELL-CLI-ZERO-ARGUMENTS`  
-**Status**: Active (Version 1.1.1 – CIAO v2.10.2 principle map)  
+**Status**: Active (Version 1.2.0 – TTY menu / off-TTY Type O; `--json` JSON help)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose
@@ -11,14 +11,14 @@ This requirement is the **project Single Source of Truth** for **zero-argument (
 
 | Field | Value for pomo |
 |-------|------------------------|
-| **Empty-argv type** | **Type O — Online-install** (not Type N) |
-| **Rationale** | Product advertises `curl … \| sh` one-liner install; empty argv is install-ensure, not help |
+| **Empty-argv type** | **Type O-S — Online script-alone** (off-TTY) **plus** TTY numbered menu |
+| **Rationale** | Product advertises `curl … \| sh`; pipe empty argv is install-ensure. A real terminal keeps the daily-work menu. |
 
-**Letter O vs digit 0:** letter **O** means “no arguments → install or re-check install.” Digit **0** means “you run as yourself.” They are different words.
+**Empty argv** means **no command token** after global-flag parse. Overlay switches (`--debug`, `--quiet`/`-q`, `--force`) **do not** disqualify empty argv. `pomo --debug` **MUST** follow the same empty-argv law as `pomo` and as `DEBUG=1 pomo`. `$# -eq 0` at entry is **sufficient** but **not necessary**.
 
 Type N (non-online-install → empty argv = help) does **not** apply to this product.
 
-It defines what happens when the tool is invoked with **no command and no flags**, including the classic one-liner:
+It defines what happens when the tool is invoked with **no command token**, including the classic one-liner:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | /bin/sh
@@ -37,28 +37,29 @@ Empty argv means **install-ensure** for three detect cases:
 
 ### 1.1 Human-facing
 
-**In one sentence:** Running the program with no arguments installs it (or confirms it is already installed); it does **not** print help.
+**In one sentence:** Typing only `pomo` at a prompt shows the numbered start list; piping the script (`curl | sh`) installs or reports already installed. `pomo --json` is JSON help.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Pipe or run the script with no command | `curl -fsSL …/pomo \| sh` |
-| The other role | Already-installed no-op vs first-time place | local `~/.local/bin/pomo` or global `/usr/local/bin/pomo` |
-| Not this file | The help listing; timer start | `pomo help`, `pomo start` |
+| You / this login | Type `pomo` or `pomo --debug` at a prompt | numbered list |
+| The other role | `curl \| sh` / a script with no command | install-ensure, not help |
+| Not this file | Menu row labels | Default-interaction requirement |
 
 | Includes | Excludes |
 |----------|----------|
-| Not installed → install; already installed → success no-op | Empty argv = help |
-| TTY may confirm; pipe / `--quiet` / `--json` auto-install | Hanging on stdin in `curl \| sh` |
+| TTY empty argv (including overlay switches) = numbered list; off-TTY = install-ensure | Help on a pipe; a hanging menu in a script; help because `--debug` was present |
+| Termux: same split; dest is this login; no `sudo curl` | Root dest on Termux |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./pomo` | ship unit | empty-argv install-ensure |
-| `pomo help` | command | verbs (not the no-arg path) |
+| `./pomo` | ship unit | empty argv branch |
+| `curl … \| sh` | one-liner | first install |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| First install | No command means “place the binary.” | `curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo \| sh` |
-| Already installed | Same command succeeds without reinstalling (unless `--force`). | `pomo` with no arguments |
+| Pipe the script | Install-ensure | `curl -fsSL …/pomo \| sh` |
+| Start at a prompt | Numbered list | `pomo` then `1` |
+| Ask for JSON usage | JSON help (empty argv special case) | `pomo --json` |
 
 ---
 
@@ -68,21 +69,27 @@ Empty argv means **install-ensure** for three detect cases:
 
 | Term | Definition for pomo |
 |------|----------------------------|
-| **Type O** | Online-install empty-argv product type: empty argv = install-ensure (this product). |
+| **Type O** | Online-install empty-argv product type: off-TTY empty argv = install-ensure (this product). |
 | **Type N** | Non-online-install empty-argv type: empty argv = help — **out of scope** for pomo. |
-| **Empty argv / zero-arg** | `$# -eq 0` at entry to `app_main` (no command tokens; classic `curl \| sh` with no trailing args). |
+| **Empty argv / zero-arg** | After global-flag parse, **no command token**. Overlay `--debug` / `--quiet` / `--force` still empty argv. `$# -eq 0` is one form. |
 | **Install-ensure** | Converge to “managed `pomo` binary present”; either perform install or success no-op. |
 | **Not installed** | `inst_is_installed` returns false (`inst_get_version` → `not installed`). |
 | **Installed (local)** | Executable at `${USER_BIN}/pomo` (default `USER_BIN=${HOME}/.local/bin`) observed by install-detect SSOT. |
 | **Installed (global)** | Executable at `${GLOBAL_BIN}/pomo` (default `GLOBAL_BIN=/usr/local/bin`) observed by install-detect SSOT. |
 | **Force / reinstall** | `FORCE_REINSTALL=1` from `--force` (and related force wiring in `app_main`). Required only for deliberate replace, not for ensure. |
 
-### 2.2 Single meaning of empty argv
+### 2.2 Split meaning of empty argv
 
-1. When **argv is empty**, `app_main` **MUST** run **install-ensure** — **MUST NOT** route to `app_help` / default `COMMAND=help`.  
-2. Explicit `pomo help` remains the only full-usage path for help text.  
-3. Bootstrap **MUST** always call `app_main "$@"` so pipe one-liners reach this contract (no `${0##*/}` product-name gate).  
-4. Empty argv **MUST NOT** require the user to pass `install` or `install --force` merely because a previous ensure already succeeded.
+1. **Empty argv** is: after global-flag parse, **no command token** was present. `$# -eq 0` at entry to `app_main` is one form. Flags-only overlay argv (`pomo --debug`, `pomo --quiet`, `pomo --force`) is the same form.  
+2. **Interactive** (`TTY=1`): route to `app_default` (numbered start list). **MUST NOT** install-ensure. **MUST NOT** print the help dump.  
+3. **Not interactive** (`TTY=0`): **Type O install-ensure**. **MUST NOT** print help. **MUST NOT** draw the numbered list. **MUST NOT** prompt. Not installed → download from `SCRIPT_URL` and place. Already installed → success no-op (no `--force` required). `--force` re-downloads.  
+4. Overlay switches with no command token **MUST** follow rules 2–3. `pomo --debug` **MUST** match `DEBUG=1 pomo`.  
+5. **`--json` special case:** `--json` with no command token **is** empty argv. Outcome **MUST** be JSON help on **TTY and off-TTY**. **MUST NOT** the numbered list. **MUST NOT** Type O ensure. `pomo menu --json` on a TTY remains the list (`requirement-shell-cli-default-interaction`).  
+6. Explicit `pomo help` remains full usage.  
+7. Explicit `pomo install` remains ensure.  
+8. Explicit `pomo menu` / `main` remain the numbered list (TTY) / help (off-TTY).  
+9. Script entry **MUST** always call `app_main "$@"` (no basename gate). Pipe-safe.  
+10. The dispatcher **MUST** decide empty argv **after** flag parse. **MUST NOT** use only `$# -eq 0` before parse so overlay flags fall through to default `COMMAND=help`.
 
 ### 2.3 Normative case matrix
 
@@ -100,13 +107,15 @@ Empty argv means **install-ensure** for three detect cases:
 4. JSON mode **MUST** use structured success (`out_json` success type) with already-installed message — **MUST NOT** emit help JSON.  
 5. Detect **MUST** treat either global or local managed binary as installed when that is how `inst_is_installed` / `inst_get_version` resolve paths (project SSOT today prefers global when executable there, else user path).
 
-### 2.4 Case A — not installed (modes)
+### 2.4 Case A — not installed (modes) — **off-TTY empty argv only**
+
+TTY empty argv is the numbered list (§2.2), not this table.
 
 | Mode | Required empty-argv behavior |
 |------|------------------------------|
-| **Interactive** (TTY stdin+stdout, not quiet/json) | `inst_maybe_install`: note + `prompt_yes_no`; yes → `inst_perform_install`; no → skip without help dump |
 | **Non-interactive** (non-TTY / `curl \| sh`) | Auto-install message + `inst_perform_install` (via `inst_maybe_install` non-TTY branch) |
-| **Quiet or JSON** | `inst_perform_install` directly (no prompt) |
+| **Quiet** (off-TTY, no `--json`) | `inst_perform_install` directly (no prompt) |
+| **`--json` with no command** | Empty argv **special case** (§2.2): JSON help on TTY **and** off-TTY — **MUST NOT** this Case A install |
 | **Failure** (network, checksum, I/O) | Non-zero exit; no fake success; no help-only output |
 
 **Placement privilege:**
@@ -199,7 +208,7 @@ When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login
 
 Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`. Dual mention: `requirement-shell-cli-interface`.
 
-**This requirement:** empty argv still means install-ensure on this class; `inst_maybe_install` must not print a sudo one-liner.
+**This requirement:** off-TTY empty argv still means install-ensure on this class; TTY empty argv is the daily-work list. `inst_maybe_install` must not print a sudo one-liner.
 
 ---
 
@@ -257,6 +266,7 @@ This requirement is satisfied when all of the following hold:
 | **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | self-update / uninstall (not empty-argv default) |
 | **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | out_* / JSON purity |
 | **`RQ-SHELL-AUTOMATIC-CHECKSUM`** (`requirement-shell-automatic-checksum.md`) | Integrity on install download path |
+| **`RQ-SHELL-CLI-DEFAULT-INTERACTION`** | TTY numbered list for empty argv |
 | Repo root `./pomo` | Implementation (`app_main`, `inst_*`) |
 | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | Regression coverage |
 
@@ -281,3 +291,5 @@ This requirement is satisfied when all of the following hold:
 | **TP-LC-01** empty-argv ensure first + already local/global | `tests/test_install_lifecycle.sh` | have |
 | **TP-LC-12** explicit `install --json` | `tests/test_install_lifecycle.sh` | have |
 | **TP-TX-03** Termux empty-argv recommend has no `sudo curl` | `tests/test_cli.sh` | have |
+| **TP-CLI-29** overlay `--debug` / `--quiet` / `--json` follow empty argv | `tests/test_cli.sh` | have |
+| **TP-CLI-17** TTY empty argv numbered list (peer of default-interaction) | `tests/test_cli.sh` | have |

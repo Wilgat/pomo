@@ -139,7 +139,7 @@ Root may write global install path; non-root uses user path. Do not assume root 
 | **Uninstall steps** | `inst_self_uninstall_determine_bin` → `inst_self_uninstall_confirm_and_remove` → `inst_self_uninstall_cleanup_path` |
 | **PATH ensure** | `path_add_shell` / bash / zsh / fish helpers on user install |
 | **Privilege** | Type 0 only for self-management surface; no dedicated system user |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.3"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.1.0"`) |
 | **Termux paths** | `pomo_apply_target_paths` retargets `USER_BIN`/`GLOBAL_BIN` to `$PREFIX/bin` when POSIX defaults still apply; skip rc PATH edit when install is `$PREFIX/bin`; `IS_ROOT` forced 0 |
 | **Termux about** | JSON `termux` / `user_bin` / `prefix` plus `target` / `normal_user_only`; no `sudo curl` recommend |
 

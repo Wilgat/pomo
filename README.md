@@ -1,6 +1,6 @@
 # pomo - Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.0.3-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.1.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
@@ -50,6 +50,7 @@ This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**
 - Daily statistics (completed pomodoros + total minutes today)
 - Strict `--json` for scripts and status bars (`watch --json` is refused)
 - One-liner install, self-update, self-uninstall, and `about` diagnostics
+- On a real terminal, typing only `pomo` (or `pomo --debug`) opens a numbered daily-work list; `curl | sh` still installs
 - Worked on dash, BusyBox ash, Git Bash, Alpine, Termux, and containers
 
 ---
@@ -203,7 +204,7 @@ All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
 - **[mariadb-galera](https://github.com/Wilgat/mariadb-galera)** — MariaDB Galera Cluster deployment scripts
 
-Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.0.3** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), and `ver_gt` downgrade protection on `self-update`.
+Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.1.0** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), and `ver_gt` downgrade protection on `self-update`.
 
 ---
 
@@ -241,6 +242,6 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ## Last Update
 
-2026-09-08 — Full Termux support: `$PREFIX/bin` install, `$PREFIX/tmp` volatile fallback, refuse root-path writes. Product version **2.0.3**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+2026-09-08 — TTY empty argv opens the numbered daily-work menu (`pomo --debug` included); pipe empty argv still installs. Product version **2.1.0**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
 
 **Made with care and a healthy dose of paranoia.** 🍅

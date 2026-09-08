@@ -2,7 +2,7 @@
 
 Maps **portable proof molds (`PM-*`)** to product-root `tests/` with status.  
 **Suite entry:** `./tests/run.sh` (`PM-SHELL-CLI-SUITE-TEST-PLAN` order: CLI → LC → CURL → domain)  
-**Last update:** 2026-09-08 (Termux **TP-TX-01..05** + **TP-TX-08** `$PREFIX/tmp`; version 2.0.3)
+**Last update:** 2026-09-08 (TTY main menu **TP-CLI-16/17/29/30**; version 2.1.0)
 
 **Proof molds (cite by PM-ID):**
 
@@ -33,6 +33,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | 2026-07-24 | **PASS=239 FAIL=0 SKIP=1** | Mold-aligned CURL-04 pipe; shared **TP-STORAGE**; re-check green |
 | 2026-09-06 | **PASS=255 FAIL=0 SKIP=1** | Termux/Git Bash **TP-CLI-13**; version 2.0.2 |
 | 2026-09-08 | **PASS=270 FAIL=0 SKIP=1** | Termux **TP-TX-01..05** + **TP-TX-08**; version **2.0.3** |
+| 2026-09-08 | **PASS=324 FAIL=0 SKIP=1** | TTY main menu **TP-CLI-16/17/29/30**; version **2.1.0** |
 
 ---
 
@@ -53,6 +54,10 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-CLI-11** | self-uninstall refuse without force | **have** | `confirm_required`; binary remains |
 | **TP-CLI-12** | *(product extension)* out_json string-key | **have** | beyond mold; string-escape contract (`@key` raw n/a) |
 | **TP-CLI-13** | *(product)* Termux / Git Bash target detect | **have** | about `target`; help no `sudo curl` on that class |
+| **TP-CLI-16** | do-not-capture-read | **have** | no `$()` of `prompt_*` |
+| **TP-CLI-17** | menu header nametag + off-TTY `menu` is help | **have** | `tests/test_cli.sh` |
+| **TP-CLI-29** | overlay empty argv (`--debug` / `--quiet` / `--json`) | **have** | TTY `--debug` → menu; off-TTY `--debug` → ensure |
+| **TP-CLI-30** | TTY menu start name; stop/status running pick | **have** | `tests/test_cli.sh` |
 
 ---
 

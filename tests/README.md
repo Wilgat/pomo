@@ -27,7 +27,7 @@ RUN_ONLINE_CURL_TESTS=1 ./tests/run.sh   # optional public-channel smoke (TP-CUR
 
 | Suite | File | TP families | Focus |
 |-------|------|-------------|--------|
-| CLI surface | `test_cli.sh` | **TP-CLI**, **TP-CSUM-01/05**, **TP-U-01/02**, **TP-TX-01..05**, **TP-TX-08** | syntax, companion, version/help/about, domain help rows, quiet, uninstall refuse, zero-arg fail; Termux dest + `$PREFIX/tmp` |
+| CLI surface | `test_cli.sh` | **TP-CLI**, **TP-CSUM-01/05**, **TP-U-01/02**, **TP-CLI-16/17/29/30**, **TP-TX-01..05**, **TP-TX-08** | syntax, companion, version/help/about, TTY menu, quiet, uninstall refuse, zero-arg fail; Termux dest + `$PREFIX/tmp` |
 | Install lifecycle | `test_install_lifecycle.sh` | **TP-LC**, **TP-CSUM-02..04** | local channel install, Type O ensure, self-update, pin, downgrade, PATH cleanup |
 | Online curl\|sh | `test_online_curl_install.sh` | **TP-CURL**, **TP-U-03** | local `curl\|sh` first/second pipe, hostile HOME, bad URL, pipe version |
 | Pomo domain | `test_pomo_domain.sh` | **TP-POMO-01..11**, **TP-STORAGE-01..03** | ops/verbs/theme/stats; storage path, `--persist`, corrupted state |

@@ -109,7 +109,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./pomo` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.0.3"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.1.0"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin`. **Termux:** `pomo_apply_target_paths` retargets both to `$PREFIX/bin` when those POSIX defaults are still in force |
 | **Target detect** | `pomo_is_termux` (`PREFIX` contains `com.termux`, `TERMUX_VERSION`, Termux usr tree); `pomo_is_git_bash`; `pomo_is_windows_cmd`; union `pomo_is_normal_user_only_cli`; name via `pomo_target_system` (`termux` / `git-bash` / `windows-cmd` / `posix`) |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `pomo`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/pomo/main/pomo`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
@@ -120,7 +120,8 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 
 | Command | Type | Handler (current) | Required behavior |
 |---------|------|-------------------|-------------------|
-| *(no args — empty argv)* | Type 0 | `app_main` → `inst_maybe_install` / `inst_perform_install` | **Type O install-ensure** (not Type N help): not-installed / local / global; never help; see `requirement-shell-cli-zero-arguments.md` |
+| *(no args — empty argv)* | Type 0 | TTY → `app_default`; off-TTY → `inst_empty_argv_ensure`; `--json` → `app_help` | **No command token** after flag parse. TTY numbered list; off-TTY Type O install-ensure; `--json` JSON help. See `requirement-shell-cli-zero-arguments.md` |
+| `menu` / `main` | Type 0 | `app_default` | TTY numbered list (ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo menu` |
 | `install` | Type 0 | `inst_perform_install` | Install binary for current privilege (root→global, user→local); idempotent unless force reinstall |
 | `version` | Type 0 | `app_main` / `app_version` | Print local version; JSON object when `--json` |
 | `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**; JSON when `--json` includes `target`, `normal_user_only`, `termux`, `user_bin`, `prefix`; **no `CHECKSUM` field** |
@@ -152,8 +153,8 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 #### Dispatcher acceptance criteria (this project)
 
 1. Unknown token after flag parse → `out_die` with pointer to `pomo help`.  
-2. Zero-arg → install-ensure: not installed → install; already installed (local or global) → already-installed success (not help); failures non-zero.  
-3. Command routing table in `app_main` **must** include every row in the command table above.  
+2. Zero-arg after flag parse: TTY → menu; off-TTY → install-ensure; `--json` → JSON help; overlay `--debug` follows empty argv.  
+3. Command routing table in `app_main` **must** include every row in the command table above (`menu` / `main` included).  
 4. Help text **must** stay aligned with that table (no orphan commands, no listed-but-unrouted commands).  
 5. User-facing strings **must not** use raw `echo`/`printf` outside the `out_*` system (protected low-level helpers excepted only if already CIAO-marked and not for general messages).
 
@@ -276,6 +277,10 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | **TP-CLI-11** self-uninstall refuse | `tests/test_cli.sh` | have |
 | **TP-CLI-12** out_json string-key contract | `tests/test_cli.sh` | have |
 | **TP-CLI-13** Termux / Git Bash target detect + help no `sudo curl` | `tests/test_cli.sh` | have |
+| **TP-CLI-16** do-not-capture-read | `tests/test_cli.sh` | have |
+| **TP-CLI-17** menu header nametag | `tests/test_cli.sh` | have |
+| **TP-CLI-29** overlay empty argv | `tests/test_cli.sh` | have |
+| **TP-CLI-30** TTY menu start name / running pick | `tests/test_cli.sh` | have |
 | **TP-TX-01** Termux off-detect (`termux=false`; stub `pkg` not called) | `tests/test_cli.sh` | have |
 | **TP-TX-02** Termux PREFIX detect (`termux=true` + prefix) | `tests/test_cli.sh` | have |
 | **TP-TX-03** no `sudo curl` on Termux (help + empty-argv) | `tests/test_cli.sh` | have |

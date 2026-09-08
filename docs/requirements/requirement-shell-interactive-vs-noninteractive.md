@@ -169,9 +169,9 @@ interactive   non-interactive
 
 | Condition | Behavior |
 |-----------|----------|
-| `JSON=1` or `QUIET=1` | Return **default** without `read` |
-| Not a TTY (and `INTERACTIVE` ≠ 1) | Return **default** without `read` |
-| TTY interactive | Show current/default via `out_*`, then `read` |
+| `JSON=1` or `QUIET=1` | Set **`PROMPT_ASK_VALUE`** to the default without `read` |
+| Not a TTY (and `INTERACTIVE` ≠ 1) | Set **`PROMPT_ASK_VALUE`** to the default without `read` |
+| TTY interactive | Show current/default via `out_*`, then `read` in **this shell**; assign **`PROMPT_ASK_VALUE`**. **MUST NOT** wrap `prompt_ask` in `$()` |
 
 #### `inst_maybe_install` contract (this project)
 
@@ -191,7 +191,8 @@ This dual policy is intentional: **pipe install proceeds**; **destructive uninst
 |----------------|-------------|------------------------------|
 | Domain `start`/`stop`/`status`/`list`/`stats`/`theme` | Full human UX via `out_*` | Supported with `--json` / `--quiet` where designed |
 | Domain `watch` | Live TTY refresh (Ctrl+C to exit) | **Refuse** `--json` and `--quiet` (non-zero); not a machine API |
-| Domain prompts | None for domain ops (no confirm on stop) | No stdin hang |
+| Domain prompts | None for domain CLI ops (no confirm on stop) | No stdin hang |
+| TTY empty argv / `menu` | Numbered list (`requirement-shell-cli-default-interaction`) | Off-TTY empty argv is Type O ensure; `menu` off-TTY is help |
 
 Detail: `requirement-domain-pomo.md`.
 

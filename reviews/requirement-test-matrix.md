@@ -1,7 +1,7 @@
 # Requirement → test matrix (pomo)
 
 **Product:** pomo  
-**Updated:** 2026-09-08  
+**Updated:** 2026-09-08 (TTY main menu)  
 **Map:** `reviews/test-plan.md`  
 **Suite:** `./tests/run.sh`
 
@@ -11,8 +11,9 @@ Primary citation is **`RQ-*`** + **`TP-*`**. Paths are secondary.
 |----------------|-----|-------------|-------------|--------|
 | `RQ-CLASS-SOFTWARE-DEV` | requirement-class-software-dev | **TP-CLI-01** (posix-sh syntax); residual n/a | `tests/test_cli.sh` | have / n/a residual |
 | `RQ-SHELL-SCRIPT-CODING` | requirement-shell-script-coding | **TP-CLI-01**, **TP-CITE-01**, **TP-TX-01..05**, **TP-TX-08** | `tests/test_cli.sh` + static header | have |
-| `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface | **TP-CLI-01..13**, **TP-TX-01..05**, **TP-TX-08**, **TP-POMO-01** | `tests/test_cli.sh`, `tests/test_pomo_domain.sh` | have (05/10 n/a; TX-06/07 n/a) |
-| `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments | **TP-CLI-09**, **TP-LC-01/09/12**, **TP-U-02**, **TP-TX-03** | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | have |
+| `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface | **TP-CLI-01..13**, **TP-CLI-16/17/29/30**, **TP-TX-01..05**, **TP-TX-08**, **TP-POMO-01** | `tests/test_cli.sh`, `tests/test_pomo_domain.sh` | have (05/10 n/a; TX-06/07 n/a) |
+| `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments | **TP-CLI-09**, **TP-LC-01/09/12**, **TP-U-02**, **TP-TX-03**, **TP-CLI-29** | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | have |
+| `RQ-SHELL-CLI-DEFAULT-INTERACTION` | requirement-shell-cli-default-interaction | **TP-CLI-16/17/29/30** | `tests/test_cli.sh` | have |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements | **TP-CLI-02/04/06/07/12**, **TP-POMO-04** | `tests/test_cli.sh`, `tests/test_pomo_domain.sh` | have |
 | `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | **TP-LC-04/05/05b/07/08/11**, **TP-CLI-11**, **TP-TX-01..05**, **TP-TX-08** | `tests/test_install_lifecycle.sh`, `tests/test_cli.sh` | have |
 | `RQ-SHELL-AUTOMATIC-CHECKSUM` | requirement-shell-automatic-checksum | **TP-CSUM-01..05**, **TP-LC-06** | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | have |

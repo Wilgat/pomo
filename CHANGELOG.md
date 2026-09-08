@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-08
+
+### Added
+- **TTY main menu:** empty argv on a real terminal (including `pomo --debug`) shows a numbered daily-work list (`start` … `theme`, Exit **99**). Commands **`menu`** / **`main`**. Requirement **`RQ-SHELL-CLI-DEFAULT-INTERACTION`**.
+- Menu **start** prompts for the pomodoro name (Enter = `default`); **status** / **watch** / **skip** / **stop** / **kill** pick from a numbered running list (cancel **0**).
+- Suites **TP-CLI-16** (do-not-capture-read), **TP-CLI-17** (header nametag), **TP-CLI-29** (overlay empty argv), **TP-CLI-30** (start name / running pick).
+
+### Changed
+- Empty argv is **no command token after flag parse**. Off-TTY / `curl | sh` stays Type O install-ensure. `--json` with no command is JSON help even on a TTY.
+- `prompt_ask` assigns **`PROMPT_ASK_VALUE`** in the current shell (must not wrap in `$()`).
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.1.0 ship-unit bytes.
+
 ## [2.0.3] - 2026-09-08
 
 ### Added

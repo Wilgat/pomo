@@ -3,8 +3,8 @@
 # =============================================================================
 # Mold catalog TP-CLI-01..11 (Core). Product: sh -n not bash -n; TP-CLI-05/10 n/a;
 # TP-CLI-12 product extension (out_json string-key). Cross: TP-CSUM-01/05, TP-U-01/02,
-# TP-POMO-01 (help domain verbs); TP-CLI-13 Git Bash/target; TP-TX-01..05 + TP-TX-08
-# Termux this-login dest + $PREFIX/tmp. Labels = TP-IDs.
+# TP-POMO-01 (help domain verbs); TP-CLI-13 Git Bash/target; TP-CLI-16/17/29/30
+# TTY menu; TP-TX-01..05 + TP-TX-08 Termux this-login dest + $PREFIX/tmp.
 # =============================================================================
 
 # shellcheck source=helpers.sh
@@ -222,6 +222,127 @@ run_test_cli() {
     _out=$(MSYSTEM=MINGW64 sh "${SCRIPT}" help 2>/dev/null)
     assert_contains "TP-CLI-13 Git Bash help names Git Bash" "$_out" "Git Bash"
     assert_not_contains "TP-CLI-13 Git Bash help must not recommend sudo curl" "$_out" "sudo curl"
+
+    # --- TP-CLI-16: do-not-capture-read (no $() of prompt_* in live code) ---
+    _hits=$(grep -nE '\$\(prompt_|`prompt_' "${SCRIPT}" | grep -v '^[^:]*:[[:space:]]*#' || true)
+    if [ -z "${_hits}" ]; then
+        t_pass "TP-CLI-16 no live \$(prompt_ / backtick prompt_ capture"
+    else
+        t_fail "TP-CLI-16 live prompt capture: ${_hits}"
+    fi
+
+    # --- TP-CLI-29 / TP-CLI-17: empty argv overlay; --json is JSON help ---
+    _out=$(sh "${SCRIPT}" --json 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-29 --json no command exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-29 --json no command is JSON help" "$_out" '"type":"success"'
+    assert_contains "TP-CLI-29 --json no command help command field" "$_out" '"command":"help"'
+    assert_not_contains "TP-CLI-29 --json no command not numbered list" "$_out" "99. Exit"
+
+    ci_isolated_env
+    HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" install >/dev/null 2>&1 || true
+    _errf="${CI_HOME}/dbg-empty.err"
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" --debug </dev/null 2>"${_errf}")
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "TP-CLI-29 --debug no command off-TTY exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-29 --debug no command off-TTY ensure" "$_out" "already installed"
+    assert_not_contains "TP-CLI-29 --debug no command off-TTY not help dump" "$_out" "Usage:"
+    assert_not_contains "TP-CLI-29 --debug no command off-TTY not numbered list" "$_out" "99. Exit"
+    assert_contains "TP-CLI-29 --debug no command off-TTY debug tag" "$_err" "[DEBUG]"
+    assert_contains "TP-CLI-29 --debug no command off-TTY dispatch ensure" "$_err" "command=ensure"
+
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" --quiet </dev/null 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-29 --quiet no command off-TTY exit 0" 0 "$_ec"
+    assert_not_contains "TP-CLI-29 --quiet no command off-TTY not help dump" "$_out" "Usage:"
+    assert_not_contains "TP-CLI-29 --quiet no command off-TTY not numbered list" "$_out" "99. Exit"
+
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" --json --debug 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-29 --json --debug no command exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-29 --json --debug no command is JSON help" "$_out" '"type":"success"'
+    assert_not_contains "TP-CLI-29 --json --debug no command not numbered list" "$_out" "99. Exit"
+
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" menu </dev/null 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-17 off-TTY menu is help exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-17 off-TTY menu is help" "$_out" "Usage:"
+    assert_not_contains "TP-CLI-17 off-TTY menu not CSI" "$_out" "$(printf '\033')"
+
+    if command -v python3 >/dev/null 2>&1; then
+        _bold=$(printf '\033[1m')
+        _italic=$(printf '\033[3m')
+        _gray_italic=$(printf '\033[3;37m')
+        _ident="${APP_NAME}(${APP_VERSION})"
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" PTY_IN="99" ci_pty_capture "${SCRIPT}")
+        _stripped=$(printf '%s' "$_out" | awk 'BEGIN{ORS=""} {gsub(/\033\[[0-9;]*m/,""); print}')
+        assert_contains "TP-CLI-17 TTY empty argv is numbered list" "$_out" "99. Exit"
+        assert_contains "TP-CLI-17 TTY empty argv start first" "$_out" "1. start:"
+        assert_not_contains "TP-CLI-17 TTY empty argv no install row" "$_out" "install:"
+        assert_not_contains "TP-CLI-17 TTY empty argv not help dump" "$_out" "Usage:"
+        assert_contains "TP-CLI-17 TTY header bold APP_NAME" "$_out" "${_bold}"
+        assert_contains "TP-CLI-17 TTY header italic VERSION" "$_out" "${_italic}"
+        assert_contains "TP-CLI-17 TTY header nametag APP_NAME(VERSION)" "$_stripped" "${_ident}"
+        assert_contains "TP-CLI-17 TTY number and short-descript unstyled" "$_out" "1. start: "
+        assert_contains "TP-CLI-17 TTY desc is italic + light gray (SGR 3+37)" "$_out" "${_gray_italic}"
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" PTY_IN="99" ci_pty_capture "${SCRIPT}" --debug)
+        assert_contains "TP-CLI-29 TTY --debug no command is numbered list" "$_out" "99. Exit"
+        assert_contains "TP-CLI-29 TTY --debug no command start first" "$_out" "1. start:"
+        assert_contains "TP-CLI-29 TTY --debug no command dispatch menu" "$_out" "command=menu"
+        assert_not_contains "TP-CLI-29 TTY --debug no command not help dump" "$_out" "Usage:"
+        _jout=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" PTY_IN="99" ci_pty_capture "${SCRIPT}" --json)
+        assert_contains "TP-CLI-29 TTY --json no command is JSON help" "$_jout" '"type":"success"'
+        assert_not_contains "TP-CLI-29 TTY --json no command not numbered list" "$_jout" "99. Exit"
+        unset _jout _bold _italic _gray_italic _ident
+
+        mkdir -p "${CI_HOME}/vol"
+        _vol="${CI_HOME}/vol"
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" VOLATILE_DIR="${_vol}" \
+            PTY_IN="7" ci_pty_capture "${SCRIPT}")
+        assert_contains "TP-CLI-30 TTY menu list still lists" "$_out" "7. list:"
+        assert_not_contains "TP-CLI-30 TTY menu list does not prompt for name" "$_out" "Pomodoro name"
+        assert_contains "TP-CLI-30 TTY menu list runs without name" "$_out" "No running pomodoros found."
+
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" VOLATILE_DIR="${_vol}" \
+            PTY_IN="5" ci_pty_capture "${SCRIPT}")
+        assert_contains "TP-CLI-30 TTY menu stop with none is empty list" "$_out" "No running pomodoros found."
+        assert_not_contains "TP-CLI-30 TTY menu stop with none does not prompt for name" "$_out" "Pomodoro name"
+        assert_not_contains "TP-CLI-30 TTY menu stop with none has no cancel row" "$_out" "0. Exit"
+
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" VOLATILE_DIR="${_vol}" \
+            PTY_IN="1\\n" ci_pty_capture "${SCRIPT}")
+        assert_contains "TP-CLI-30 TTY menu start prompts for name" "$_out" "Pomodoro name"
+        assert_contains "TP-CLI-30 TTY menu start shows default" "$_out" "Default: default"
+        assert_contains "TP-CLI-30 TTY menu start Enter uses default name" "$_out" "Work phase started"
+
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" VOLATILE_DIR="${_vol}" \
+            PTY_IN="1\\nwork" ci_pty_capture "${SCRIPT}")
+        assert_contains "TP-CLI-30 TTY menu start typed name" "$_out" "Work phase started"
+        _u=$(id -un 2>/dev/null || echo "unknown")
+        assert_file_exists "TP-CLI-30 TTY menu start typed name file" "${_vol}/${APP_NAME}_${_u}_work"
+
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" VOLATILE_DIR="${_vol}" \
+            PTY_IN="5\\n1" ci_pty_capture "${SCRIPT}")
+        assert_contains "TP-CLI-30 TTY menu stop numbered running row" "$_out" "1. default:"
+        assert_contains "TP-CLI-30 TTY menu stop cancel is 0" "$_out" "0. Exit"
+        assert_not_contains "TP-CLI-30 TTY menu stop does not prompt for name" "$_out" "Pomodoro name"
+        assert_contains "TP-CLI-30 TTY menu stop pick 1 stops listed timer" "$_out" "Work session completed"
+        assert_file_missing "TP-CLI-30 TTY menu stop pick 1 removed default" "${_vol}/${APP_NAME}_${_u}_default"
+        assert_file_exists "TP-CLI-30 TTY menu stop pick 1 does not stop other" "${_vol}/${APP_NAME}_${_u}_work"
+
+        _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" VOLATILE_DIR="${_vol}" \
+            PTY_IN="2\\nwork" ci_pty_capture "${SCRIPT}")
+        assert_contains "TP-CLI-30 TTY menu status listed name" "$_out" "1. work:"
+        assert_contains "TP-CLI-30 TTY menu status uses listed name" "$_out" "Work"
+        unset _vol _u
+    else
+        t_skip "TP-CLI-17 TTY header (no python3 for PTY)"
+        t_skip "TP-CLI-29 TTY --debug no command (no python3 for PTY)"
+        t_skip "TP-CLI-29 TTY --json no command (no python3 for PTY)"
+        t_skip "TP-CLI-30 TTY menu start name / running-pomo pick (no python3 for PTY)"
+    fi
+    ci_cleanup_env
 
     # --- TP-TX-*: Termux target (command line for this login only) ---
     _stub=$(mktemp -d "${TMPDIR:-/tmp}/tm-pkgstub.XXXXXX")

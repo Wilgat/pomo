@@ -1,6 +1,6 @@
 # What to review (pomo) — living checklist
 
-**Product:** pomo v2.0.3  
+**Product:** pomo v2.1.0  
 **Ship unit:** `./pomo`  
 **Domain SSOT:** **`RQ-DOMAIN-POMO`** (`docs/requirements/requirement-domain-pomo.md`)  
 **Domain TP family:** **`TP-POMO-*`** (not `TP-DOM-*`; policy-harness-id-notation §5)  
@@ -24,8 +24,8 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 
 | Surface | Check |
 |---------|--------|
-| Registry | 11 Active rows; Area `class` / `shell` / `domain` correct |
-| Type 0 REQs | CLI, zero-arg Type O, output, self-mgmt, checksum, interactive, idempotency, modular |
+| Registry | 12 Active rows; Area `class` / `shell` / `domain` correct |
+| Type 0 REQs | CLI, zero-arg Type O, default interaction, output, self-mgmt, checksum, interactive, idempotency, modular |
 | Domain REQ | Four pillars: subcommands, features, help, about; basename `requirement-domain-*` |
 | ALIGNMENT | Ship unit cites only registered requirement basenames |
 

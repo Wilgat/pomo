@@ -1,7 +1,7 @@
 # Reviews registry (pomo)
 
 **Product:** pomo  
-**Updated:** 2026-09-08  
+**Updated:** 2026-09-08 (TTY main menu)  
 
 ## Plans (living)
 

@@ -2,7 +2,7 @@
 
 Authoritative product and engineering requirements for this project live here.
 
-**Current state (2026-09-08 — Termux TP-TX):** **Eleven** live requirements registered in `index.md` with primary **Requirement-IDs (`RQ-*`)**. Class **`RQ-CLASS-SOFTWARE-DEV`**, coding-style **`RQ-SHELL-SCRIPT-CODING`**, eight Type 0 shell REQs, plus domain SSOT **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`; Area **`domain`**). Live header Status is **Active**. Each file declares **`Requirement-ID`**, **§1.1 Human-facing**, and a **Design-time verification** table (**TP-*** + `tests/*` + `reviews/*` only — never `docs/templates/**`). Type 0 lifecycle is composition of shell REQs; **pomodoro specialty** is **`RQ-DOMAIN-POMO`** / family **`TP-POMO`**. Domain product law **MUST** use the `requirement-domain-*` basename prefix. **Review scope:** treat **registry rows** as this product’s law; list/confirm unregistered files before assuming they apply.
+**Current state (2026-09-08 — TTY main menu):** **Twelve** live requirements registered in `index.md` with primary **Requirement-IDs (`RQ-*`)**. Class **`RQ-CLASS-SOFTWARE-DEV`**, coding-style **`RQ-SHELL-SCRIPT-CODING`**, eight Type 0 shell REQs, plus domain SSOT **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`; Area **`domain`**). Live header Status is **Active**. Each file declares **`Requirement-ID`**, **§1.1 Human-facing**, and a **Design-time verification** table (**TP-*** + `tests/*` + `reviews/*` only — never `docs/templates/**`). Type 0 lifecycle is composition of shell REQs; **pomodoro specialty** is **`RQ-DOMAIN-POMO`** / family **`TP-POMO`**. Domain product law **MUST** use the `requirement-domain-*` basename prefix. **Review scope:** treat **registry rows** as this product’s law; list/confirm unregistered files before assuming they apply.
 
 ## Purpose
 
@@ -40,6 +40,7 @@ Authoritative list is always **`index.md`**. Active IDs:
 | `RQ-SHELL-AUTOMATIC-CHECKSUM` | requirement-shell-automatic-checksum |
 | `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface |
 | `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments |
+| `RQ-SHELL-CLI-DEFAULT-INTERACTION` | requirement-shell-cli-default-interaction |
 | `RQ-SHELL-IDEMPOTENCY` | requirement-shell-idempotency |
 | `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE` | requirement-shell-interactive-vs-noninteractive |
 | `RQ-SHELL-MODULAR-FUNCTION-DESIGN` | requirement-shell-modular-function-design |

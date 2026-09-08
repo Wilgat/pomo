@@ -178,14 +178,14 @@ function_name() {
 
 | Prefix | Live examples in `./pomo` |
 |--------|----------------------------------|
-| `out_` | `out_text`, `out_success`, `out_info`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_msg_n`, `out_empty_line`, `out_double_line`, `out_json`, `out_json_error` |
-| `inst_` | `inst_perform_install`, `inst_perform_install_prepare_target`, `inst_perform_install_download_with_checksum`, `inst_perform_install_download_without_checksum`, `inst_perform_install_atomic_install`, `inst_maybe_install`, `inst_self_update`, `inst_self_uninstall` (+ determine_bin / confirm_and_remove / cleanup_path), `inst_is_installed`, `inst_get_version` |
+| `out_` | `out_text`, `out_success`, `out_info`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_msg_n`, `out_empty_line`, `out_double_line`, `out_json`, `out_json_error`, `out_menu_choice` |
+| `inst_` | `inst_perform_install`, `inst_perform_install_prepare_target`, `inst_perform_install_download_with_checksum`, `inst_perform_install_download_without_checksum`, `inst_perform_install_atomic_install`, `inst_maybe_install`, `inst_empty_argv_ensure`, `inst_self_update`, `inst_self_uninstall` (+ determine_bin / confirm_and_remove / cleanup_path), `inst_is_installed`, `inst_get_version` |
 | `ver_` | `ver_gt`, `ver_check` |
 | `path_` | `path_add_bashrc`, `path_add_zshrc`, `path_add_fish`, `path_add_shell` |
-| `util_` | `util_json_escape`, `util_sha256_file`, `util_fetch_remote_version`, `util_get_install_bin_path`, `util_backup`, `util_resolve_storage`, `util_ensure_writable_dir`, `util_get_current_shell` |
+| `util_` | `util_json_escape`, `util_sha256_file`, `util_fetch_remote_version`, `util_get_install_bin_path`, `util_backup`, `util_resolve_storage`, `util_ensure_writable_dir`, `util_get_current_shell`, `util_app_ident` |
 | `prompt_` | `prompt_ask`, `prompt_yes_no` |
 | `pomo_` | `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_cmd`, `pomo_is_normal_user_only_cli`, `pomo_target_system`, `pomo_apply_target_paths`, `pomo_resolve_base_dir`, `pomo_get_file`, `pomo_require_file`, `pomo_sanitize_name`, `pomo_domain_fail`, `pomo_parse_duration`, `pomo_start`, `pomo_show_status`, `pomo_watch`, `pomo_skip`, `pomo_stop`, `pomo_list`, `pomo_list_scan_dir`, `pomo_stats`, `pomo_theme`, `pomo_get_icon` / bar helpers (domain law: `requirement-domain-pomo.md`) |
-| `app_` | `app_about`, `app_version` (dispatcher routes `version` here), `app_help`, `app_main` |
+| `app_` | `app_about`, `app_version` (dispatcher routes `version` here), `app_help`, `app_main`, `app_default`, `app_default_print_menu`, `app_default_print_running`, `app_default_map_running_pick`, `app_default_run_pick` |
 
 #### Structural notes (implementation status)
 

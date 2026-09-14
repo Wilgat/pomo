@@ -152,14 +152,22 @@ ci_cleanup_env() {
 }
 
 # Remove this user's volatile pomo state files (best-effort; domain suite).
-# Live layout: ${/dev/shm|/tmp}/${APP_NAME}_${USER}_${name}
-# Also clean nested private-dir variant if present.
+# Live layout: ${/dev/shm|/dev/shm/cache|/tmp/cache|/tmp}/${APP_NAME}_${USER}_${name}
+# Also clean nested private-dir variant and Git Bash AppData Local Temp/cache.
 ci_cleanup_pomo_domain() {
     _u=$(id -un 2>/dev/null || echo "unknown")
-    for _base in /dev/shm /tmp; do
+    for _base in /dev/shm /dev/shm/cache /tmp/cache /tmp; do
         rm -f "${_base}/${APP_NAME}_${_u}"_* 2>/dev/null || true
         rm -rf "${_base}/${APP_NAME}-${_u}" 2>/dev/null || true
     done
+    if [ -n "${HOME-}" ] && [ -d "${HOME}/AppData/Local/Temp/cache" ]; then
+        rm -f "${HOME}/AppData/Local/Temp/cache/${APP_NAME}_${_u}"_* 2>/dev/null || true
+        rm -rf "${HOME}/AppData/Local/Temp/cache/${APP_NAME}-${_u}" 2>/dev/null || true
+    fi
+    if [ -n "${TEMP-}" ] && [ -d "${TEMP}/cache" ]; then
+        rm -f "${TEMP}/cache/${APP_NAME}_${_u}"_* 2>/dev/null || true
+        rm -rf "${TEMP}/cache/${APP_NAME}-${_u}" 2>/dev/null || true
+    fi
 }
 
 # Back-compat aliases if suites share countdown/timer names

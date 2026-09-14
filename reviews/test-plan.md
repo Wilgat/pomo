@@ -2,14 +2,14 @@
 
 Maps **portable proof molds (`PM-*`)** to product-root `tests/` with status.  
 **Suite entry:** `./tests/run.sh` (`PM-SHELL-CLI-SUITE-TEST-PLAN` order: CLI → LC → CURL → domain)  
-**Last update:** 2026-09-08 (TTY main menu **TP-CLI-16/17/29/30**; version 2.1.0)
+**Last update:** 2026-09-14 (TTY top menu timer / self-management **TP-CLI-16/17/29/30**; version 2.2.0)
 
 **Proof molds (cite by PM-ID):**
 
 | Family | Proof mold-ID | Suite file | Specialize note |
 |--------|---------------|------------|-----------------|
 | **TP-CLI** | `PM-SHELL-CLI-TEST-PLAN` | `tests/test_cli.sh` | Core 01–11; product **12** beyond mold |
-| **TP-LC** | `PM-INSTALL-LIFECYCLE-TEST-PLAN` | `tests/test_install_lifecycle.sh` | Core 01–09; product **05b/10–12** beyond mold |
+| **TP-LC** | `PM-INSTALL-LIFECYCLE-TEST-PLAN` | `tests/test_install_lifecycle.sh` | Parent catalog 01–09/11–16/20–22; dest-mode **TP-LC-23**; product **05b/10–12** |
 | **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle | Full 01–05 |
 | **TP-U** | `PM-SET-U-TEST-PLAN` | CLI + curl | 01–03 have; 04–05 n/a |
 | **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | `tests/test_online_curl_install.sh` | Full 01–09; sh not bash |
@@ -33,6 +33,8 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | 2026-07-24 | **PASS=239 FAIL=0 SKIP=1** | Mold-aligned CURL-04 pipe; shared **TP-STORAGE**; re-check green |
 | 2026-09-06 | **PASS=255 FAIL=0 SKIP=1** | Termux/Git Bash **TP-CLI-13**; version 2.0.2 |
 | 2026-09-08 | **PASS=270 FAIL=0 SKIP=1** | Termux **TP-TX-01..05** + **TP-TX-08**; version **2.0.3** |
+| 2026-09-10 | **PASS=333 FAIL=0 SKIP=1** | Git Bash cache **TP-TX-09** / **TP-TX-10**; version **2.1.1** |
+| 2026-09-10 | **PASS=339 FAIL=0 SKIP=2** | Git Bash `/c/` **TP-TX-11** / drive Temp **TP-TX-12**; **RQ-SHELL-GIT-BASH** + **RQ-SHELL-CLI-STORAGE**; version **2.1.2** |
 | 2026-09-08 | **PASS=324 FAIL=0 SKIP=1** | TTY main menu **TP-CLI-16/17/29/30**; version **2.1.0** |
 
 ---
@@ -55,7 +57,8 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-CLI-12** | *(product extension)* out_json string-key | **have** | beyond mold; string-escape contract (`@key` raw n/a) |
 | **TP-CLI-13** | *(product)* Termux / Git Bash target detect | **have** | about `target`; help no `sudo curl` on that class |
 | **TP-CLI-16** | do-not-capture-read | **have** | no `$()` of `prompt_*` |
-| **TP-CLI-17** | menu header nametag + off-TTY `menu` is help | **have** | `tests/test_cli.sh` |
+| **TP-CLI-17** | menu header nametag + parent-prefix boards + bold short | **have** | `tests/test_cli.sh` |
+| **TP-CLI-19** | unused TTY menu number retries this layer | **have** | `tests/test_cli.sh` |
 | **TP-CLI-29** | overlay empty argv (`--debug` / `--quiet` / `--json`) | **have** | TTY `--debug` → menu; off-TTY `--debug` → ensure |
 | **TP-CLI-30** | TTY menu start name; stop/status running pick | **have** | `tests/test_cli.sh` |
 
@@ -73,6 +76,10 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-TX-06** | One-shot `proot` reaper | **n/a** | No guest/proot dispatch |
 | **TP-TX-07** | One-shot without `proot` | **n/a** | No guest/proot dispatch |
 | **TP-TX-08** | Termux: unusable `VOLATILE_DIR` → file under `$PREFIX/tmp`; no `/pomo_*` root write | **have** | `tests/test_cli.sh` |
+| **TP-TX-09** | Git Bash: unusable `VOLATILE_DIR` → `$HOME/AppData/Local/Temp/cache` | **have** | `tests/test_cli.sh` |
+| **TP-TX-10** | Git Bash: `cache` is a file so mkdir fails → `$TEMP/cache`; no abort | **have** | `tests/test_cli.sh` |
+| **TP-TX-11** | Git Bash detect: source probes `/c/`; live about when `/c/` exists | **have** | `tests/test_cli.sh` |
+| **TP-TX-12** | Git Bash `${GIT_BASH_DRIVE}/Users/<user>/AppData/Local/Temp/cache` | **have** | `tests/test_cli.sh` |
 
 ---
 
@@ -93,6 +100,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-LC-10** | *(product)* Idempotent re-install | **have** | beyond mold; “already installed” |
 | **TP-LC-11** | *(product)* version-check network failure | **have** | beyond mold |
 | **TP-LC-12** | *(product)* Explicit `install --json` | **have** | beyond mold |
+| **TP-LC-23** | Shebang dest mode **0755** after atomic place | **have** | not `chmod +x` → 0711; **RQ-SHELL-SELF-MANAGEMENT** |
 
 ---
 
@@ -164,7 +172,7 @@ Subject = `pomo` **ops/verbs**. **Not** portable **TP-DOM-***. Storage is **not*
 
 | TP-ID | Mold intent | Status | Evidence | Legacy (this product) |
 |-------|-------------|--------|----------|------------------------|
-| **TP-STORAGE-01** | Volatile storage path resolve | **have** | `/dev/shm\|tmp/${APP}_${USER}_${name}` | was TP-POMO-12 |
+| **TP-STORAGE-01** | Volatile storage path resolve | **have** | `/dev/shm\|/tmp/cache\|/tmp/${APP}_${USER}_${name}` | was TP-POMO-12 |
 | **TP-STORAGE-02** | `--persist` start/list/status/stop | **have** | isolated HOME | was TP-POMO-08 |
 | **TP-STORAGE-03** | Corrupted state → `corrupted_data` | **have** | empty state file | was TP-POMO-13 |
 

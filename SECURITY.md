@@ -64,7 +64,7 @@ Beyond install integrity, domain ops intentionally constrain risk:
 |---------|---------|
 | **Path-safe names** | Timer names are sanitized before filesystem use; invalid names fail closed (`invalid_name`). |
 | **Per-user isolation** | State files are scoped by product name + username. |
-| **Storage resolution** | Volatile and persistent paths use defensive fallbacks (missing `/dev/shm`, missing `$HOME`); no silent write to unusable locations. |
+| **Storage resolution** | Volatile and persistent paths use defensive fallbacks (missing `/dev/shm`, Git Bash `$HOME/AppData/Local/Temp/cache`, `$TEMP/cache`, `/tmp/cache`, missing `$HOME`); `mkdir` of `cache` is fail-soft; no silent write to unusable locations. |
 | **Privilege** | Domain and Type 0 lifecycle run as the **invoking user** (no Type 1 host bootstrap / Type 2 system-user surface in current product). |
 
 Domain product law: `docs/requirements/requirement-domain-pomo.md` (when present in a full checkout).

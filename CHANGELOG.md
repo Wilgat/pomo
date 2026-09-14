@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- **TTY top menu:** empty argv shows **1 timer** and **8 self-management** (Exit **9**). Timer rows **11…19**. Self-management rows **81…84**. **0** Back. Commands **`timer`** and **`self-management`**.
+
+### Changed
+- VERSION **2.2.0**. Menu `start` is **1** then **11**. Numbered rows use **bold** short description + *italic* gray explain. Unused picks reprint this layer (`[ERROR]`, not die).
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.2.0 ship-unit bytes.
+
+### Fixed
+- **Global shebang dest mode:** atomic install now `chmod 0755` the staging file. `mktemp` + `chmod +x` left **0711**, so unprivileged `pomo` was `/bin/sh: 0: cannot open /usr/local/bin/pomo: Permission denied` while `sudo pomo` worked (**INC-20260912-001**, **L-16**, **TP-LC-23**).
+
+## [2.1.2] - 2026-09-10
+
+### Added
+- **`RQ-SHELL-GIT-BASH`:** detect Git Bash when folder `/c/` or `/c` exists; default drive `/c/`; Temp parent `$HOME/AppData/Local/Temp` then `/c/Users/<user>/AppData/Local/Temp`.
+- **`RQ-SHELL-CLI-STORAGE`:** volatile root chain aligned with Git Bash Temp `cache`; mkdir fail-soft.
+- **TP-TX-11** (`/c/` probe); **TP-TX-12** (`GIT_BASH_DRIVE` Users Temp fallback).
+
+### Changed
+- `pomo_is_git_bash` probes `/c/` first (excludes WSL). `GIT_BASH_DRIVE` default `/c`.
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.1.2 ship-unit bytes.
+
+## [2.1.1] - 2026-09-10
+
+### Fixed
+- **Git Bash volatile cache:** `$HOME/AppData/Local/Temp/cache` when that Temp parent exists, then `$TEMP/cache`, then `/tmp/cache`. `mkdir` of `cache` is fail-soft (does not abort mid-chain).
+- `util_resolve_volatile_root` walks the portable chain; `util_ensure_writable_dir` uses `mkdir -p … || true`.
+
+### Added
+- Terms **git-bash** and **git-bash-temp-folder**; **TP-TX-09** / **TP-TX-10**.
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.1.1 ship-unit bytes.
+
 ## [2.1.0] - 2026-09-08
 
 ### Added
@@ -72,7 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Software-dev housekeeping (2026-08-13): H2 from RAM `GENESIS_SSOT` (NEW=73 UPDATE=67 DEST_ONLY=2), dest-SSOT map rebind (9 Active REQs recognized), tests PASS=239 FAIL=0 SKIP=1; no product-source change so no auto-commit/push.
 - Software-dev housekeeping (2026-08-11): re-pull portable harness from RAM `GENESIS_SSOT`, dest-SSOT map rebind (9 Active REQs recognized), H1/H2 backup ignore patterns on product `.gitignore`.
 - **`tests/test_online_curl_install.sh`** — full **TP-CURL-01…09** (local channel Core; optional public via flag); **TP-U-03** via TP-CURL-04.
-- Shared dual-storage family **TP-STORAGE-01..03** (volatile path, `--persist`, corrupted state) — same family on **timer/countdown/pomo** (not pomo-only); former **TP-POMO-08/12/13**.
+- Shared dual-storage family **TP-STORAGE-01..03** (volatile path, `--persist`, corrupted state) — same family on **timer/countdown/pomo** (not pomo-only); former **TP-POMO-08/12/23**.
 - Tests aligned to proof molds: **TP-CURL** catalog order; **PM-DOMAIN** §4.2 **TP-STORAGE** + §4.3.3 **TP-POMO** ops.
 
 ## [2.0.1] - 2026-07-17

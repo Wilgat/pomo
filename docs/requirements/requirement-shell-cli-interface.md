@@ -109,9 +109,9 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./pomo` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.1.0"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.1.2"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin`. **Termux:** `pomo_apply_target_paths` retargets both to `$PREFIX/bin` when those POSIX defaults are still in force |
-| **Target detect** | `pomo_is_termux` (`PREFIX` contains `com.termux`, `TERMUX_VERSION`, Termux usr tree); `pomo_is_git_bash`; `pomo_is_windows_cmd`; union `pomo_is_normal_user_only_cli`; name via `pomo_target_system` (`termux` / `git-bash` / `windows-cmd` / `posix`) |
+| **Target detect** | `pomo_is_termux` (`PREFIX` contains `com.termux`, `TERMUX_VERSION`, Termux usr tree); `pomo_is_git_bash` (**`RQ-SHELL-GIT-BASH`**: folder `/c/` or `/c`, then `MSYSTEM` / `uname`); `pomo_is_windows_cmd`; union `pomo_is_normal_user_only_cli`; name via `pomo_target_system` (`termux` / `git-bash` / `windows-cmd` / `posix`) |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `pomo`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/pomo/main/pomo`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
 | **Type 1 / Type 2 commands** | **None** — Type 0 lifecycle + Type 0 domain (pomodoro); no elevated host/system-user ops |
 | **Dedicated system user** | **Not required** for Type 0 CLI self-management |
@@ -121,7 +121,9 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | Command | Type | Handler (current) | Required behavior |
 |---------|------|-------------------|-------------------|
 | *(no args — empty argv)* | Type 0 | TTY → `app_default`; off-TTY → `inst_empty_argv_ensure`; `--json` → `app_help` | **No command token** after flag parse. TTY numbered list; off-TTY Type O install-ensure; `--json` JSON help. See `requirement-shell-cli-zero-arguments.md` |
-| `menu` / `main` | Type 0 | `app_default` | TTY numbered list (ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo menu` |
+| `menu` / `main` | Type 0 | `app_default` | TTY **top** menu (1 timer, 8 self-management; ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo menu` |
+| `timer` | Type 0 | `app_default` | TTY timer board (ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo timer` |
+| `self-management` | Type 0 | `app_default` | TTY self-management board (ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo self-management` |
 | `install` | Type 0 | `inst_perform_install` | Install binary for current privilege (root→global, user→local); idempotent unless force reinstall |
 | `version` | Type 0 | `app_main` / `app_version` | Print local version; JSON object when `--json` |
 | `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**; JSON when `--json` includes `target`, `normal_user_only`, `termux`, `user_bin`, `prefix`; **no `CHECKSUM` field** |
@@ -154,7 +156,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 
 1. Unknown token after flag parse → `out_die` with pointer to `pomo help`.  
 2. Zero-arg after flag parse: TTY → menu; off-TTY → install-ensure; `--json` → JSON help; overlay `--debug` follows empty argv.  
-3. Command routing table in `app_main` **must** include every row in the command table above (`menu` / `main` included).  
+3. Command routing table in `app_main` **must** include every row in the command table above (`menu` / `main` / `timer` / `self-management` included).  
 4. Help text **must** stay aligned with that table (no orphan commands, no listed-but-unrouted commands).  
 5. User-facing strings **must not** use raw `echo`/`printf` outside the `out_*` system (protected low-level helpers excepted only if already CIAO-marked and not for general messages).
 
@@ -187,6 +189,7 @@ When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login
 | Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
 | Detect via `pomo_is_termux` / `pomo_is_git_bash` / `pomo_is_windows_cmd`; union `pomo_is_normal_user_only_cli`; `help` names the target and this-login install | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
 | Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+| Dual mention: Git Bash `/c/` detect + default drive + Temp parent | Re-own Git Bash temp chain here (that is `requirement-shell-git-bash.md` + `requirement-shell-cli-storage.md`) |
 
 **This requirement:** privilege labels, dispatch, and detect. Type 1 / Type 2 stay **unused** on this class. Help **MUST NOT** advertise `sudo curl | sh` as the path for Termux / Git Bash / Windows cmd.
 
@@ -247,6 +250,8 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | **`RQ-SHELL-IDEMPOTENCY`** (`requirement-shell-idempotency.md`) | Re-run safety for ensure ops |
 | **`RQ-SHELL-MODULAR-FUNCTION-DESIGN`** (`requirement-shell-modular-function-design.md`) | Prefix ownership (`app_`, `inst_`, `out_*`, `pomo_*`) |
 | **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`) | Pomodoro domain semantics (state, phases, stats, themes) |
+| **`RQ-SHELL-GIT-BASH`** (`requirement-shell-git-bash.md`) | Dual mention: Git Bash detect `/c/`, default drive, Temp parent |
+| **`RQ-SHELL-CLI-STORAGE`** (`requirement-shell-cli-storage.md`) | Volatile/persistent roots |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 
@@ -287,4 +292,5 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | **TP-TX-04** `$PREFIX/bin` dest | `tests/test_cli.sh` | have |
 | **TP-TX-05** `pkg` not invoked | `tests/test_cli.sh` | have |
 | **TP-TX-08** Termux `$PREFIX/tmp` volatile records | `tests/test_cli.sh` | have |
+| **TP-TX-11** Git Bash `/c/` detect | `tests/test_cli.sh` | have |
 | **TP-POMO-01** domain help verbs | `tests/test_pomo_domain.sh` | have |

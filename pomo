@@ -19,6 +19,8 @@
 # - requirement-shell-output-requirements.md
 # - requirement-shell-interactive-vs-noninteractive.md
 # - requirement-shell-automatic-checksum.md
+# - requirement-shell-git-bash.md
+# - requirement-shell-cli-storage.md
 # - requirement-domain-pomo.md
 # Plus CIAO Protection Zones and "DO NOT MODIFY" rules.
 #
@@ -46,8 +48,8 @@ set -u  # Treat unset variables as error (defensive)
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
 # Product version SSOT (specialized from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
-VERSION="2.1.0"
-: "${VERSION:=2.1.0}"
+VERSION="2.2.0"
+: "${VERSION:=2.2.0}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -116,6 +118,9 @@ else
 fi
 : "${IS_ROOT:=0}"
 : "${IS_TERMUX:=0}"
+: "${IS_GIT_BASH:=0}"
+: "${GIT_BASH_DRIVE:=/c}"
+: "${TEMP:=}"
 : "${FORCE_GLOBAL:=0}"
 : "${SH:=sh}"
 # =============================================================================
@@ -238,30 +243,36 @@ out_success() { out_text out_success "$*"; }
 out_info() { out_text out_info "$*"; }
 
 # =============================================================================
-# out_menu_choice() - Numbered menu row; explain is italic + light gray on TTY
+# out_menu_choice() - Numbered menu row; bold short + italic gray long on TTY
 # =============================================================================
 #
 # GENERAL PURPOSE:
 # Print one numbered list row as "N. command: desc" (default CLI main menu
-# style). Explain is italic and light gray (SGR 3+37) on a TTY and plain
-# off-TTY. Number and command name stay unstyled. Rows with no desc
-# (Exit) print "N. label" only.
+# style). On a TTY the short description is bold (SGR 1) and the explain is
+# italic light gray (SGR 3+37). Off-TTY: plain. Rows with no desc (Exit /
+# Back) print "N. label" only.
 #
 # ALIGNMENT (live requirements only):
 # - requirement-shell-cli-default-interaction.md
 # - requirement-shell-output-requirements.md
 #
-# Last updated: 2026-09-08
+# Last updated: 2026-09-14
 # =============================================================================
 out_menu_choice() {
     _n="${1-}"
     _label="${2-}"
     _desc="${3-}"
     if [ -n "${_desc}" ]; then
-        out_text menu_choice "${_n}. ${_label}: " "${_desc}"
+        _pfx="${_n}. ${_label}: "
+        if [ "${TTY:-0}" -eq 1 ] && [ "${QUIET:-0}" -eq 0 ] && [ "${JSON:-0}" -eq 0 ]; then
+            _pfx="${_n}. $(printf '\033[1m')${_label}$(printf '\033[0m'): "
+        fi
+        out_text menu_choice "${_pfx}" "${_desc}"
+        unset _pfx
     else
         out_plain "${_n}. ${_label}"
     fi
+    unset _n _label _desc
 }
 
 # =============================================================================
@@ -523,26 +534,34 @@ out_json_error() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Shared probe for Termux/Android tmp and cache fallbacks. Creates the path
-# when missing, then returns 0 only if it is a writable directory.
+# Shared probe for Termux/Android tmp, Git Bash Windows temp, $TEMP/cache,
+# /tmp/cache, and other fallbacks. Creates the path when missing, then
+# returns 0 only if it is a writable directory. mkdir failure is a probe
+# result (return 1) — callers MUST continue the chain, not abort.
 #
 # CIAO PRINCIPLES APPLIED:
 # - Caution: never treat a missing or read-only mount as usable storage.
 # - Intentional: one mkdir+writable check instead of copy-pasted probes.
 # - Anti-fragile: mkdir failure is not enough — re-test -d and -w.
-# - Over-protect: empty path is fail-closed (return 1).
+# - Over-protect: empty path is fail-closed (return 1). mkdir MUST NOT
+#   abort the process (no set -e; || true on mkdir).
 #
 # ALIGNMENT (live requirements only — never template-*.md or skill-*.md):
+# - requirement-shell-cli-storage.md
+# - requirement-shell-git-bash.md
 # - requirement-domain-pomo.md
 # - requirement-shell-cli-interface.md
+# - requirement-shell-script-coding.md
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 #
 # Lessons Learned (CIAO Reflection):
 # 2026-09-08: Termux $PREFIX/tmp is the userspace /tmp; Android /tmp is often
 #             missing or read-only. Shared probe so domain + scratch agree.
+# 2026-09-10: Git Bash cache mkdir in the middle of the chain aborted the
+#             CLI. mkdir of cache is fail-soft; only the empty chain dies.
 #
-# Last updated: 2026-09-08
+# Last updated: 2026-09-10
 # =============================================================================
 util_ensure_writable_dir() {
     _uw_dir="${1-}"
@@ -550,12 +569,135 @@ util_ensure_writable_dir() {
         unset _uw_dir
         return 1
     fi
-    mkdir -p "${_uw_dir}" 2>/dev/null
+    mkdir -p "${_uw_dir}" 2>/dev/null || true
     if [ -d "${_uw_dir}" ] && [ -w "${_uw_dir}" ]; then
         unset _uw_dir
         return 0
     fi
     unset _uw_dir
+    return 1
+}
+
+# =============================================================================
+# util_resolve_volatile_root() - Portable volatile cache/temp root (fail-soft)
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Walk the portable cache-root chain and print the first writable root.
+# mkdir of a cache leaf MUST NOT abort: failed create → next candidate.
+#
+# Chain (parent must exist unless noted):
+#   1. VOLATILE_DIR when it is already a usable directory
+#   2. /dev/shm when it exists (default VOLATILE_DIR only; mkdir fail-soft)
+#   3. Termux $PREFIX/tmp (create if needed)
+#   4. Git Bash: $HOME/AppData/Local/Temp/cache, then
+#      ${GIT_BASH_DRIVE}/Users/${USERNAME}/AppData/Local/Temp/cache (default /c)
+#   5. $TEMP/cache when TEMP is defined and the parent exists
+#   6. $TMPDIR when set and a directory
+#   7. /tmp/cache (then /tmp) when /tmp exists
+#
+# ECHO EXCEPTION (class B – function return-via-stdout):
+# printf of the root is a data return for $(util_resolve_volatile_root).
+# Failures return 1 with no path — callers die via out_die at the END.
+#
+# ALIGNMENT (live requirements only):
+# - requirement-shell-cli-storage.md
+# - requirement-shell-git-bash.md
+# - requirement-domain-pomo.md
+# - requirement-shell-cli-interface.md
+# - requirement-shell-script-coding.md
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+#
+# Lessons Learned (CIAO Reflection):
+# 2026-09-10: Git Bash used $HOME/.cache or died on mkdir cache. Prefer
+#             $HOME/AppData/Local/Temp/cache; mkdir is a probe not a fatal.
+#             Default drive /c/; fallback /c/Users/<user>/AppData/Local/Temp.
+#
+# Last updated: 2026-09-10
+# =============================================================================
+util_resolve_volatile_root() {
+    : "${HOME:=/tmp}"
+    : "${PREFIX:=}"
+    : "${TEMP:=}"
+    : "${TMPDIR:=}"
+    : "${VOLATILE_DIR:=/dev/shm}"
+    : "${GIT_BASH_DRIVE:=/c}"
+    : "${USERNAME:=unknown}"
+
+    _vr=""
+
+    if [ -n "${VOLATILE_DIR}" ] && [ -d "${VOLATILE_DIR}" ]; then
+        if util_ensure_writable_dir "${VOLATILE_DIR}"; then
+            _vr="${VOLATILE_DIR}"
+        fi
+    fi
+
+    if [ -z "${_vr}" ]; then
+        if [ -z "${VOLATILE_DIR}" ] || [ "${VOLATILE_DIR}" = "/dev/shm" ]; then
+            if [ -d "/dev/shm" ]; then
+                if util_ensure_writable_dir "/dev/shm"; then
+                    _vr="/dev/shm"
+                elif util_ensure_writable_dir "/dev/shm/cache"; then
+                    _vr="/dev/shm/cache"
+                fi
+            fi
+        fi
+    fi
+
+    if [ -z "${_vr}" ] && [ -n "${PREFIX}" ]; then
+        if util_ensure_writable_dir "${PREFIX}/tmp"; then
+            _vr="${PREFIX}/tmp"
+        fi
+    fi
+
+    if [ -z "${_vr}" ]; then
+        if pomo_is_git_bash; then
+            if [ -n "${HOME}" ] && [ -d "${HOME}/AppData/Local/Temp" ]; then
+                if util_ensure_writable_dir "${HOME}/AppData/Local/Temp/cache"; then
+                    _vr="${HOME}/AppData/Local/Temp/cache"
+                fi
+            fi
+            if [ -z "${_vr}" ] && [ -n "${GIT_BASH_DRIVE}" ] && [ -d "${GIT_BASH_DRIVE}" ]; then
+                _gb_drive_temp="${GIT_BASH_DRIVE}/Users/${USERNAME}/AppData/Local/Temp"
+                if [ -d "${_gb_drive_temp}" ]; then
+                    if util_ensure_writable_dir "${_gb_drive_temp}/cache"; then
+                        _vr="${_gb_drive_temp}/cache"
+                    fi
+                fi
+                unset _gb_drive_temp
+            fi
+        fi
+    fi
+
+    if [ -z "${_vr}" ] && [ -n "${TEMP}" ] && [ -d "${TEMP}" ]; then
+        if util_ensure_writable_dir "${TEMP}/cache"; then
+            _vr="${TEMP}/cache"
+        elif util_ensure_writable_dir "${TEMP}"; then
+            _vr="${TEMP}"
+        fi
+    fi
+
+    if [ -z "${_vr}" ] && [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ]; then
+        if util_ensure_writable_dir "${TMPDIR}"; then
+            _vr="${TMPDIR}"
+        fi
+    fi
+
+    if [ -z "${_vr}" ] && [ -d "/tmp" ]; then
+        if util_ensure_writable_dir "/tmp/cache"; then
+            _vr="/tmp/cache"
+        elif util_ensure_writable_dir "/tmp"; then
+            _vr="/tmp"
+        fi
+    fi
+
+    if [ -n "${_vr}" ]; then
+        printf '%s\n' "${_vr}"
+        unset _vr
+        return 0
+    fi
+    unset _vr
     return 1
 }
 
@@ -570,8 +712,13 @@ util_ensure_writable_dir() {
 # freeze install to $PREFIX/bin (this login), force IS_ROOT=0, and retarget
 # volatile storage to $PREFIX/tmp when /dev/shm is missing. Android /tmp is
 # often read-only — create $PREFIX/tmp instead of assuming it exists.
+# On Git Bash, freeze IS_ROOT=0 and retarget volatile storage to
+# $HOME/AppData/Local/Temp/cache (then $TEMP/cache, then /tmp/cache) when
+# /dev/shm is missing. mkdir of cache is fail-soft.
 #
 # ALIGNMENT (live requirements only):
+# - requirement-shell-git-bash.md
+# - requirement-shell-cli-storage.md
 # - requirement-shell-cli-interface.md
 # - requirement-shell-self-management.md
 # - requirement-domain-pomo.md
@@ -591,8 +738,12 @@ util_ensure_writable_dir() {
 # 2026-09-08: timer start died on Termux when VOLATILE_DIR=/dev/shm and /tmp
 #             were both unusable; empty base wrote /APP_NAME_<user>_name on
 #             the read-only root. Create $PREFIX/tmp; refuse empty/root files.
+# 2026-09-10: Git Bash cache folder was $HOME/.cache or mkdir died mid-chain.
+#             Retarget VOLATILE_DIR via util_resolve_volatile_root (AppData
+#             Local Temp/cache, $TEMP/cache, /tmp/cache).
+#             Detect /c/ or /c as Git Bash; default drive GIT_BASH_DRIVE=/c.
 #
-# Last updated: 2026-09-08
+# Last updated: 2026-09-10
 # =============================================================================
 
 pomo_is_termux() {
@@ -612,6 +763,13 @@ pomo_is_termux() {
 }
 
 pomo_is_git_bash() {
+    if [ -n "${WSL_DISTRO_NAME-}" ]; then
+        return 1
+    fi
+    # Primary: Git Bash / MSYS mounts Windows C: as /c/ (default drive).
+    if [ -d /c/ ] || [ -d /c ]; then
+        return 0
+    fi
     case "${MSYSTEM-}" in
         MINGW*|MSYS*|UCRT*|CLANG*) return 0 ;;
     esac
@@ -679,15 +837,14 @@ pomo_apply_target_paths() {
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${VOLATILE_DIR:=/dev/shm}"
     : "${FORCE_GLOBAL:=0}"
+    : "${TEMP:=}"
+    : "${GIT_BASH_DRIVE:=/c}"
     IS_TERMUX=0
-    if ! pomo_is_termux; then
-        : "${IS_TERMUX:=0}"
-        return 0
-    fi
-
-    IS_TERMUX=1
-    IS_ROOT=0
-    FORCE_GLOBAL=0
+    IS_GIT_BASH=0
+    if pomo_is_termux; then
+        IS_TERMUX=1
+        IS_ROOT=0
+        FORCE_GLOBAL=0
 
     if [ -z "${PREFIX}" ]; then
         PREFIX="/data/data/com.termux/files/usr"
@@ -723,6 +880,30 @@ pomo_apply_target_paths() {
     unset _default_user_bin _default_global
     : "${IS_TERMUX:=0}"
     : "${IS_ROOT:=0}"
+    return 0
+    fi
+
+    if pomo_is_git_bash; then
+        IS_GIT_BASH=1
+        IS_ROOT=0
+        FORCE_GLOBAL=0
+        if [ -d /c/ ] || [ -d /c ]; then
+            GIT_BASH_DRIVE="/c"
+        fi
+        : "${GIT_BASH_DRIVE:=/c}"
+        if [ ! -d "${VOLATILE_DIR}" ] || [ ! -w "${VOLATILE_DIR}" ]; then
+            _gb_root=$(util_resolve_volatile_root) || true
+            if [ -n "${_gb_root}" ]; then
+                VOLATILE_DIR="${_gb_root}"
+            fi
+            unset _gb_root
+        fi
+        : "${IS_GIT_BASH:=0}"
+        : "${IS_ROOT:=0}"
+        return 0
+    fi
+    : "${IS_TERMUX:=0}"
+    : "${IS_GIT_BASH:=0}"
     return 0
 }
 
@@ -1154,7 +1335,8 @@ inst_perform_install_atomic_install() {
     local tmp_file="$1"
     local downloaded_checksum_ok="$2"
 
-    chmod +x "${tmp_file}" 2>/dev/null || true
+    # 0755: mktemp is 0600; chmod +x → 0711 (no other-read). Shebang dest must be readable.
+    chmod 0755 "${tmp_file}" 2>/dev/null || chmod +x "${tmp_file}" 2>/dev/null || true
 
     rm -f "${INSTALL_PATH}" 2>/dev/null
     if ! mv "${tmp_file}" "${INSTALL_PATH}" 2>/dev/null; then
@@ -2267,8 +2449,14 @@ util_backup() {
 #
 # GENERAL PURPOSE:
 # Returns the best available volatile storage directory for prompt files.
-# Prefers /dev/shm (fastest, in-memory) → /tmp → fallback to XDG_CACHE_HOME.
+# Prefers /dev/shm (fastest, in-memory) then Git Bash / $TEMP / /tmp cache
+# roots via util_resolve_volatile_root. mkdir of cache is fail-soft.
 # All paths include ${USERNAME} to isolate per-user storage.
+#
+# ALIGNMENT (live requirements only):
+# - requirement-shell-cli-storage.md
+# - requirement-shell-git-bash.md
+# - requirement-domain-pomo.md
 #
 # Safe Variable Defaults
 #
@@ -2307,8 +2495,10 @@ util_backup() {
 #             per-user ${APP_NAME}-${USERNAME} isolation under set -u.
 # 2026-09-08: Termux $PREFIX/tmp before Linux /tmp (Android /tmp is often RO).
 #             Create chosen tier before echo (fail-closed).
+# 2026-09-10: mkdir of the chosen candidate used to die mid-chain (Git Bash
+#             cache). Walk util_resolve_volatile_root; mkdir is fail-soft.
 #
-# Last updated: 2026-09-08
+# Last updated: 2026-09-10
 # =============================================================================
 util_resolve_storage() {
     # --- Safe Variable Defaults ----
@@ -2319,26 +2509,34 @@ util_resolve_storage() {
     : "${XDG_CACHE_HOME:=${HOME}/.cache}"
     : "${IS_TERMUX:=0}"
     : "${PREFIX:=}"
+    : "${TEMP:=}"
+    : "${GIT_BASH_DRIVE:=/c}"
     pomo_apply_target_paths
 
-    # Pick first available tier, then create root (all tiers fail-closed)
+    _storage_root=$(util_resolve_volatile_root) || true
     _storage_candidate=""
-    if [ -d "/dev/shm" ] && [ -w "/dev/shm" ]; then
-        _storage_candidate="/dev/shm/${APP_NAME}-${USERNAME}"
-    elif [ "${IS_TERMUX}" -eq 1 ] && [ -n "${PREFIX-}" ] && util_ensure_writable_dir "${PREFIX}/tmp"; then
-        _storage_candidate="${PREFIX}/tmp/${APP_NAME}-${USERNAME}"
-    elif [ -w "/tmp" ]; then
-        _storage_candidate="/tmp/${APP_NAME}-${USERNAME}"
-    else
-        : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
-        _storage_candidate="${STORAGE_DIR}"
+    if [ -n "${_storage_root}" ]; then
+        _storage_candidate="${_storage_root}/${APP_NAME}-${USERNAME}"
+        if ! util_ensure_writable_dir "${_storage_candidate}"; then
+            if util_ensure_writable_dir "${_storage_root}"; then
+                _storage_candidate="${_storage_root}"
+            else
+                _storage_candidate=""
+            fi
+        fi
     fi
-
-    if ! mkdir -p "${_storage_candidate}" 2>/dev/null; then
-        out_die "Cannot create storage directory ${_storage_candidate}. Next: mkdir -p \"\${PREFIX}/tmp\" or \"\${HOME}/.cache/${APP_NAME}\""
+    if [ -z "${_storage_candidate}" ]; then
+        : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
+        if util_ensure_writable_dir "${STORAGE_DIR}"; then
+            _storage_candidate="${STORAGE_DIR}"
+        fi
+    fi
+    if [ -z "${_storage_candidate}" ]; then
+        unset _storage_root _storage_candidate
+        out_die "Cannot create storage directory. Next: mkdir -p \"\${HOME}/AppData/Local/Temp/cache\" or \"\${PREFIX}/tmp\" or \"\${HOME}/.cache/${APP_NAME}\""
     fi
     echo "${_storage_candidate}"
-    unset _storage_candidate
+    unset _storage_root _storage_candidate
     return 0
 }
 
@@ -2553,8 +2751,10 @@ util_get_current_shell() {
 #             VOLATILE_DIR → $PREFIX/tmp → TMPDIR → /tmp → XDG cache. out_die
 #             inside $(pomo_resolve_base_dir) only exits the subshell — parent
 #             must refuse an empty base so we never write /pomo_<user>_<name>.
+# 2026-09-10: Git Bash: $HOME/AppData/Local/Temp/cache then $TEMP/cache then
+#             /tmp/cache. mkdir of cache must not abort; walk remaining roots.
 #
-# Last updated: 2026-09-08
+# Last updated: 2026-09-10
 # =============================================================================
 
 pomo_resolve_base_dir() {
@@ -2571,43 +2771,32 @@ pomo_resolve_base_dir() {
     : "${PERSISTENT_DIR:=${XDG_CACHE_HOME}/${APP_NAME}}"
     : "${TMPDIR:=}"
     : "${PREFIX:=}"
+    : "${TEMP:=}"
     pomo_apply_target_paths
 
     if [ "$requested_mode" = "volatile" ]; then
-        if [ -d "$VOLATILE_DIR" ] && [ -w "$VOLATILE_DIR" ]; then
-            base_dir="$VOLATILE_DIR"
-        else
-            base_dir=""
-            # Termux userspace tmp (Android /tmp is often missing or read-only)
-            if [ -n "${PREFIX-}" ]; then
-                if util_ensure_writable_dir "${PREFIX}/tmp"; then
-                    base_dir="${PREFIX}/tmp"
-                fi
+        _orig_vol="${VOLATILE_DIR}"
+        base_dir=$(util_resolve_volatile_root) || true
+        if [ -z "$base_dir" ]; then
+            if util_ensure_writable_dir "${XDG_CACHE_HOME}/${APP_NAME}"; then
+                base_dir="${XDG_CACHE_HOME}/${APP_NAME}"
             fi
-            if [ -z "$base_dir" ] && [ -n "${TMPDIR}" ] && [ -d "${TMPDIR}" ] && [ -w "${TMPDIR}" ]; then
-                base_dir="${TMPDIR}"
-            fi
-            if [ -z "$base_dir" ] && [ -d "/tmp" ] && [ -w "/tmp" ]; then
-                base_dir="/tmp"
-            fi
-            if [ -z "$base_dir" ]; then
-                if util_ensure_writable_dir "${XDG_CACHE_HOME}/${APP_NAME}"; then
-                    base_dir="${XDG_CACHE_HOME}/${APP_NAME}"
-                fi
-            fi
-            if [ -z "$base_dir" ]; then
-                out_die "No writable temporary storage available (/dev/shm, \$PREFIX/tmp, TMPDIR, /tmp, or cache). ${APP_NAME} cannot start. Next: mkdir -p \"\${PREFIX}/tmp\" or ${APP_NAME} start --persist"
-                return 1
-            fi
+        fi
+        if [ -z "$base_dir" ]; then
+            out_die "No writable temporary storage available (/dev/shm, Git Bash AppData Local Temp/cache, \$TEMP/cache, \$PREFIX/tmp, TMPDIR, /tmp/cache, or cache). ${APP_NAME} cannot start. Next: mkdir -p \"\${HOME}/AppData/Local/Temp/cache\" or \"\${PREFIX}/tmp\" or ${APP_NAME} start --persist"
+            return 1
+        fi
+        if [ "$base_dir" != "$_orig_vol" ]; then
             actual_mode="fallback"
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
                 out_warn "Volatile storage (/dev/shm) not available. Using: $base_dir"
             fi
         fi
+        unset _orig_vol
     else
         if [ -n "${HOME-}" ] && [ -d "${HOME}" ] && [ -w "${HOME}" ]; then
             base_dir="${PERSISTENT_DIR}"
-            mkdir -p "$base_dir" 2>/dev/null
+            mkdir -p "$base_dir" 2>/dev/null || true
             if [ ! -d "$base_dir" ] || [ ! -w "$base_dir" ]; then
                 base_dir=""
             fi
@@ -3637,7 +3826,7 @@ app_help() {
     out_info "Usage:"
     out_plain "  ${APP_NAME} [command] [options]"
     out_empty_line
-    out_info "Empty argv on a real terminal shows the numbered list. Off-TTY empty argv is channel install-ensure (curl|sh)."
+    out_info "Empty argv on a real terminal shows the top menu (1 timer, 8 self-management, Exit 9). Timer rows are 11…19; self-management 81…84; 0 goes back. Off-TTY empty argv is channel install-ensure (curl|sh)."
     out_info "Switches without a command (--debug, --quiet) still follow empty argv. ${APP_NAME} --json with no command is empty argv special case: JSON help (even on a TTY)."
     out_empty_line
 
@@ -3673,7 +3862,9 @@ app_help() {
     out_plain "  version-check        Compare local vs remote version (needs SCRIPT_URL)"
     out_plain "  self-update          Update ${APP_NAME} to a newer remote version"
     out_plain "  self-uninstall       Remove ${APP_NAME} (safe PATH cleanup)"
-    out_plain "  menu / main          Numbered daily-work list (TTY); help off-TTY"
+    out_plain "  menu / main          Top menu (TTY): 1 timer, 8 self-management; help off-TTY"
+    out_plain "  timer                Timer board (TTY); help off-TTY"
+    out_plain "  self-management      Install / update / remove board (TTY); help off-TTY"
     out_plain "  help                 Show this help"
     out_empty_line
 
@@ -3724,17 +3915,17 @@ app_help() {
 }
 
 # =============================================================================
-# app_default_print_menu() - Numbered main-menu list (TTY)
+# app_default_print_menu() - Top-layer TTY menu (timer / self-management)
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Print pomo daily-work list: APP_NAME(VERSION) header, nine domain rows,
-# Exit 99. Labels match the routed-verb human-readable column.
+# Print the top board: 1 timer, 8 self-management, Exit 9. Unused 2–7
+# omitted. Labels match the routed-verb human-readable column.
 #
 # ALIGNMENT (live requirements only):
 # - requirement-shell-cli-default-interaction.md
 #
-# Last updated: 2026-09-08
+# Last updated: 2026-09-14
 # =============================================================================
 app_default_print_menu() {
     : "${APP_NAME:=pomo}"
@@ -3742,16 +3933,65 @@ app_default_print_menu() {
     : "${JSON:=0}"
     : "${QUIET:=0}"
     out_info "$(util_app_ident) — ${SHORT_DESCRIPTION}"
-    out_menu_choice "1" "start" "Start a work phase"
-    out_menu_choice "2" "status" "Show themed status and progress"
-    out_menu_choice "3" "watch" "Live refresh every second"
-    out_menu_choice "4" "skip" "Skip the current phase"
-    out_menu_choice "5" "stop" "Complete work (counts toward stats)"
-    out_menu_choice "6" "kill" "Discard without counting"
-    out_menu_choice "7" "list" "List running pomodoros"
-    out_menu_choice "8" "stats" "Daily completed count and minutes"
-    out_menu_choice "9" "theme" "List available themes"
-    out_menu_choice "99" "Exit"
+    out_menu_choice "1" "timer" "Daily pomodoro work"
+    out_menu_choice "8" "self-management" "Install, update, and remove this program"
+    out_menu_choice "9" "Exit"
+}
+
+# =============================================================================
+# app_default_print_timer() - Timer board (daily pomodoro verbs)
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Print the timer submenu: parent prefix 11…19, Back 0. Self-managed
+# and diagnostic verbs stay off this board. MUST NOT restart at 1.
+#
+# ALIGNMENT (live requirements only):
+# - requirement-shell-cli-default-interaction.md
+#
+# Last updated: 2026-09-14
+# =============================================================================
+app_default_print_timer() {
+    : "${APP_NAME:=pomo}"
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+    out_info "$(util_app_ident) — timer"
+    out_menu_choice "11" "start" "Start a work phase"
+    out_menu_choice "12" "status" "Show themed status and progress"
+    out_menu_choice "13" "watch" "Live refresh every second"
+    out_menu_choice "14" "skip" "Skip the current phase"
+    out_menu_choice "15" "stop" "Complete work (counts toward stats)"
+    out_menu_choice "16" "kill" "Discard without counting"
+    out_menu_choice "17" "list" "List running pomodoros"
+    out_menu_choice "18" "stats" "Daily completed count and minutes"
+    out_menu_choice "19" "theme" "List available themes"
+    out_menu_choice "0" "Back"
+}
+
+# =============================================================================
+# app_default_print_selfmgmt() - Self-management board
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Print install / version-check / self-update / self-uninstall as 81…84.
+# Back 0. MUST NOT list version / about / help / menu. MUST NOT Exit 9.
+#
+# ALIGNMENT (live requirements only):
+# - requirement-shell-cli-default-interaction.md
+# - requirement-shell-self-management.md
+#
+# Last updated: 2026-09-14
+# =============================================================================
+app_default_print_selfmgmt() {
+    : "${APP_NAME:=pomo}"
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+    out_info "$(util_app_ident) — self-management"
+    out_menu_choice "81" "install" "Place the program for this login"
+    out_menu_choice "82" "version-check" "Compare local vs remote version"
+    out_menu_choice "83" "self-update" "Update to a newer remote version"
+    out_menu_choice "84" "self-uninstall" "Remove this program"
+    out_menu_choice "0" "Back"
 }
 
 # =============================================================================
@@ -3759,8 +3999,8 @@ app_default_print_menu() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Map 1–9 / domain verbs to domain handlers. Returns 1 for unknown picks
-# (caller reprints). Exit numbers are handled in app_default.
+# Map 11–19 / domain verbs to domain handlers. Returns 1 for unknown picks
+# (caller reprints). Back is handled in app_default.
 #
 # WARNING — do-not-capture-read (PP-A-22): this function MUST NOT contain
 # read. Choice, start name, and running-session pick are read in app_default.
@@ -3770,15 +4010,15 @@ app_default_print_menu() {
 app_default_run_pick() {
     _pick="${1-}"
     case "${_pick}" in
-        1|start)  COMMAND=start ;;
-        2|status) COMMAND=status ;;
-        3|watch)  COMMAND=watch ;;
-        4|skip)   COMMAND=skip ;;
-        5|stop)   COMMAND=stop ;;
-        6|kill)   COMMAND=kill ;;
-        7|list)   COMMAND=list ;;
-        8|stats)  COMMAND=stats ;;
-        9|theme)
+        11|start)  COMMAND=start ;;
+        12|status) COMMAND=status ;;
+        13|watch)  COMMAND=watch ;;
+        14|skip)   COMMAND=skip ;;
+        15|stop)   COMMAND=stop ;;
+        16|kill)   COMMAND=kill ;;
+        17|list)   COMMAND=list ;;
+        18|stats)  COMMAND=stats ;;
+        19|theme)
             COMMAND=theme
             POMO_THEME_SUB="list"
             ;;
@@ -3820,6 +4060,33 @@ app_default_run_pick() {
         theme)  pomo_theme "${POMO_THEME_SUB}" "${POMO_THEME_ARG}" ;;
         *)      return 1 ;;
     esac
+    return 0
+}
+
+# =============================================================================
+# app_default_run_selfmgmt_pick() - Run one self-management menu choice
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Map 81–84 / self-managed verbs to install / version-check / self-update /
+# self-uninstall. Returns 1 for unknown picks (caller reprints). Back is
+# handled in app_default. MUST NOT contain read (PP-A-22).
+#
+# Last updated: 2026-09-14
+# =============================================================================
+app_default_run_selfmgmt_pick() {
+    _pick="${1-}"
+    case "${_pick}" in
+        81|install)        inst_perform_install ;;
+        82|version-check)  ver_check ;;
+        83|self-update)    inst_self_update ;;
+        84|self-uninstall) inst_self_uninstall ;;
+        *)
+            unset _pick
+            return 1
+            ;;
+    esac
+    unset _pick
     return 0
 }
 
@@ -3934,18 +4201,19 @@ app_default_map_running_pick() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Command menu / main / TTY empty argv. On a real terminal: ignore --json on
-# menu/main, show the numbered list, prompt for a name on start (Enter =
-# default), pick a running session on status/watch/skip/stop/kill, run one
-# pick. Off-TTY: help (JSON help when --json). Never hang. Choice, name, and
-# running pick are read in this shell (not $() of read / prompt_ask).
+# Command menu / main / timer / self-management / TTY empty argv. On a real
+# terminal: ignore --json, show the top board (1 timer, 8 self-management,
+# Exit 9), then a submenu. Timer start prompts for a name; status/watch/
+# skip/stop/kill pick a running session. Off-TTY: help (JSON help when
+# --json). Never hang. Choice, name, and running pick are read in this
+# shell (not $() of read / prompt_ask).
 #
 # ALIGNMENT (live requirements only):
 # - requirement-shell-cli-default-interaction.md
 # - requirement-shell-cli-zero-arguments.md
 # - requirement-shell-interactive-vs-noninteractive.md
 #
-# Last updated: 2026-09-08
+# Last updated: 2026-09-14
 # =============================================================================
 app_default() {
     : "${TTY:=0}"
@@ -3954,6 +4222,7 @@ app_default() {
     : "${APP_NAME:=pomo}"
     : "${POMO_NAME:=default}"
     : "${POMO_PERSIST:=0}"
+    : "${COMMAND:=menu}"
 
     if [ "${TTY}" -ne 1 ]; then
         _menu_quiet="${QUIET}"
@@ -3965,6 +4234,12 @@ app_default() {
         return 0
     fi
 
+    case "${COMMAND}" in
+        timer)            POMO_MENU_BOARD="timer" ;;
+        self-management)  POMO_MENU_BOARD="selfmgmt" ;;
+        *)                POMO_MENU_BOARD="top" ;;
+    esac
+
     _menu_json="${JSON}"
     _menu_quiet="${QUIET}"
     JSON=0
@@ -3972,7 +4247,11 @@ app_default() {
     export JSON QUIET
 
     while true; do
-        app_default_print_menu
+        case "${POMO_MENU_BOARD}" in
+            timer)    app_default_print_timer ;;
+            selfmgmt) app_default_print_selfmgmt ;;
+            *)        app_default_print_menu ;;
+        esac
         out_msg_n "Choice: "
         _pick=""
         # WARNING — do-not-capture-read (PP-A-22 / T1-PROMPT-CAPTURE)
@@ -3983,62 +4262,106 @@ app_default() {
             export JSON QUIET
             return 0
         fi
-        case "${_pick}" in
-            99|exit|quit|Exit|QUIT)
+        case "${POMO_MENU_BOARD}" in
+            top)
+                case "${_pick}" in
+                    9|exit|quit|Exit|QUIT)
+                        JSON="${_menu_json}"
+                        QUIET="${_menu_quiet}"
+                        export JSON QUIET
+                        return 0
+                        ;;
+                    1|timer)
+                        POMO_MENU_BOARD="timer"
+                        continue
+                        ;;
+                    8|self-management)
+                        POMO_MENU_BOARD="selfmgmt"
+                        continue
+                        ;;
+                esac
+                JSON=0
+                QUIET=0
+                export JSON QUIET
+                out_error "Not a menu choice. Type 1, 8, 9 to leave, timer, or self-management."
+                continue
+                ;;
+            timer)
+                case "${_pick}" in
+                    ""|0|back|Back|exit|quit|Exit|QUIT)
+                        POMO_MENU_BOARD="top"
+                        continue
+                        ;;
+                    11|start)
+                        prompt_ask "Pomodoro name" "default"
+                        POMO_NAME="${PROMPT_ASK_VALUE}"
+                        : "${POMO_NAME:=default}"
+                        ;;
+                    12|status|13|watch|14|skip|15|stop|16|kill)
+                        _ran_pick=0
+                        while true; do
+                            if ! app_default_print_running; then
+                                break
+                            fi
+                            out_msg_n "Choice: "
+                            _tpick=""
+                            if ! read -r _tpick; then
+                                JSON="${_menu_json}"
+                                QUIET="${_menu_quiet}"
+                                export JSON QUIET
+                                return 0
+                            fi
+                            app_default_map_running_pick "${_tpick}"
+                            _map=$?
+                            if [ "${_map}" -eq 2 ]; then
+                                break
+                            fi
+                            if [ "${_map}" -eq 0 ]; then
+                                _ran_pick=1
+                                break
+                            fi
+                            out_error "Not a running pomodoro. Type 1-${POMO_PICK_COUNT}, 0 to go back, or a listed name."
+                        done
+                        unset _tpick _map
+                        if [ "${_ran_pick}" -ne 1 ]; then
+                            unset _ran_pick
+                            continue
+                        fi
+                        unset _ran_pick
+                        ;;
+                esac
                 JSON="${_menu_json}"
                 QUIET="${_menu_quiet}"
                 export JSON QUIET
-                return 0
+                if app_default_run_pick "${_pick}"; then
+                    return 0
+                fi
+                JSON=0
+                QUIET=0
+                export JSON QUIET
+                out_error "Not a timer choice. Type 11-19, 0 to go back, or a listed command name."
+                continue
+                ;;
+            selfmgmt)
+                case "${_pick}" in
+                    ""|0|back|Back|exit|quit|Exit|QUIT)
+                        POMO_MENU_BOARD="top"
+                        continue
+                        ;;
+                esac
+                JSON="${_menu_json}"
+                QUIET="${_menu_quiet}"
+                export JSON QUIET
+                if app_default_run_selfmgmt_pick "${_pick}"; then
+                    return 0
+                fi
+                JSON=0
+                QUIET=0
+                export JSON QUIET
+                out_error "Not a self-management choice. Type 81-84, 0 to go back, or a listed command name."
+                continue
                 ;;
         esac
-        case "${_pick}" in
-            1|start)
-                prompt_ask "Pomodoro name" "default"
-                POMO_NAME="${PROMPT_ASK_VALUE}"
-                : "${POMO_NAME:=default}"
-                ;;
-            2|status|3|watch|4|skip|5|stop|6|kill)
-                while true; do
-                    if ! app_default_print_running; then
-                        JSON="${_menu_json}"
-                        QUIET="${_menu_quiet}"
-                        export JSON QUIET
-                        return 0
-                    fi
-                    out_msg_n "Choice: "
-                    _tpick=""
-                    if ! read -r _tpick; then
-                        JSON="${_menu_json}"
-                        QUIET="${_menu_quiet}"
-                        export JSON QUIET
-                        return 0
-                    fi
-                    app_default_map_running_pick "${_tpick}"
-                    _map=$?
-                    if [ "${_map}" -eq 2 ]; then
-                        JSON="${_menu_json}"
-                        QUIET="${_menu_quiet}"
-                        export JSON QUIET
-                        return 0
-                    fi
-                    if [ "${_map}" -eq 0 ]; then
-                        break
-                    fi
-                    out_warn "Not a running pomodoro. Type 1-${POMO_PICK_COUNT}, 0 to leave, or a listed name. Next: ${APP_NAME} menu"
-                done
-                unset _tpick _map
-                ;;
-        esac
-        JSON="${_menu_json}"
-        QUIET="${_menu_quiet}"
-        export JSON QUIET
-        if app_default_run_pick "${_pick}"; then
-            return 0
-        fi
-        JSON=0
-        QUIET=0
-        export JSON QUIET
-        out_warn "Not a menu choice. Type 1-9, 99 to leave, or a listed command name. Next: ${APP_NAME} menu"
     done
 }
 
@@ -4175,7 +4498,7 @@ app_main() {
                 POMO_CUSTOM_BREAK="$2"
                 shift
                 ;;
-            start|status|watch|skip|stop|kill|list|stats|theme|version|about|help|menu|main|version-check|self-update|self-uninstall|install)
+            start|status|watch|skip|stop|kill|list|stats|theme|version|about|help|menu|main|timer|self-management|version-check|self-update|self-uninstall|install)
                 if [ "${COMMAND}" = "theme" ]; then
                     if [ -z "${POMO_THEME_SUB}" ]; then
                         POMO_THEME_SUB="$1"
@@ -4252,7 +4575,7 @@ app_main() {
         install)
             inst_perform_install
             ;;
-        menu|main)
+        menu|main|timer|self-management)
             app_default
             ;;
         ensure)

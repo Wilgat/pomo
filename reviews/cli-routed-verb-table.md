@@ -2,7 +2,7 @@
 
 Human-readable column is **`command: what it does`**. Menu labels **MUST** match this column.
 
-**Last update:** 2026-09-08
+**Last update:** 2026-09-14
 
 | Verb | Handler | Privilege | Live since | Human-readable |
 |------|---------|-----------|------------|----------------|
@@ -15,14 +15,16 @@ Human-readable column is **`command: what it does`**. Menu labels **MUST** match
 | list | `pomo_list` | you (Type 0) | 2026-07-14 | `list: List running pomodoros` |
 | stats | `pomo_stats` | you (Type 0) | 2026-07-14 | `stats: Daily completed count and minutes` |
 | theme | `pomo_theme` | you (Type 0) | 2026-07-14 | `theme: List available themes` |
-| menu | `app_default` | you (Type 0) | 2026-09-08 | `menu: Show the numbered list of live commands` |
+| menu | `app_default` | you (Type 0) | 2026-09-14 | `menu: Show the top menu of live boards` |
 | main | `app_default` | you (Type 0) | 2026-09-08 | `main: Same as menu` |
-| install | `inst_perform_install` | you (Type 0) | 2026-07-14 | *(off main menu — self-managed)* |
+| timer | `app_default` | you (Type 0) | 2026-09-14 | `timer: Daily pomodoro work` |
+| self-management | `app_default` | you (Type 0) | 2026-09-14 | `self-management: Install, update, and remove this program` |
+| install | `inst_perform_install` | you (Type 0) | 2026-07-14 | `install: Place the program for this login` |
 | version | `app_version` | you (Type 0) | 2026-07-14 | *(off main menu — diagnostics)* |
 | about | `app_about` | you (Type 0) | 2026-07-14 | *(off main menu — diagnostics)* |
 | help | `app_help` | you (Type 0) | 2026-07-14 | *(off main menu)* |
-| version-check | `ver_check` | you (Type 0) | 2026-07-14 | *(off main menu — self-managed)* |
-| self-update | `inst_self_update` | you (Type 0) | 2026-07-14 | *(off main menu — self-managed)* |
-| self-uninstall | `inst_self_uninstall` | you (Type 0) | 2026-07-14 | *(off main menu — self-managed)* |
+| version-check | `ver_check` | you (Type 0) | 2026-07-14 | `version-check: Compare local vs remote version` |
+| self-update | `inst_self_update` | you (Type 0) | 2026-07-14 | `self-update: Update to a newer remote version` |
+| self-uninstall | `inst_self_uninstall` | you (Type 0) | 2026-07-14 | `self-uninstall: Remove this program` |
 
-Main menu lists **start … theme** then **Exit 99**. **MUST NOT** list install / self-managed / version / about / help / menu / main.
+Top menu lists **1 timer**, **8 self-management**, **Exit 9**. Timer board lists **11…19** (start … theme) then **Back 0**. Self-management board lists **81…84** then **Back 0**. **MUST NOT** restart a submenu at **1**. **MUST NOT** list version / about / help / menu / main as numbered rows.

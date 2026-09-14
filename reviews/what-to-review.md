@@ -1,6 +1,6 @@
 # What to review (pomo) — living checklist
 
-**Product:** pomo v2.1.0  
+**Product:** pomo v2.1.2  
 **Ship unit:** `./pomo`  
 **Domain SSOT:** **`RQ-DOMAIN-POMO`** (`docs/requirements/requirement-domain-pomo.md`)  
 **Domain TP family:** **`TP-POMO-*`** (not `TP-DOM-*`; policy-harness-id-notation §5)  
@@ -12,7 +12,7 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 
 ## Pre-flight
 
-- [ ] Load `reviews/lessons.md` (L-01…L-14, L-TX-01, L-TX-02)  
+- [ ] Load `reviews/lessons.md` (L-01…L-16, L-TX-01, L-TX-02, L-GB-01, L-GB-02)  
 - [ ] Load `docs/requirements/index.md` (registry-only law; confirm no foreign orphans)  
 - [ ] Confirm scope: full product / domain / Type 0 / docs / origin  
 - [ ] Note ship unit version (`VERSION` in `./pomo`) vs README badge  
@@ -24,7 +24,7 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 
 | Surface | Check |
 |---------|--------|
-| Registry | 12 Active rows; Area `class` / `shell` / `domain` correct |
+| Registry | 14 Active rows; Area `class` / `shell` / `domain` correct; **`RQ-SHELL-GIT-BASH`** + **`RQ-SHELL-CLI-STORAGE`** |
 | Type 0 REQs | CLI, zero-arg Type O, default interaction, output, self-mgmt, checksum, interactive, idempotency, modular |
 | Domain REQ | Four pillars: subcommands, features, help, about; basename `requirement-domain-*` |
 | ALIGNMENT | Ship unit cites only registered requirement basenames |
@@ -39,7 +39,9 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 | Output SSOT | — | User messages via `out_*` |
 | Install + self-update integrity | L-08 | Automatic companion; pin secondary; no self-hash in body |
 | CHECKSUM not in help/about | L-08 | Help Environment / about JSON free of CHECKSUM |
-| Type O empty argv | — | Not installed → install-ensure; already installed → no-op not help |
+| Type O empty argv | L-15 | Off-TTY / pre-2.1.0: ensure. 2.1.0 TTY: menu. Prove **which binary** (`command -v`, version, about paths) |
+| Stale global dest | L-15 | `/usr/local/bin/pomo` root 2.0.3 shadows user 2.1.0; non-root cannot self-update it |
+| Global shebang dest unreadable | L-16 | `sudo pomo` ok + unprivileged dash `cannot open` = missing other-read (0711/0700). Need 0755; `chmod +x` is not enough. Proof **TP-LC-23**; gate **CL-ONLINE-INSTALL-SCRIPT** §4 |
 | Uninstall non-interactive | L-07 | Without `--force` → fail closed |
 | Domain path-safe names | — | `/` and `..` → `invalid_name` |
 | Domain already-running | — | Second start same name → non-zero |
@@ -48,6 +50,8 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 | Reverse-copy | L-10 | No domain write-back to countdown |
 | Termux detect / sudo recommend | L-TX-01 | `sudo curl` or `/usr/local/bin` on Termux |
 | Termux volatile tmp | L-TX-02 | `/dev/shm`+`/tmp` only; write `/pomo_*` on RO root |
+| Git Bash cache | L-GB-01 | `$HOME/.cache` or mkdir `cache` dies mid-chain |
+| Git Bash `/c/` | L-GB-02 | Detect without `/c/`; no drive Temp when HOME AppData missing |
 
 ---
 

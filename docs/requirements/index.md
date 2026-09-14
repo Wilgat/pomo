@@ -3,7 +3,7 @@
 **Product:** pomo (POSIX `/bin/sh` Type 0 self-install / self-maintenance CLI + pomodoro domain)  
 **Workspace state:** Specialized product law (not blank genesis); **software-development** with Active class file.  
 **Domain SSOT:** `requirement-domain-pomo` / **`RQ-DOMAIN-POMO`**.  
-**Updated:** 2026-09-08 (TTY main menu)
+**Updated:** 2026-09-10 (Git Bash `/c/` + shell storage)
 
 | Requirement-ID | Key | Title | Area | Status | Path | Updated |
 |----------------|-----|-------|------|--------|------|---------|
@@ -12,13 +12,15 @@
 | `RQ-SHELL-AUTOMATIC-CHECKSUM` | requirement-shell-automatic-checksum | Automatic companion-digest integrity (transparent link/value/result; CHECKSUM not help/about) | shell | Active | `requirement-shell-automatic-checksum.md` | 2026-07-24 |
 | `RQ-SHELL-CLI-INTERFACE` | requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes; Termux/Git Bash detect; **TP-TX**; `menu`/`main`) | shell | Active | `requirement-shell-cli-interface.md` | 2026-09-08 |
 | `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments | Empty argv: TTY menu / off-TTY Type O ensure; `--json` JSON help | shell | Active | `requirement-shell-cli-zero-arguments.md` | 2026-09-08 |
-| `RQ-SHELL-CLI-DEFAULT-INTERACTION` | requirement-shell-cli-default-interaction | TTY numbered start list (`menu`/`main`; start name; running-pomo pick) | shell | Active | `requirement-shell-cli-default-interaction.md` | 2026-09-08 |
+| `RQ-SHELL-CLI-DEFAULT-INTERACTION` | requirement-shell-cli-default-interaction | TTY top menu (`1` timer / `8` self-management; `menu`/`main`; start name; running-pomo pick) | shell | Active | `requirement-shell-cli-default-interaction.md` | 2026-09-14 |
 | `RQ-SHELL-IDEMPOTENCY` | requirement-shell-idempotency | Shell idempotency / re-run safety for ensure-style ops | shell | Active | `requirement-shell-idempotency.md` | 2026-07-24 |
 | `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE` | requirement-shell-interactive-vs-noninteractive | Interactive vs non-interactive / `curl\|sh` behavior | shell | Active | `requirement-shell-interactive-vs-noninteractive.md` | 2026-07-24 |
 | `RQ-SHELL-MODULAR-FUNCTION-DESIGN` | requirement-shell-modular-function-design | Single-file modular function design (prefixes, zones) | shell | Active | `requirement-shell-modular-function-design.md` | 2026-07-24 |
 | `RQ-DOMAIN-POMO` | requirement-domain-pomo | Pomodoro domain (work/break, **minutes unit + 1-min minimum**, themes, stats, path-safe names, storage; Termux `$PREFIX/tmp`) | domain | Active | `requirement-domain-pomo.md` | 2026-09-08 |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements | Central `out_*` output SSOT (stdout/stderr, modes) | shell | Active | `requirement-shell-output-requirements.md` | 2026-07-24 |
-| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about; Termux `$PREFIX/bin`) | shell | Active | `requirement-shell-self-management.md` | 2026-09-08 |
+| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about; Termux `$PREFIX/bin`; dest **0755**) | shell | Active | `requirement-shell-self-management.md` | 2026-09-12 |
+| `RQ-SHELL-GIT-BASH` | requirement-shell-git-bash | Git Bash this-login: detect folder `/c/`; default drive `/c/`; AppData Local Temp `cache` | shell | Active | `requirement-shell-git-bash.md` | 2026-09-10 |
+| `RQ-SHELL-CLI-STORAGE` | requirement-shell-cli-storage | Volatile/persistent storage roots; Git Bash `/c/` Temp tier; mkdir fail-soft | shell | Active | `requirement-shell-cli-storage.md` | 2026-09-10 |
 
 **Rules for agents:**
 
@@ -37,4 +39,4 @@ When adding a requirement: append a row (with `RQ-*`), create the file under `do
 
 ## Law-mold alignment (product)
 
-Each Active shell requirement **specializes** a portable law mold-ID (cited as **`LM-*`** on DTV, not as a template path). Class **`RQ-CLASS-SOFTWARE-DEV`** specializes **`LM-REQUIREMENT-CLASS-SOFTWARE-DEV`**. Coding-style **`RQ-SHELL-SCRIPT-CODING`** specializes **`LM-SHELL-SCRIPT-CODING`** (own-or-point). Domain SSOT **`RQ-DOMAIN-POMO`** has no portable domain law mold; proof design aid is **`PM-DOMAIN-TEST-PLAN`** → product family **`TP-POMO`**.
+Each Active shell requirement **specializes** a portable law mold-ID (cited as **`LM-*`** on DTV, not as a template path). Class **`RQ-CLASS-SOFTWARE-DEV`** specializes **`LM-REQUIREMENT-CLASS-SOFTWARE-DEV`**. Coding-style **`RQ-SHELL-SCRIPT-CODING`** specializes **`LM-SHELL-SCRIPT-CODING`** (own-or-point). **`RQ-SHELL-CLI-STORAGE`** specializes **`LM-SHELL-CLI-STORAGE`**. **`RQ-SHELL-GIT-BASH`** is product Git Bash target law (consumes storage + temp molds). Domain SSOT **`RQ-DOMAIN-POMO`** has no portable domain law mold; proof design aid is **`PM-DOMAIN-TEST-PLAN`** → product family **`TP-POMO`**.

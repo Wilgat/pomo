@@ -1,8 +1,9 @@
 # =============================================================================
 # tests/test_install_lifecycle.sh — install lifecycle (PM-INSTALL-LIFECYCLE-TEST-PLAN)
 # =============================================================================
-# Mold catalog TP-LC-01..09 (Core). Product: Type O → TP-LC-02/03 n/a; extensions
-# TP-LC-05b/10/11/12. Cross: TP-CSUM-02..04. Local HTTP only — no public network.
+# Mold catalog TP-LC-01..09 + TP-LC-23 dest 0755 (Core). Product: Type O →
+# TP-LC-02/03 n/a; extensions TP-LC-05b/10/11/12. Cross: TP-CSUM-02..04.
+# Local HTTP only — no public network.
 # Labels MUST include TP-IDs (policy-harness-id-notation).
 # =============================================================================
 
@@ -53,6 +54,10 @@ run_test_install_lifecycle() {
     assert_contains "TP-LC-12 install --json success type" "$_out" '"type":"out_success"'
     assert_contains "TP-LC-12 install --json path" "$_out" "${_app_bin}"
     assert_file_exists "TP-LC-12 installed binary exists" "${_app_bin}"
+
+    # --- TP-LC-23: dest mode 0755 (shebang other-read; not chmod +x → 0711) ---
+    _mode=$(python3 -c "import os,sys; print('%04o' % (os.stat(sys.argv[1]).st_mode & 0o777))" "${_app_bin}")
+    assert_eq "TP-LC-23 dest mode 0755 after atomic install" "0755" "${_mode}"
 
     # --- TP-LC-10: idempotent re-install (no --force) ---
     _out=$(

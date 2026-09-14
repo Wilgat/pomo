@@ -65,7 +65,7 @@ Related Type 0 commands (`version`, `install`, `help`) are owned by `requirement
 | Trusted source | Fetch only from the configured official channel (project Config / env — not ad hoc URLs in random helpers) |
 | Semver compare | Prefer upgrade when remote is **newer**; **MUST NOT** downgrade without explicit force policy |
 | Integrity | Checksum or digest verification before replace when downloading update artifacts |
-| Atomic install | Download to temp → verify → atomic move/replace of the installed binary |
+| Atomic install | Download to temp → verify → **`chmod 0755`** → atomic move/replace. **MUST NOT** `chmod +x` only (`mktemp` 0600 → **0711**; `/bin/sh` cannot open). **TP-LC-23** |
 | Install type preserved | Per-user vs global/system-wide placement remains consistent with invoker privilege / install policy |
 | Reuse install SSOT | Self-update **MUST** reuse the same install orchestrator primitives as first-time install (no second ad hoc download/replace path) |
 | Output SSOT | All messages via centralized `out_*` |
@@ -114,7 +114,7 @@ Root may write global install path; non-root uses user path. Do not assume root 
 |------|--------|
 | **No silent downgrade** | Without explicit force policy, refuse remote older than local |
 | **No skip integrity** | Digest/checksum path required for downloaded update artifacts — automatic companion is default; strict pin secondary. Full automatic transparency law: `requirement-shell-automatic-checksum.md` |
-| **No weak atomicity** | Avoid partial replaces that leave a broken binary |
+| **No weak atomicity** | Avoid partial replaces that leave a broken binary; dest mode **0755** (shebang other-read) |
 | **No reckless PATH edit** | Only clean PATH when managed bin dir is empty / policy-safe |
 | **No raw I/O** | Use output SSOT; quiet/json channel rules |
 | **No secrets in tree** | Never embed tokens or credentials in update URLs in docs/code; Config/env only |
@@ -153,7 +153,8 @@ Root may write global install path; non-root uses user path. Do not assume root 
    - If remote is newer (or force policy allows reinstall) → set reinstall and call `inst_perform_install` with integrity + atomic replace.  
 3. **`self-uninstall`:** Resolve binary; confirm when interactive and force off; without force under quiet/json/non-TTY → fail closed (`confirm_required`), never fake cancel success; with force → remove without confirm; clean PATH only if `~/.local/bin` empty (non-root); never delete unrelated trees.  
 4. **`about`:** Human diagnostics + JSON about object including `target` / `normal_user_only`; no secrets; **no `CHECKSUM` name/value**.  
-5. **Shared install path:** Self-update **must not** introduce a parallel curl-to-final-path overwrite outside `inst_perform_install*`.
+5. **Shared install path:** Self-update **must not** introduce a parallel curl-to-final-path overwrite outside `inst_perform_install*`.  
+6. **Dest mode:** After atomic place, the installed CLI is **0755** (shebang other-read). **MUST NOT** `chmod +x` only.
 
 #### Compliance notes (implementation status)
 
@@ -217,7 +218,8 @@ Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_c
 7. Use raw user-facing `echo`/`printf` instead of the centralized output system.  
 8. Hard-code project secrets or private tokens into update URLs in the tree.  
 9. Require a dedicated system user solely for Type 0 CLI self-update without a specialized architecture requirement.  
-10. Invent a second update implementation path that bypasses `inst_perform_install*`.
+10. Invent a second update implementation path that bypasses `inst_perform_install*`.  
+11. Leave or ship `chmod +x` alone on install staging so a global `#!/bin/sh` dest is **0711** / **0700** (INC-20260912-001).
 
 **Self-management is critical for long-term maintainability of one-command shell CLIs. Violating this rule is a critical regression.**
 
@@ -254,7 +256,7 @@ Work claiming self-management support for pomo is **not done** if any of the fol
 
 ---
 
-**Last Updated**: 2026-07-14
+**Last Updated**: 2026-09-12 (dest **0755** / **TP-LC-23**)
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 2, 3, 4, 5, 9, 10, 11, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
 
@@ -275,3 +277,4 @@ Work claiming self-management support for pomo is **not done** if any of the fol
 | **TP-CLI-11** uninstall refuse (CLI suite) | `tests/test_cli.sh` | have |
 | **TP-TX-01..05** Termux target (detect, no sudo, PREFIX/bin, no pkg) | `tests/test_cli.sh` | have |
 | **TP-TX-08** Termux `$PREFIX/tmp` volatile records | `tests/test_cli.sh` | have |
+| **TP-LC-23** shebang dest mode 0755 after atomic install | `tests/test_install_lifecycle.sh` | have |

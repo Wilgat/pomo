@@ -37,7 +37,7 @@ Empty argv means **install-ensure** for three detect cases:
 
 ### 1.1 Human-facing
 
-**In one sentence:** Typing only `pomo` at a prompt shows the numbered start list; piping the script (`curl | sh`) installs or reports already installed. `pomo --json` is JSON help.
+**In one sentence:** Typing only `pomo` at a prompt shows the top menu (timer / self-management); piping the script (`curl | sh`) installs or reports already installed. `pomo --json` is JSON help.
 
 | Box | Meaning | Example |
 |-----|---------|---------|

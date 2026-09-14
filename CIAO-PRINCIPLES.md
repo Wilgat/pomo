@@ -118,11 +118,14 @@ In the age of AI-assisted coding, CIAO complements SOLID by addressing risks tha
 - **Always** use the `mktemp` utility (or equivalent safe equivalent) to create unique, unpredictable, securely permissioned temporary files or directories.
 - Prefer creating a **temporary directory** (`mktemp -d`) over individual files whenever multiple temporary items are needed.
 - Implement a strict fallback chain when the primary location fails:
-  1. `$TMPDIR` (if set and writable)
-  2. `/tmp`
-  3. `/var/tmp` (non-volatile fallback)
-  4. `~/Library/Caches/` (macOS) or `$HOME/.cache/` (Linux)
-  5. Current working directory (as last resort, with explicit warning)
+  1. `/dev/shm` when it exists (mkdir of an isolated child or `cache` is fail-soft — **MUST NOT** abort)
+  2. Git Bash: `$HOME/AppData/Local/Temp/cache` when that Temp parent exists
+  3. `$TEMP/cache` when `$TEMP` is defined and the parent exists
+  4. `$TMPDIR` (if set and writable)
+  5. `/tmp/cache` when `/tmp` exists (then `/tmp`)
+  6. `/var/tmp` (non-volatile fallback)
+  7. `~/Library/Caches/` (macOS) or `$HOME/.cache/` (Linux) — **not** the Git Bash volatile root
+  8. Current working directory (as last resort, with explicit warning)
 - Explicitly test that the chosen location is writable and has enough space **before** use.
 - Prefer **volatile** (RAM-based) storage such as `/dev/shm` (when available and appropriate) for performance-critical temporary data, but fall back gracefully if `/dev/shm` is not present or is mounted noexec.
 - Always use **atomic write patterns**: write to a temporary file first, then `mv` (atomic on the same filesystem) to the final location.

@@ -1,6 +1,6 @@
 # pomo - Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.1.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.2.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
@@ -41,16 +41,16 @@ This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**
 
 - **Named timers** (`default`, `focus`, `meeting`, `writing`, …) isolated per login
 - **Two storage modes**:
-  - **Volatile** (default): in-memory when `/dev/shm` is writable; Termux falls back to `$PREFIX/tmp` then cache
+  - **Volatile** (default): in-memory when `/dev/shm` is writable; Termux falls back to `$PREFIX/tmp`; Git Bash uses `$HOME/AppData/Local/Temp/cache` then `$TEMP/cache` then `/tmp/cache` (`mkdir` of `cache` does not abort)
   - **Persistent** (`--persist`): survives reboot under `~/.cache/pomo/`
-- Fallbacks when `/dev/shm`, `$HOME`, or a container is missing or restricted
+- Fallbacks when `/dev/shm`, `$HOME`, Git Bash temp, or a container is missing or restricted (`mkdir` of `cache` does not abort)
 - **Three themes** (`default`, `energetic`, `minimal`) with icons, colors, and UTF-8 progress bars
 - Automatic work → break transition with a terminal bell
 - `watch` for a live refreshing view (Ctrl+C to leave)
 - Daily statistics (completed pomodoros + total minutes today)
 - Strict `--json` for scripts and status bars (`watch --json` is refused)
 - One-liner install, self-update, self-uninstall, and `about` diagnostics
-- On a real terminal, typing only `pomo` (or `pomo --debug`) opens a numbered daily-work list; `curl | sh` still installs
+- On a real terminal, typing only `pomo` (or `pomo --debug`) opens a top menu (**1** timer, **8** self-management, Exit **9**); timer commands are **11…19**; `curl | sh` still installs
 - Worked on dash, BusyBox ash, Git Bash, Alpine, Termux, and containers
 
 ---
@@ -179,7 +179,7 @@ pomo theme set energetic
 |-----------------------|----------------------|------------|------------------------------------|
 | Alpine Linux          | BusyBox ash          | Excellent  | Primary target for minimalism      |
 | Termux (Android)      | dash / bash          | Excellent  | This login only; `$PREFIX/bin`. `/dev/shm` usually missing; Android `/tmp` often read-only → `$PREFIX/tmp` then cache. |
-| Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | This login only; full fallback     |
+| Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | This login only; detect `/c/`; default drive `/c/`; `$HOME/AppData/Local/Temp/cache` or `/c/Users/<you>/AppData/Local/Temp/cache` |
 | Rocky / RHEL / CentOS | Bash                 | Excellent  | Enterprise environments            |
 | macOS                 | Bash / zsh           | Excellent  | Fully supported                    |
 | Debian / Ubuntu       | dash / bash          | Excellent  | Broad compatibility                |
@@ -242,6 +242,6 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ## Last Update
 
-2026-09-08 — TTY empty argv opens the numbered daily-work menu (`pomo --debug` included); pipe empty argv still installs. Product version **2.1.0**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+2026-09-14 — TTY top menu **1** timer / **8** self-management; timer **11…19**; self-management **81…84**. Product version **2.2.0**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
 
 **Made with care and a healthy dose of paranoia.** 🍅

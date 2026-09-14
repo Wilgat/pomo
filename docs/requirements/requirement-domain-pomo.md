@@ -168,7 +168,7 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 | **Minimum work duration** | **1 minute** (not 1 second); `0` or non-positive → **`invalid_duration`** |
 | **State file format** | `start_time target_time phase work_dur break_dur` (epoch seconds; phase `work`\|`break`; **stored** durations in seconds = minutes×60) |
 | **State path pattern** | `${base}/${APP_NAME}_${USERNAME}_${name}` |
-| **Volatile base** | `/dev/shm` (or `VOLATILE_DIR`) → `$PREFIX/tmp` (create if needed on Termux) → `TMPDIR` → `/tmp` → cache `${XDG_CACHE_HOME}/${APP_NAME}`. Fail closed if none are writable. **MUST NOT** write `/${APP_NAME}_*` at filesystem root. |
+| **Volatile base** | Roots from **`RQ-SHELL-CLI-STORAGE`**. Git Bash Temp parent / default drive `/c/` from **`RQ-SHELL-GIT-BASH`**. Leaf: `${base}/${APP_NAME}_${USERNAME}_${name}`. **MUST NOT** write `/${APP_NAME}_*` at filesystem root. |
 | **Persistent base** | `${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}` (fallback under `/tmp/..._persistent`) |
 | **Stats path** | `${persistent_base}/stats_YYYY-MM-DD` (`count total_min`) |
 | **Theme path** | `${persistent_base}/theme` |
@@ -247,9 +247,9 @@ When `pomo` runs on Termux, Git Bash, Windows cmd, or the same class (this login
 |------|----------|
 | Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
 | Start/status/watch/stop as this login; volatile fallback **creates** `$PREFIX/tmp` when `/dev/shm` is unusable (Android `/tmp` is often read-only) | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
-| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+| Git Bash temp parent / `/c/` drive | Re-own detect or the storage chain (`requirement-shell-git-bash.md`, `requirement-shell-cli-storage.md`) |
 
-Helpers (this product): `pomo_is_termux`, `pomo_apply_target_paths`. Dual mention: `requirement-shell-cli-interface`.
+Helpers (this product): `pomo_is_termux`, `pomo_apply_target_paths`. Dual mention: `requirement-shell-cli-interface`. Git Bash: `requirement-shell-git-bash`. Storage roots: `requirement-shell-cli-storage`.
 
 **This requirement:** domain timers stay this-login files; do not move state into `/var` or `/etc` because Termux was detected.
 
@@ -280,7 +280,8 @@ Helpers (this product): `pomo_is_termux`, `pomo_apply_target_paths`. Dual mentio
 8. Treat `watch` as a JSON API (must remain human live view; refuse `--json`).  
 9. Reverse-copy pomo domain into the countdown bootstrap ship unit (or any bootstrap A).  
 10. Claim domain help/about pillars are complete while §2.8 / §2.9 are empty or contradicted by live `help`/`about`.  
-11. Treat empty `$(pomo_resolve_base_dir)` / `$(pomo_get_file)` as success and write `/${APP_NAME}_*` at filesystem root (Termux read-only `/`).
+11. Treat empty `$(pomo_resolve_base_dir)` / `$(pomo_get_file)` as success and write `/${APP_NAME}_*` at filesystem root (Termux read-only `/`).  
+12. Abort because `mkdir` of a `cache` leaf failed, or use `$HOME/.cache` as the Git Bash volatile root when `$HOME/AppData/Local/Temp` exists.
 
 **Violating this rule is a critical pomodoro domain regression.**
 
@@ -307,6 +308,8 @@ This requirement is satisfied when all of the following hold:
 
 | Artifact | Role |
 |----------|------|
+| **`RQ-SHELL-CLI-STORAGE`** (`requirement-shell-cli-storage.md`) | Volatile/persistent **roots** |
+| **`RQ-SHELL-GIT-BASH`** (`requirement-shell-git-bash.md`) | Git Bash `/c/` detect; Temp parent |
 | **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Command routing / flags surface; help must include domain rows |
 | **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | Type 0 `about` baseline (domain adds none) |
 | **`RQ-SHELL-OUTPUT-REQUIREMENTS`** (`requirement-shell-output-requirements.md`) | `out_*` SSOT |
@@ -319,7 +322,7 @@ This requirement is satisfied when all of the following hold:
 
 ---
 
-**Last Updated**: 2026-07-16  
+**Last Updated**: 2026-09-10  
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO v2.10.2 Principles **1, 4, 5, 17, 18, 19, 20** (names per `template-ciao-principles.md`); CIAO-Lite.
 
@@ -345,4 +348,8 @@ This requirement is satisfied when all of the following hold:
 | **TP-STORAGE-02** `--persist` mode | §4.2 shared | `tests/test_pomo_domain.sh` | have |
 | **TP-STORAGE-03** corrupted state fail-closed | §4.2 shared | `tests/test_pomo_domain.sh` | have |
 | **TP-TX-08** Termux `$PREFIX/tmp` when `VOLATILE_DIR` unusable | product Termux | `tests/test_cli.sh` | have |
+| **TP-TX-09** Git Bash `$HOME/AppData/Local/Temp/cache` | product Git Bash | `tests/test_cli.sh` | have |
+| **TP-TX-10** mkdir `cache` fail-soft → `$TEMP/cache` | product Git Bash | `tests/test_cli.sh` | have |
+| **TP-TX-11** Git Bash `/c/` detect | product Git Bash | `tests/test_cli.sh` | have |
+| **TP-TX-12** `/c/` drive Temp fallback | product Git Bash | `tests/test_cli.sh` | have |
 | **TP-PAYLOAD-*** Type O-P scaffold | §4.1 | n/a — not Type O-P | n/a |

@@ -321,5 +321,5 @@ Output-related work for pomo is **not done** if any of the following fail:
 | **TP-CLI-06** unknown command JSON `out_error` | `tests/test_cli.sh` | have |
 | **TP-CLI-07** quiet suppresses human chatter | `tests/test_cli.sh` | have |
 | **TP-CLI-12** out_json string-key escape | `tests/test_cli.sh` | have |
-| **TP-CLI-17** `out_menu_choice` gray italic explain | `tests/test_cli.sh` | have |
+| **TP-CLI-17** `out_menu_choice` bold short + gray italic explain | `tests/test_cli.sh` | have |
 | **TP-POMO-04** domain JSON contracts | `tests/test_pomo_domain.sh` | have |

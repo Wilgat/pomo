@@ -254,12 +254,12 @@ run_test_pomo_domain() {
     assert_contains "TP-POMO-11 stop --force not counted" "$_out" '"counted":"false"'
 
     # --- TP-STORAGE-01: volatile storage path (shared dual-storage) ---
-    # Live layout (pomo_get_file): ${/dev/shm|/tmp}/${APP_NAME}_${USER}_${name}
+    # Live layout (pomo_get_file): ${/dev/shm|/dev/shm/cache|/tmp/cache|/tmp}/...
     _run start stor-path 1 --break 1 >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
     _hit=0
     _state=
-    for _base in /dev/shm /tmp; do
+    for _base in /dev/shm /dev/shm/cache /tmp/cache /tmp; do
         _candidate="${_base}/${APP_NAME}_${_u}_stor-path"
         if [ -f "$_candidate" ]; then
             _hit=1
@@ -291,7 +291,7 @@ run_test_pomo_domain() {
     _run start corrupt-me 1 --break 1 >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
     _state=
-    for _base in /dev/shm /tmp; do
+    for _base in /dev/shm /dev/shm/cache /tmp/cache /tmp; do
         _candidate="${_base}/${APP_NAME}_${_u}_corrupt-me"
         if [ -f "$_candidate" ]; then
             _state="$_candidate"

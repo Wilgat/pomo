@@ -139,7 +139,7 @@ This file is **class law + residual SSOT**. It is not a second copy of the pomod
 | Coding-style related REQ | `requirement-shell-script-coding` / **`RQ-SHELL-SCRIPT-CODING`** | **MUST**; residual **points** only |
 | Actor / role / subject / approver | **considered — no dest approver and no approval subject** | No dest review product |
 | Dest fence conditions | **considered — no dest fence conditions** | No dest JSON queue |
-| Termux / Git Bash / Windows cmd | `requirement-shell-cli-interface` (detect) + peers | Class residual **points**; Type 1/2 unused on that class |
+| Termux / Git Bash / Windows cmd | `requirement-shell-cli-interface` (dispatch) + **`requirement-shell-git-bash`** (Git Bash `/c/`) + **`requirement-shell-cli-storage`** (roots) | Class residual **points**; Type 1/2 unused on that class |
 
 ## Under command line for normal user only
 

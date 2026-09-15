@@ -1,7 +1,8 @@
 # =============================================================================
 # tests/test_install_lifecycle.sh — install lifecycle (PM-INSTALL-LIFECYCLE-TEST-PLAN)
 # =============================================================================
-# Mold catalog TP-LC-01..09 + TP-LC-23 dest 0755 (Core). Product: Type O →
+# Mold catalog TP-LC-01..09 + TP-LC-23 dest 0755 (Core) + TP-LC-24/25
+# global dest 0755 (install + self-update). Product: Type O →
 # TP-LC-02/03 n/a; extensions TP-LC-05b/10/11/12. Cross: TP-CSUM-02..04.
 # Local HTTP only — no public network.
 # Labels MUST include TP-IDs (policy-harness-id-notation).
@@ -285,6 +286,47 @@ run_test_install_lifecycle() {
     HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
         PATH="${CI_USER_BIN}:${PATH}" \
         sh "${_app_bin}" --json --force self-uninstall >/dev/null 2>&1 || true
+
+    # --- TP-LC-24 / TP-LC-25: GLOBAL dest 0755 (not USER_BIN; INC-20260912-001 / INC-20260915-001) ---
+    # Isolated GLOBAL_BIN + PATH stub so `id -u` is 0. No real root.
+    ci_isolated_global_env
+    _g_bin="${CI_GLOBAL_BIN}/${APP_NAME}"
+    _channel_bin="${CI_CHANNEL_DIR}/${APP_NAME}"
+    rm -f "${_app_bin}"
+    cp "${SCRIPT}" "${_channel_bin}"
+    printf '%s\n' "$(sha256sum "${_channel_bin}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/${APP_NAME}.sha256"
+
+    _out=$(
+        HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+        SCRIPT_URL="${CI_SCRIPT_URL}" PATH="${CI_STUB_BIN}:${PATH}" \
+        sh "${SCRIPT}" --json install 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "TP-LC-24 global install --json exit 0" 0 "$_ec"
+    assert_file_exists "TP-LC-24 global dest exists" "${_g_bin}"
+    assert_file_missing "TP-LC-24 must not place USER_BIN dest" "${_app_bin}"
+    assert_file_mode "TP-LC-24 global dest mode 0755 after install" "${_g_bin}" "0755"
+    assert_contains "TP-LC-24 global install path" "$_out" "${_g_bin}"
+
+    # Leftover 0711 (chmod +x class) must not survive self-update of the current placer.
+    chmod 0711 "${_g_bin}"
+    _newer_ver="9.9.9"
+    # shellcheck disable=SC2016
+    sed "s/^VERSION=\"${APP_VERSION}\"/VERSION=\"${_newer_ver}\"/" "${SCRIPT}" > "${_channel_bin}"
+    printf '%s\n' "$(sha256sum "${_channel_bin}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/${APP_NAME}.sha256"
+    _out=$(
+        HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+        SCRIPT_URL="${CI_SCRIPT_URL}" PATH="${CI_STUB_BIN}:${PATH}" \
+        sh "${_g_bin}" --json self-update 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "TP-LC-25 global self-update exit 0" 0 "$_ec"
+    _loc=$(grep '^VERSION="' "${_g_bin}" | cut -d'"' -f2)
+    assert_eq "TP-LC-25 global dest version after self-update" "${_newer_ver}" "$_loc"
+    assert_file_mode "TP-LC-25 global dest mode 0755 after self-update" "${_g_bin}" "0755"
+    assert_file_missing "TP-LC-25 must not place USER_BIN dest" "${_app_bin}"
 
     ci_stop_channel
     ci_cleanup_env

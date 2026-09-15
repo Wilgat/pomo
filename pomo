@@ -48,8 +48,8 @@ set -u  # Treat unset variables as error (defensive)
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
 # Product version SSOT (specialized from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
-VERSION="2.2.0"
-: "${VERSION:=2.2.0}"
+VERSION="2.2.1"
+: "${VERSION:=2.2.1}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -1336,7 +1336,16 @@ inst_perform_install_atomic_install() {
     local downloaded_checksum_ok="$2"
 
     # 0755: mktemp is 0600; chmod +x → 0711 (no other-read). Shebang dest must be readable.
-    chmod 0755 "${tmp_file}" 2>/dev/null || chmod +x "${tmp_file}" 2>/dev/null || true
+    # MUST NOT fall back to chmod +x (INC-20260912-001 / INC-20260915-001).
+    if ! chmod 0755 "${tmp_file}" 2>/dev/null; then
+        rm -f "${tmp_file}"
+        if [ "${JSON}" -eq 1 ]; then
+            out_json_error "Failed to set dest mode 0755 on staging file" "io_error"
+        else
+            out_error "Failed to set dest mode 0755 on staging file"
+        fi
+        return 1
+    fi
 
     rm -f "${INSTALL_PATH}" 2>/dev/null
     if ! mv "${tmp_file}" "${INSTALL_PATH}" 2>/dev/null; then

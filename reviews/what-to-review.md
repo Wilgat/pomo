@@ -41,7 +41,8 @@ Load **`lessons.md`** before every run. This file is the **review plan** surface
 | CHECKSUM not in help/about | L-08 | Help Environment / about JSON free of CHECKSUM |
 | Type O empty argv | L-15 | Off-TTY / pre-2.1.0: ensure. 2.1.0 TTY: menu. Prove **which binary** (`command -v`, version, about paths) |
 | Stale global dest | L-15 | `/usr/local/bin/pomo` root 2.0.3 shadows user 2.1.0; non-root cannot self-update it |
-| Global shebang dest unreadable | L-16 | `sudo pomo` ok + unprivileged dash `cannot open` = missing other-read (0711/0700). Need 0755; `chmod +x` is not enough. Proof **TP-LC-23**; gate **CL-ONLINE-INSTALL-SCRIPT** §4 |
+| Global shebang dest unreadable | L-16 | `sudo pomo` ok + unprivileged dash `cannot open` = missing other-read (0711/0700). Need 0755; `chmod +x` is not enough. Proof **TP-LC-24** (global install); USER_BIN **TP-LC-23** is not the class. Gate **CL-ONLINE-INSTALL-SCRIPT** §4 |
+| Self-update re-applies 0711 | L-17 | 2.1.0 `self-update` to 2.2.0 uses the **running** `chmod +x` placer. 2.2.0 `chmod 0755` does not run on that path. Prove **TP-LC-25** global dest **0755** after update, not only VERSION. |
 | Uninstall non-interactive | L-07 | Without `--force` → fail closed |
 | Domain path-safe names | — | `/` and `..` → `invalid_name` |
 | Domain already-running | — | Second start same name → non-zero |

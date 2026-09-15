@@ -65,7 +65,7 @@ Related Type 0 commands (`version`, `install`, `help`) are owned by `requirement
 | Trusted source | Fetch only from the configured official channel (project Config / env — not ad hoc URLs in random helpers) |
 | Semver compare | Prefer upgrade when remote is **newer**; **MUST NOT** downgrade without explicit force policy |
 | Integrity | Checksum or digest verification before replace when downloading update artifacts |
-| Atomic install | Download to temp → verify → **`chmod 0755`** → atomic move/replace. **MUST NOT** `chmod +x` only (`mktemp` 0600 → **0711**; `/bin/sh` cannot open). **TP-LC-23** |
+| Atomic install | Download to temp → verify → **`chmod 0755`** → atomic move/replace. **MUST NOT** `chmod +x` only or `chmod 0755 \|\| chmod +x` (`mktemp` 0600 → **0711**; `/bin/sh` cannot open). **TP-LC-23**. **Global dest** is Core: **TP-LC-24** (install) · **TP-LC-25** (`self-update`) |
 | Install type preserved | Per-user vs global/system-wide placement remains consistent with invoker privilege / install policy |
 | Reuse install SSOT | Self-update **MUST** reuse the same install orchestrator primitives as first-time install (no second ad hoc download/replace path) |
 | Output SSOT | All messages via centralized `out_*` |
@@ -114,7 +114,7 @@ Root may write global install path; non-root uses user path. Do not assume root 
 |------|--------|
 | **No silent downgrade** | Without explicit force policy, refuse remote older than local |
 | **No skip integrity** | Digest/checksum path required for downloaded update artifacts — automatic companion is default; strict pin secondary. Full automatic transparency law: `requirement-shell-automatic-checksum.md` |
-| **No weak atomicity** | Avoid partial replaces that leave a broken binary; dest mode **0755** (shebang other-read) |
+| **No weak atomicity** | Avoid partial replaces that leave a broken binary; dest mode **0755** (shebang other-read). **MUST** prove **`GLOBAL_BIN`** dest (**TP-LC-24** / **TP-LC-25**), not only `USER_BIN` |
 | **No reckless PATH edit** | Only clean PATH when managed bin dir is empty / policy-safe |
 | **No raw I/O** | Use output SSOT; quiet/json channel rules |
 | **No secrets in tree** | Never embed tokens or credentials in update URLs in docs/code; Config/env only |
@@ -139,7 +139,7 @@ Root may write global install path; non-root uses user path. Do not assume root 
 | **Uninstall steps** | `inst_self_uninstall_determine_bin` → `inst_self_uninstall_confirm_and_remove` → `inst_self_uninstall_cleanup_path` |
 | **PATH ensure** | `path_add_shell` / bash / zsh / fish helpers on user install |
 | **Privilege** | Type 0 only for self-management surface; no dedicated system user |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.1.0"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.2.1"`) |
 | **Termux paths** | `pomo_apply_target_paths` retargets `USER_BIN`/`GLOBAL_BIN` to `$PREFIX/bin` when POSIX defaults still apply; skip rc PATH edit when install is `$PREFIX/bin`; `IS_ROOT` forced 0 |
 | **Termux about** | JSON `termux` / `user_bin` / `prefix` plus `target` / `normal_user_only`; no `sudo curl` recommend |
 
@@ -154,7 +154,8 @@ Root may write global install path; non-root uses user path. Do not assume root 
 3. **`self-uninstall`:** Resolve binary; confirm when interactive and force off; without force under quiet/json/non-TTY → fail closed (`confirm_required`), never fake cancel success; with force → remove without confirm; clean PATH only if `~/.local/bin` empty (non-root); never delete unrelated trees.  
 4. **`about`:** Human diagnostics + JSON about object including `target` / `normal_user_only`; no secrets; **no `CHECKSUM` name/value**.  
 5. **Shared install path:** Self-update **must not** introduce a parallel curl-to-final-path overwrite outside `inst_perform_install*`.  
-6. **Dest mode:** After atomic place, the installed CLI is **0755** (shebang other-read). **MUST NOT** `chmod +x` only.
+6. **Dest mode:** After atomic place, the installed CLI is **0755** (shebang other-read). **MUST NOT** `chmod +x` only. **MUST NOT** fall back to `chmod +x` if `chmod 0755` fails.  
+7. **Global dest:** After elevated install or `self-update` onto `/usr/local/bin/pomo` (or test `GLOBAL_BIN`), dest is **0755**. **MUST NOT** treat `~/.local/bin` dest mode as this proof (owner still has `r` on 0711). **TP-LC-24** / **TP-LC-25**. The **running** installer applies dest mode.
 
 #### Compliance notes (implementation status)
 
@@ -219,7 +220,9 @@ Helpers (this product): `pomo_is_termux`, `pomo_is_git_bash`, `pomo_is_windows_c
 8. Hard-code project secrets or private tokens into update URLs in the tree.  
 9. Require a dedicated system user solely for Type 0 CLI self-update without a specialized architecture requirement.  
 10. Invent a second update implementation path that bypasses `inst_perform_install*`.  
-11. Leave or ship `chmod +x` alone on install staging so a global `#!/bin/sh` dest is **0711** / **0700** (INC-20260912-001).
+11. Leave or ship `chmod +x` alone (or `chmod 0755 \|\| chmod +x`) on install staging so a global `#!/bin/sh` dest is **0711** / **0700** (INC-20260912-001, INC-20260915-001).  
+12. Close dest-mode on **USER_BIN 0755** (**TP-LC-23**) without **TP-LC-24** (global install) and **TP-LC-25** (global `self-update`).  
+13. Claim dest mode in 2.2.0+ bytes was applied by a 2.1.0 `self-update` (the placer is the running binary).
 
 **Self-management is critical for long-term maintainability of one-command shell CLIs. Violating this rule is a critical regression.**
 
@@ -237,7 +240,8 @@ Work claiming self-management support for pomo is **not done** if any of the fol
 6. All messages go through output SSOT; `--json` stays machine-oriented when claimed.  
 7. Project channel/path facts live in Config/env / Implementation Notes—not scattered hardcodes.  
 8. Idempotent already-latest / already-uninstalled behaviors hold.  
-9. Implementation changes cite `requirement-shell-self-management`.
+9. Implementation changes cite `requirement-shell-self-management`.  
+10. Global dest is **0755** after install and after `self-update` (**TP-LC-24** / **TP-LC-25**).
 
 ---
 
@@ -256,7 +260,7 @@ Work claiming self-management support for pomo is **not done** if any of the fol
 
 ---
 
-**Last Updated**: 2026-09-12 (dest **0755** / **TP-LC-23**)
+**Last Updated**: 2026-09-15 (global dest **0755** / **TP-LC-24** / **TP-LC-25**)
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 2, 3, 4, 5, 9, 10, 11, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
 
@@ -278,3 +282,5 @@ Work claiming self-management support for pomo is **not done** if any of the fol
 | **TP-TX-01..05** Termux target (detect, no sudo, PREFIX/bin, no pkg) | `tests/test_cli.sh` | have |
 | **TP-TX-08** Termux `$PREFIX/tmp` volatile records | `tests/test_cli.sh` | have |
 | **TP-LC-23** shebang dest mode 0755 after atomic install | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-24** global dest 0755 after elevated install | `tests/test_install_lifecycle.sh` | have |
+| **TP-LC-25** global dest 0755 after self-update | `tests/test_install_lifecycle.sh` | have |

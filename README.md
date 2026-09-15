@@ -1,6 +1,6 @@
 # pomo - Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.2.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.2.1-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
@@ -68,6 +68,8 @@ curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sudo sh
 ```
+
+A system-wide copy must be **readable and executable** for every login (mode **0755**). After a root install or `sudo pomo self-update`, run `pomo` **without** sudo. If you see `/bin/sh: 0: cannot open /usr/local/bin/pomo: Permission denied`, the file is execute-only — as root run `chmod 0755 /usr/local/bin/pomo`, then try `pomo` as yourself again.
 
 **Termux (this login only — do not use `sudo`):**
 
@@ -204,7 +206,7 @@ All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
 - **[mariadb-galera](https://github.com/Wilgat/mariadb-galera)** — MariaDB Galera Cluster deployment scripts
 
-Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.1.0** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), and `ver_gt` downgrade protection on `self-update`.
+Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.2.1** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), `ver_gt` downgrade protection on `self-update`, and global dest mode **0755**.
 
 ---
 
@@ -242,6 +244,6 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ## Last Update
 
-2026-09-14 — TTY top menu **1** timer / **8** self-management; timer **11…19**; self-management **81…84**. Product version **2.2.0**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+2026-09-15 — Global install / `self-update` dest mode **0755** (shebang other-read). Product version **2.2.1**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
 
 **Made with care and a healthy dose of paranoia.** 🍅

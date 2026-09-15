@@ -2,7 +2,7 @@
 
 Maps **portable proof molds (`PM-*`)** to product-root `tests/` with status.  
 **Suite entry:** `./tests/run.sh` (`PM-SHELL-CLI-SUITE-TEST-PLAN` order: CLI → LC → CURL → domain)  
-**Last update:** 2026-09-14 (TTY top menu timer / self-management **TP-CLI-16/17/29/30**; version 2.2.0)
+**Last update:** 2026-09-15 (global dest **0755** **TP-LC-24/25**; version 2.2.1)
 
 **Proof molds (cite by PM-ID):**
 
@@ -101,6 +101,8 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-LC-11** | *(product)* version-check network failure | **have** | beyond mold |
 | **TP-LC-12** | *(product)* Explicit `install --json` | **have** | beyond mold |
 | **TP-LC-23** | Shebang dest mode **0755** after atomic place | **have** | not `chmod +x` → 0711; **RQ-SHELL-SELF-MANAGEMENT** |
+| **TP-LC-24** | Global dest **0755** after elevated install | **have** | isolated `GLOBAL_BIN`; not USER_BIN; **RQ-SHELL-SELF-MANAGEMENT** |
+| **TP-LC-25** | Global dest **0755** after `self-update` | **have** | leftover 0711 then update; **RQ-SHELL-SELF-MANAGEMENT** |
 
 ---
 

@@ -18,7 +18,7 @@
 | `RQ-SHELL-MODULAR-FUNCTION-DESIGN` | requirement-shell-modular-function-design | Single-file modular function design (prefixes, zones) | shell | Active | `requirement-shell-modular-function-design.md` | 2026-07-24 |
 | `RQ-DOMAIN-POMO` | requirement-domain-pomo | Pomodoro domain (work/break, **minutes unit + 1-min minimum**, themes, stats, path-safe names, storage; Termux `$PREFIX/tmp`) | domain | Active | `requirement-domain-pomo.md` | 2026-09-08 |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements | Central `out_*` output SSOT (stdout/stderr, modes) | shell | Active | `requirement-shell-output-requirements.md` | 2026-07-24 |
-| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about; Termux `$PREFIX/bin`; dest **0755**) | shell | Active | `requirement-shell-self-management.md` | 2026-09-12 |
+| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about; Termux `$PREFIX/bin`; dest **0755**; global dest **TP-LC-24/25**) | shell | Active | `requirement-shell-self-management.md` | 2026-09-15 |
 | `RQ-SHELL-GIT-BASH` | requirement-shell-git-bash | Git Bash this-login: detect folder `/c/`; default drive `/c/`; AppData Local Temp `cache` | shell | Active | `requirement-shell-git-bash.md` | 2026-09-10 |
 | `RQ-SHELL-CLI-STORAGE` | requirement-shell-cli-storage | Volatile/persistent storage roots; Git Bash `/c/` Temp tier; mkdir fail-soft | shell | Active | `requirement-shell-cli-storage.md` | 2026-09-10 |
 

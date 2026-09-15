@@ -1,7 +1,7 @@
 # Requirement → test matrix (pomo)
 
 **Product:** pomo  
-**Updated:** 2026-09-12 (TP-LC-23 dest 0755)  
+**Updated:** 2026-09-15 (TP-LC-24/25 global dest 0755)  
 **Map:** `reviews/test-plan.md`  
 **Suite:** `./tests/run.sh`
 
@@ -15,7 +15,7 @@ Primary citation is **`RQ-*`** + **`TP-*`**. Paths are secondary.
 | `RQ-SHELL-CLI-ZERO-ARGUMENTS` | requirement-shell-cli-zero-arguments | **TP-CLI-09**, **TP-LC-01/09/12**, **TP-U-02**, **TP-TX-03**, **TP-CLI-29** | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | have |
 | `RQ-SHELL-CLI-DEFAULT-INTERACTION` | requirement-shell-cli-default-interaction | **TP-CLI-16/17/29/30** | `tests/test_cli.sh` | have |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements | **TP-CLI-02/04/06/07/12**, **TP-POMO-04** | `tests/test_cli.sh`, `tests/test_pomo_domain.sh` | have |
-| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | **TP-LC-04/05/05b/07/08/11/23**, **TP-CLI-11**, **TP-TX-01..05**, **TP-TX-08** | `tests/test_install_lifecycle.sh`, `tests/test_cli.sh` | have |
+| `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | **TP-LC-04/05/05b/07/08/11/23/24/25**, **TP-CLI-11**, **TP-TX-01..05**, **TP-TX-08** | `tests/test_install_lifecycle.sh`, `tests/test_cli.sh` | have |
 | `RQ-SHELL-AUTOMATIC-CHECKSUM` | requirement-shell-automatic-checksum | **TP-CSUM-01..05**, **TP-LC-06** | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | have |
 | `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE` | requirement-shell-interactive-vs-noninteractive | **TP-CLI-07/09/11**, **TP-LC-07**, **TP-CURL-01..08**, **TP-POMO-10** | CLI + lifecycle + curl + domain | have (**TP-CURL-09** optional) |
 | `RQ-SHELL-IDEMPOTENCY` | requirement-shell-idempotency | **TP-LC-01/05/10**, **TP-POMO-03** | lifecycle + domain | have |
@@ -29,7 +29,7 @@ Primary citation is **`RQ-*`** + **`TP-*`**. Paths are secondary.
 | Blank | When | This pass |
 |-------|------|-----------|
 | `checklist-shell-cli-test` | Suite completeness | Covered by `reviews/test-plan.md` (have/n/a/optional) |
-| `checklist-online-install-script` | `curl \| sh` / companion / dest **0755** | **TP-CURL** + **TP-CSUM** + **TP-LC-23** |
+| `checklist-online-install-script` | `curl \| sh` / companion / dest **0755** | **TP-CURL** + **TP-CSUM** + **TP-LC-23** + **TP-LC-24** + **TP-LC-25** |
 | `plan-and-requirements` / `code-review` | Product-law + README review | `reviews/reports/2026-09-06-readme-req-coverage.md` |
 
 **Honest gaps (not suite failures):**

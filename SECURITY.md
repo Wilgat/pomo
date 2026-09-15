@@ -4,11 +4,10 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.1.0 (current) | Yes |
-| 2.0.3 | Yes (please upgrade to **2.1.0+** when possible) |
-| 2.0.2 | Yes (please upgrade to **2.1.0+** when possible) |
-| 2.0.1 | Yes (please upgrade to **2.1.0+** when possible) |
-| 2.0.0 | Yes (please upgrade to **2.1.0+** when possible) |
+| 2.2.1 (current) | Yes |
+| 2.2.0 | Yes (please upgrade to **2.2.1** for global dest **0755** on self-update) |
+| 2.1.x | Yes (please upgrade to **2.2.1+** when possible) |
+| 2.0.x | Yes (please upgrade to **2.2.1+** when possible) |
 | 1.x releases | Best-effort only; please upgrade to **2.0.x+** when possible |
 
 ## Reporting a Vulnerability
@@ -66,6 +65,7 @@ Beyond install integrity, domain ops intentionally constrain risk:
 | **Per-user isolation** | State files are scoped by product name + username. |
 | **Storage resolution** | Volatile and persistent paths use defensive fallbacks (missing `/dev/shm`, Git Bash `$HOME/AppData/Local/Temp/cache`, `$TEMP/cache`, `/tmp/cache`, missing `$HOME`); `mkdir` of `cache` is fail-soft; no silent write to unusable locations. |
 | **Privilege** | Domain and Type 0 lifecycle run as the **invoking user** (no Type 1 host bootstrap / Type 2 system-user surface in current product). |
+| **Global dest mode** | A shebang dest in `/usr/local/bin` must be **0755** (other-read + execute). Execute-only **0711** lets root run the file and denies unprivileged `/bin/sh` open. `sudo pomo` success is not proof `pomo` works for the login. |
 
 Domain product law: `docs/requirements/requirement-domain-pomo.md` (when present in a full checkout).
 
@@ -77,4 +77,4 @@ Domain product law: `docs/requirements/requirement-domain-pomo.md` (when present
 
 ---
 
-*Last updated: 2026-09-08 (pomo 2.1.0 · CIAO v2.10.2).*
+*Last updated: 2026-09-15 (pomo 2.2.1 · CIAO v2.10.2).*

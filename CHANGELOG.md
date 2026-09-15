@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-09-15
+
+### Added
+- **TP-LC-24** / **TP-LC-25:** isolated `GLOBAL_BIN` dest mode **0755** after elevated install and after `self-update` (leftover 0711 must not survive). USER_BIN-only **TP-LC-23** is not this class (**INC-20260915-001**, **L-17**).
+
+### Changed
+- VERSION **2.2.1**.
+- Atomic install **fails closed** if `chmod 0755` fails (no `chmod +x` fallback).
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.2.1 ship-unit bytes.
+- Global shebang dest contract: mode **0755** (other-read + execute). `sudo` success is not proof an unprivileged login can open `/usr/local/bin/pomo`.
+
+### Fixed
+- **Global shebang dest mode:** atomic install now `chmod 0755` the staging file. `mktemp` + `chmod +x` left **0711**, so unprivileged `pomo` was `/bin/sh: 0: cannot open /usr/local/bin/pomo: Permission denied` while `sudo pomo` worked (**INC-20260912-001**, **L-16**, **TP-LC-23**). Field **2.1.0** `self-update` still placed 2.2.0 with 0711 (**INC-20260915-001**); current placer + **TP-LC-25** cover the global update path going forward.
+
+## [2.2.0] - 2026-09-14
+
 ### Added
 - **TTY top menu:** empty argv shows **1 timer** and **8 self-management** (Exit **9**). Timer rows **11…19**. Self-management rows **81…84**. **0** Back. Commands **`timer`** and **`self-management`**.
 
@@ -14,9 +32,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 - Companion `pomo.sha256` regenerated for 2.2.0 ship-unit bytes.
-
-### Fixed
-- **Global shebang dest mode:** atomic install now `chmod 0755` the staging file. `mktemp` + `chmod +x` left **0711**, so unprivileged `pomo` was `/bin/sh: 0: cannot open /usr/local/bin/pomo: Permission denied` while `sudo pomo` worked (**INC-20260912-001**, **L-16**, **TP-LC-23**).
 
 ## [2.1.2] - 2026-09-10
 

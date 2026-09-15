@@ -79,6 +79,12 @@ assert_file_missing() {
     fi
 }
 
+assert_file_mode() {
+    _lab="$1"; _path="$2"; _exp="$3"
+    _act=$(python3 -c "import os,sys; print('%04o' % (os.stat(sys.argv[1]).st_mode & 0o777))" "$_path")
+    assert_eq "$_lab" "$_exp" "$_act"
+}
+
 # Silent class: both stdout and stderr empty after a claimed one-liner = fail
 assert_not_silent() {
     _lab="$1"; _out="$2"; _err="$3"
@@ -141,6 +147,36 @@ ci_isolated_env() {
     export HOME="${CI_HOME}"
     export USER_BIN="${CI_USER_BIN}"
     unset CHECKSUM 2>/dev/null || true
+}
+
+# Isolated GLOBAL_BIN plus a PATH stub so `id -u` prints 0 (no real root).
+# Sets CI_GLOBAL_BIN, CI_STUB_BIN. Real uid is unchanged — only the `id` binary
+# on PATH is stubbed so install/self-update take the GLOBAL_BIN branch.
+ci_isolated_global_env() {
+    : "${CI_HOME:=}"
+    if [ -z "${CI_HOME}" ] || [ ! -d "${CI_HOME}" ]; then
+        t_fail "ci_isolated_global_env requires ci_isolated_env first"
+        return 1
+    fi
+    CI_GLOBAL_BIN="${CI_HOME}/global-bin"
+    CI_STUB_BIN="${CI_HOME}/stub-bin"
+    mkdir -p "${CI_GLOBAL_BIN}" "${CI_STUB_BIN}"
+    _real_id=$(command -v id)
+    _real_un=$(${_real_id} -un 2>/dev/null || echo unknown)
+    cat > "${CI_STUB_BIN}/id" <<EOF
+#!/bin/sh
+if [ "\${1-}" = "-u" ]; then
+    echo 0
+    exit 0
+fi
+if [ "\${1-}" = "-un" ]; then
+    echo ${_real_un}
+    exit 0
+fi
+exec ${_real_id} "\$@"
+EOF
+    chmod 0755 "${CI_STUB_BIN}/id"
+    unset _real_id _real_un
 }
 
 ci_cleanup_env() {

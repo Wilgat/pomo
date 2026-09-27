@@ -3,7 +3,7 @@
 **Product:** pomo (POSIX `/bin/sh` Type 0 self-install / self-maintenance CLI + pomodoro domain)  
 **Workspace state:** Specialized product law (not blank genesis); **software-development** with Active class file.  
 **Domain SSOT:** `requirement-domain-pomo` / **`RQ-DOMAIN-POMO`**.  
-**Updated:** 2026-09-10 (Git Bash `/c/` + shell storage)
+**Updated:** 2026-09-27 (cache folder per process; persistence `~/.local`)
 
 | Requirement-ID | Key | Title | Area | Status | Path | Updated |
 |----------------|-----|-------|------|--------|------|---------|
@@ -19,8 +19,8 @@
 | `RQ-DOMAIN-POMO` | requirement-domain-pomo | Pomodoro domain (work/break, **minutes unit + 1-min minimum**, themes, stats, path-safe names, storage; Termux `$PREFIX/tmp`) | domain | Active | `requirement-domain-pomo.md` | 2026-09-08 |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | requirement-shell-output-requirements | Central `out_*` output SSOT (stdout/stderr, modes) | shell | Active | `requirement-shell-output-requirements.md` | 2026-07-24 |
 | `RQ-SHELL-SELF-MANAGEMENT` | requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about; Termux `$PREFIX/bin`; dest **0755**; global dest **TP-LC-24/25**) | shell | Active | `requirement-shell-self-management.md` | 2026-09-15 |
-| `RQ-SHELL-GIT-BASH` | requirement-shell-git-bash | Git Bash this-login: detect folder `/c/`; default drive `/c/`; AppData Local Temp `cache` | shell | Active | `requirement-shell-git-bash.md` | 2026-09-10 |
-| `RQ-SHELL-CLI-STORAGE` | requirement-shell-cli-storage | Volatile/persistent storage roots; Git Bash `/c/` Temp tier; mkdir fail-soft | shell | Active | `requirement-shell-cli-storage.md` | 2026-09-10 |
+| `RQ-SHELL-GIT-BASH` | requirement-shell-git-bash | Git Bash this-login: detect folder `/c/`; default drive `/c/`; domain-volatile AppData Temp parent | shell | Active | `requirement-shell-git-bash.md` | 2026-09-27 |
+| `RQ-SHELL-CLI-STORAGE` | requirement-shell-cli-storage | Cache folder per login and process; silent skip; persistence `${HOME}/.local/${APP_NAME}`; domain volatile stays cross-process | shell | Active | `requirement-shell-cli-storage.md` | 2026-09-27 |
 
 **Rules for agents:**
 

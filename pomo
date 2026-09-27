@@ -48,7 +48,7 @@ set -u  # Treat unset variables as error (defensive)
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: self-install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
 # Product version SSOT (specialized from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
-VERSION="2.2.2"
+VERSION="2.2.3"
 : "${VERSION:=2.2.1}"
 
 # Runtime flags (safe defaults)
@@ -96,9 +96,9 @@ fi
 
 [ -t 0 ] && [ -t 1 ] && TTY=1
 USERNAME="$(id -un 2>/dev/null || echo "unknown")"
-# Domain storage SSOT (pomo): volatile RAM vs persistent cache
+# Domain storage SSOT (pomo): volatile RAM vs ${HOME}/.local/${APP_NAME}
 : "${VOLATILE_DIR:=/dev/shm}"
-: "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME}}"
+: "${PERSISTENT_DIR:=${HOME}/.local/${APP_NAME}}"
 # Pomodoro domain defaults (from 1.7.0 specialty surface)
 : "${DEFAULT_WORK_MIN:=25}"
 : "${DEFAULT_BREAK_MIN:=5}"
@@ -1062,7 +1062,7 @@ inst_perform_install() {
     fi
 
     local tmp_file
-    tmp_file=$(mktemp -t "${APP_NAME}.XXXXXX")
+    tmp_file=$(util_mktemp install)
     if [ -z "${tmp_file}" ]; then
         if [ "${JSON}" -eq 1 ]; then
             out_json_error "Failed to create temporary file" "io_error"
@@ -1283,7 +1283,7 @@ inst_perform_install_download_without_checksum() {
         fi
 
         local sha_file
-        sha_file=$(mktemp -t "${APP_NAME}.sha256.XXXXXX")
+        sha_file=$(util_mktemp sha256)
         if [ -z "${sha_file}" ]; then
             if [ "${JSON}" -eq 1 ]; then
                 out_json_error "Failed to create temporary file for checksum" "io_error"
@@ -1339,7 +1339,7 @@ inst_perform_install_download_without_checksum() {
         fi
 
         local sha_file
-        sha_file=$(mktemp -t "${APP_NAME}.sha256.XXXXXX")
+        sha_file=$(util_mktemp sha256)
         if [ -z "${sha_file}" ]; then
             if [ "${JSON}" -eq 1 ]; then
                 out_json_error "Failed to create temporary file for checksum" "io_error"
@@ -2526,100 +2526,253 @@ util_backup() {
 }
 
 # =============================================================================
-# util_resolve_storage() - Storage resolver
+# Cache folder paths — per login, per process, under cache/
+# =============================================================================
+#
+# Linux:  /dev/shm/cache/cache-${APP_NAME}-${login}-$$
+#          then /tmp/cache/cache-${APP_NAME}-${login}-$$
+#          then ${HOME}/.cache/cache-${APP_NAME}-$$
+# Git Bash: /tmp/cache/cache-${APP_NAME}-${login}-$$
+#          then ${HOME}/AppData/Local/Temp/cache-${APP_NAME}-$$
+# Mac:    /tmp/cache/cache-${APP_NAME}-${login}-$$
+#          then ${HOME}/Library/Caches/cache-${APP_NAME}-$$
+#          then ${HOME}/cache/cache-${APP_NAME}-$$
+# $$ is this process id. Home tiers omit the login (HOME already isolates).
+# A missed tier is silent. Named timer files do NOT live here — they use
+# util_resolve_volatile_root so the next command can open them.
+# MUST NOT use /dev/shm/${APP_NAME} or /dev/shm/${APP_NAME}-${USERNAME}.
+#
+# ALIGNMENT: requirement-shell-cli-storage.md
+# Test-purpose: POMO_CACHE_HOST=linux|gitbash|mac
+#               POMO_CACHE_SKIP=preferred skips tier 1 with no message
+#
+# Last updated: 2026-09-27
+# =============================================================================
+util_cache_host_kind() {
+    case "${POMO_CACHE_HOST:-}" in
+        linux|gitbash|mac)
+            printf '%s' "${POMO_CACHE_HOST}"
+            return 0
+            ;;
+    esac
+    if [ -n "${MSYSTEM:-}" ]; then
+        printf '%s' "gitbash"
+        return 0
+    fi
+    case "$(uname -s 2>/dev/null)" in
+        MINGW*|MSYS*) printf '%s' "gitbash" ;;
+        Darwin) printf '%s' "mac" ;;
+        *) printf '%s' "linux" ;;
+    esac
+}
+
+util_cache_login() {
+    _clogin="${USERNAME:-unknown}"
+    case "${_clogin}" in
+        *[!A-Za-z0-9._-]*)
+            _clogin=$(printf '%s' "${_clogin}" | tr -c 'A-Za-z0-9._-' '_')
+            ;;
+    esac
+    [ -n "${_clogin}" ] || _clogin="unknown"
+    printf '%s' "${_clogin}"
+    unset _clogin
+}
+
+util_cache_volatile_leaf() {
+    : "${APP_NAME:=app}"
+    printf '%s' "cache-${APP_NAME}-$(util_cache_login)-$$"
+}
+
+util_cache_home_leaf() {
+    : "${APP_NAME:=app}"
+    printf '%s' "cache-${APP_NAME}-$$"
+}
+
+util_preferred_cache_dir() {
+    : "${APP_NAME:=app}"
+    : "${HOME:=/tmp}"
+    case "$(util_cache_host_kind)" in
+        gitbash|mac)
+            printf '%s' "/tmp/cache/$(util_cache_volatile_leaf)"
+            ;;
+        *)
+            printf '%s' "/dev/shm/cache/$(util_cache_volatile_leaf)"
+            ;;
+    esac
+}
+
+util_fallback_cache_dir() {
+    : "${APP_NAME:=app}"
+    : "${HOME:=/tmp}"
+    case "$(util_cache_host_kind)" in
+        gitbash)
+            printf '%s' "${HOME}/AppData/Local/Temp/$(util_cache_home_leaf)"
+            ;;
+        mac)
+            printf '%s' "${HOME}/Library/Caches/$(util_cache_home_leaf)"
+            ;;
+        *)
+            printf '%s' "/tmp/cache/$(util_cache_volatile_leaf)"
+            ;;
+    esac
+}
+
+util_fallback2_cache_dir() {
+    : "${APP_NAME:=app}"
+    : "${HOME:=/tmp}"
+    case "$(util_cache_host_kind)" in
+        gitbash)
+            printf '%s' ""
+            ;;
+        mac)
+            printf '%s' "${HOME}/cache/$(util_cache_home_leaf)"
+            ;;
+        *)
+            printf '%s' "${HOME}/.cache/$(util_cache_home_leaf)"
+            ;;
+    esac
+}
+
+# Create one cache tier. Silent on failure (caller tries the next tier).
+util_cache_try_dir() {
+    _cdir="${1:-}"
+    [ -n "${_cdir}" ] || return 1
+    _cparent=$(dirname "${_cdir}")
+    case "${_cparent}" in
+        /dev/shm/cache|/tmp/cache)
+            mkdir -m 1777 -p "${_cparent}" 2>/dev/null || mkdir -p "${_cparent}" 2>/dev/null || return 1
+            ;;
+        *)
+            mkdir -p "${_cparent}" 2>/dev/null || return 1
+            ;;
+    esac
+    mkdir -m 0700 -p "${_cdir}" 2>/dev/null || mkdir -p "${_cdir}" 2>/dev/null || return 1
+    [ -d "${_cdir}" ] && [ -w "${_cdir}" ] || return 1
+    unset _cdir _cparent
+    return 0
+}
+
+util_persistent_storage_dir() {
+    : "${APP_NAME:=app}"
+    : "${HOME:=/tmp}"
+    printf '%s' "${HOME}/.local/${APP_NAME}"
+}
+
+# Create persistence storage before echo (fail-closed). Class B stdout.
+util_resolve_persistent_storage() {
+    : "${APP_NAME:=app}"
+    : "${HOME:=/tmp}"
+    _persist=$(util_persistent_storage_dir)
+    case "${_persist}" in
+        */.local/bin|*/.local/bin/)
+            unset _persist
+            return 1
+            ;;
+    esac
+    if ! mkdir -p "${_persist}" 2>/dev/null || [ ! -w "${_persist}" ]; then
+        unset _persist
+        return 1
+    fi
+    printf '%s\n' "${_persist}"
+    unset _persist
+    return 0
+}
+
+# =============================================================================
+# util_resolve_storage() - Cache folder resolver
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Returns the best available volatile storage directory for prompt files.
-# Prefers /dev/shm (fastest, in-memory) then Git Bash / $TEMP / /tmp cache
-# roots via util_resolve_volatile_root. mkdir of cache is fail-soft.
-# All paths include ${USERNAME} to isolate per-user storage.
+# Returns the best available cache directory for scratch files.
+# Linux: shm leaf, then /tmp leaf, then ${HOME}/.cache leaf.
+# Git Bash: /tmp leaf, then AppData Local Temp leaf.
+# Mac: /tmp leaf, then Library/Caches leaf, then ${HOME}/cache leaf.
+# Volatile leaves are cache-${APP_NAME}-${login}-$$. Home leaves omit login.
+# A missed tier is silent (no warning, no error). Empty stdout if every tier fails.
+# Named timer files stay on util_resolve_volatile_root (next process must open them).
+# MUST NOT restore /dev/shm/${APP_NAME} or /dev/shm/${APP_NAME}-${USERNAME}.
+#
+# ECHO EXCEPTION (class B – function return-via-stdout):
+# echo of cache paths is a data return for $(util_resolve_storage) capture,
+# not a product user message. Callers die via out_die when stdout is empty.
+# See requirement-shell-output-requirements.md §2.1.1.
 #
 # ALIGNMENT (live requirements only):
 # - requirement-shell-cli-storage.md
-# - requirement-shell-git-bash.md
-# - requirement-domain-pomo.md
-#
-# Safe Variable Defaults
-#
-# CIAO PRINCIPLES APPLIED:
-# - Caution: Must work correctly when the same computer is used by multiple
-#   different users (normal user, sudo, root, shared servers, containers).
-# - Intentionality: Never allow one user's files to be readable/writable by
-#   another user. Every directory creation must be ownership-aware.
-# - Anti-fragile: Survive permission conflicts and multi-user environments.
-#
-# CRITICAL WARNING - MULTI-USER PROBLEM AI FREQUENTLY OVERLOOKS:
-# Many good applications on a computer are run by different users over time
-# (e.g. normal user → sudo → another login account). 
-#
-# AI assistants often simply "add mkdir -p" when solving a storage task without
-# considering ownership and cross-user write privilege. This approach is
-# untested and problematic — it can create directories owned by one user that
-# another user cannot read/write, or allow unintended access between users.
-#
-# That is why we intentionally isolate folders per user (${APP_NAME}-${USERNAME})
-# and why any change to this function must preserve strict per-user isolation.
-# Rewriting this with a generic shared folder is forbidden and has caused
-# permission bugs in the past.
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 # Designed to be reusable in other projects.
 #
-# ECHO EXCEPTION (class B – function return-via-stdout):
-# echo of storage paths is a data return for $(util_resolve_storage) capture,
-# not a product user message. Failures use out_die.
-# See requirement-shell-output-requirements.md §2.1.1.
-#
 # Lessons Learned (CIAO Reflection):
 # 2026-07-13: STORAGE_DIR was bare/unset on third fallback (INC-20260713-001 P1).
-# 2026-07-14: Third fallback uses XDG_CACHE_HOME / HOME/.cache / /tmp with
-#             per-user ${APP_NAME}-${USERNAME} isolation under set -u.
-# 2026-09-08: Termux $PREFIX/tmp before Linux /tmp (Android /tmp is often RO).
-#             Create chosen tier before echo (fail-closed).
-# 2026-09-10: mkdir of the chosen candidate used to die mid-chain (Git Bash
-#             cache). Walk util_resolve_volatile_root; mkdir is fail-soft.
+# 2026-09-08: Termux scratch before a read-only Android /tmp.
+# 2026-09-10: mkdir of one cache leaf must not abort the chain.
+# 2026-09-27: Leaf is cache-${APP_NAME}-${login}-$$. Tier misses stay silent.
+#             Persistence is ${HOME}/.local/${APP_NAME}, not ~/.cache/${APP_NAME}.
 #
-# Last updated: 2026-09-10
+# Last updated: 2026-09-27
 # =============================================================================
 util_resolve_storage() {
-    # --- Safe Variable Defaults ----
-    # Defensive defaults - never assume globals are set
     : "${USERNAME:=unknown}"
     : "${APP_NAME:=app}"
     : "${HOME:=/tmp}"
-    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
-    : "${IS_TERMUX:=0}"
-    : "${PREFIX:=}"
-    : "${TEMP:=}"
-    : "${GIT_BASH_DRIVE:=/c}"
-    pomo_apply_target_paths
 
-    _storage_root=$(util_resolve_volatile_root) || true
     _storage_candidate=""
-    if [ -n "${_storage_root}" ]; then
-        _storage_candidate="${_storage_root}/${APP_NAME}-${USERNAME}"
-        if ! util_ensure_writable_dir "${_storage_candidate}"; then
-            if util_ensure_writable_dir "${_storage_root}"; then
-                _storage_candidate="${_storage_root}"
-            else
-                _storage_candidate=""
-            fi
+    if [ "${POMO_CACHE_SKIP:-}" != "preferred" ]; then
+        _pref=$(util_preferred_cache_dir)
+        if util_cache_try_dir "${_pref}"; then
+            _storage_candidate="${_pref}"
         fi
     fi
     if [ -z "${_storage_candidate}" ]; then
-        : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
-        if util_ensure_writable_dir "${STORAGE_DIR}"; then
-            _storage_candidate="${STORAGE_DIR}"
+        _fb1=$(util_fallback_cache_dir)
+        if util_cache_try_dir "${_fb1}"; then
+            _storage_candidate="${_fb1}"
         fi
     fi
     if [ -z "${_storage_candidate}" ]; then
-        unset _storage_root _storage_candidate
-        out_die "Cannot create storage directory. Next: mkdir -p \"\${HOME}/AppData/Local/Temp/cache\" or \"\${PREFIX}/tmp\" or \"\${HOME}/.cache/${APP_NAME}\""
+        _fb2=$(util_fallback2_cache_dir)
+        if [ -n "${_fb2}" ] && util_cache_try_dir "${_fb2}"; then
+            _storage_candidate="${_fb2}"
+        fi
     fi
-    echo "${_storage_candidate}"
-    unset _storage_root _storage_candidate
+    if [ -z "${_storage_candidate}" ]; then
+        unset _storage_candidate _pref _fb1 _fb2
+        return 1
+    fi
+    printf '%s\n' "${_storage_candidate}"
+    unset _storage_candidate _pref _fb1 _fb2
     return 0
+}
+
+# =============================================================================
+# util_mktemp() - Isolated scratch file (consume EFFECTIVE_STORAGE_DIR)
+# =============================================================================
+# ALIGNMENT: requirement-shell-cli-storage.md
+# Forbidden: predictable $$ names (e.g. /tmp/${APP_NAME}.$$).
+# Last updated: 2026-09-27
+# =============================================================================
+util_mktemp() {
+    : "${APP_NAME:=pomo}"
+    : "${EFFECTIVE_STORAGE_DIR:=}"
+    _suffix="${1:-tmp}"
+    _dollar='$'
+    case "${_suffix}" in
+        *"${_dollar}${_dollar}"*)
+            out_die "util_mktemp: refuse predictable \$\$ name template"
+            ;;
+    esac
+    if [ -z "${EFFECTIVE_STORAGE_DIR}" ]; then
+        EFFECTIVE_STORAGE_DIR=$(util_resolve_storage) || true
+        export EFFECTIVE_STORAGE_DIR
+    fi
+    if [ -n "${EFFECTIVE_STORAGE_DIR}" ]; then
+        mktemp "${EFFECTIVE_STORAGE_DIR}/${APP_NAME}.${_suffix}.XXXXXX" 2>/dev/null \
+            && { unset _suffix _dollar; return 0; }
+    fi
+    mktemp "${TMPDIR:-/tmp}/${APP_NAME}.${_suffix}.XXXXXX" 2>/dev/null \
+        || mktemp
+    unset _suffix _dollar
 }
 
 # =============================================================================
@@ -2849,8 +3002,7 @@ pomo_resolve_base_dir() {
     : "${HOME:=/tmp}"
     : "${QUIET:=0}"
     : "${JSON:=0}"
-    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
-    : "${PERSISTENT_DIR:=${XDG_CACHE_HOME}/${APP_NAME}}"
+    : "${PERSISTENT_DIR:=${HOME}/.local/${APP_NAME}}"
     : "${TMPDIR:=}"
     : "${PREFIX:=}"
     : "${TEMP:=}"
@@ -2860,8 +3012,8 @@ pomo_resolve_base_dir() {
         _orig_vol="${VOLATILE_DIR}"
         base_dir=$(util_resolve_volatile_root) || true
         if [ -z "$base_dir" ]; then
-            if util_ensure_writable_dir "${XDG_CACHE_HOME}/${APP_NAME}"; then
-                base_dir="${XDG_CACHE_HOME}/${APP_NAME}"
+            if util_ensure_writable_dir "${PERSISTENT_DIR}"; then
+                base_dir="${PERSISTENT_DIR}"
             fi
         fi
         if [ -z "$base_dir" ]; then
@@ -2891,7 +3043,7 @@ pomo_resolve_base_dir() {
             elif util_ensure_writable_dir "/tmp/${APP_NAME}_${USERNAME}_persistent"; then
                 base_dir="/tmp/${APP_NAME}_${USERNAME}_persistent"
             else
-                out_die "No writable location for persistent storage (home cache, \$PREFIX/tmp, and /tmp are unusable). Next: mkdir -p \"\${HOME}/.cache/${APP_NAME}\" or export PERSISTENT_DIR to a writable folder."
+                out_die "No writable location for persistent storage (home, \$PREFIX/tmp, and /tmp are unusable). Next: mkdir -p \"\${HOME}/.local/${APP_NAME}\" or export PERSISTENT_DIR to a writable folder."
                 return 1
             fi
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
@@ -3025,7 +3177,7 @@ pomo_increment_stats() {
 
 pomo_load_theme() {
     : "${POMO_THEME:=default}"
-    : "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME:-pomo}}"
+    : "${PERSISTENT_DIR:=${HOME}/.local/${APP_NAME:-pomo}}"
     local theme_file="${PERSISTENT_DIR}/theme"
     if [ -f "$theme_file" ]; then
         local saved
@@ -3457,7 +3609,7 @@ pomo_theme() {
     local subcommand="${1-}"
     local arg="${2-}"
     : "${POMO_THEME:=default}"
-    : "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME:-pomo}}"
+    : "${PERSISTENT_DIR:=${HOME}/.local/${APP_NAME:-pomo}}"
 
     if [ -z "$subcommand" ]; then
         if [ "${JSON}" -eq 1 ]; then
@@ -3680,6 +3832,18 @@ app_about() {
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
     pomo_apply_target_paths
+    if [ -z "${EFFECTIVE_STORAGE_DIR:-}" ]; then
+        EFFECTIVE_STORAGE_DIR=$(util_resolve_storage) || true
+        export EFFECTIVE_STORAGE_DIR
+        export TMPDIR="${EFFECTIVE_STORAGE_DIR}"
+    fi
+    if [ -z "${PERSISTENT_STORAGE_DIR:-}" ]; then
+        PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage) || true
+        export PERSISTENT_STORAGE_DIR
+    fi
+    _cache_preferred=$(util_preferred_cache_dir)
+    _cache_fallback=$(util_fallback_cache_dir)
+    _cache_fallback_2=$(util_fallback2_cache_dir)
 
     if [ "${JSON}" -eq 1 ]; then
         # === JSON MODE - Clean, machine-friendly output ===
@@ -3727,7 +3891,15 @@ app_about() {
             "normal_user_only" "${normal_user_only}" \
             "termux" "${termux_flag}" \
             "user_bin" "${USER_BIN}" \
-            "prefix" "${PREFIX-}"
+            "prefix" "${PREFIX-}" \
+            "cache_used" "${EFFECTIVE_STORAGE_DIR}" \
+            "cache_preferred" "${_cache_preferred}" \
+            "cache_fallback" "${_cache_fallback}" \
+            "cache_fallback_2" "${_cache_fallback_2}" \
+            "persistence_storage" "${PERSISTENT_STORAGE_DIR}" \
+            "effective_storage" "${EFFECTIVE_STORAGE_DIR}" \
+            "storage_dir" "${_cache_fallback}"
+        unset _cache_preferred _cache_fallback _cache_fallback_2
         return 0
     fi
 
@@ -3819,6 +3991,16 @@ app_about() {
     else
         out_info "TTY / Interactive: no (non-interactive / scripted mode)"
     fi
+
+    out_empty_line
+    out_info "Cache folder used: ${EFFECTIVE_STORAGE_DIR}"
+    out_info "Cache folder (preferred): ${_cache_preferred}"
+    out_info "Cache folder (1st fallback): ${_cache_fallback}"
+    if [ -n "${_cache_fallback_2}" ]; then
+        out_info "Cache folder (2nd fallback): ${_cache_fallback_2}"
+    fi
+    out_info "Persistence storage: ${PERSISTENT_STORAGE_DIR}"
+    unset _cache_preferred _cache_fallback _cache_fallback_2
 
     out_empty_line
     out_info "Useful commands:"
@@ -4534,19 +4716,22 @@ app_main() {
     : "${FORCE:=0}"
     : "${FORCE_REINSTALL:=0}"
 
-    # Termux: this login only. Scratch: /dev/shm → $PREFIX/tmp → /tmp → cache.
-    # Resolver creates root fail-closed. Export TMPDIR so mktemp -t (install
-    # download stage) lands under the isolated product root.
+    # Cache folder is per process (scratch / mktemp). Persistence is
+    # ${HOME}/.local/${APP_NAME}. Named timers use util_resolve_volatile_root.
     pomo_apply_target_paths
     : "${USERNAME:=unknown}"
     : "${HOME:=/tmp}"
-    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
-    : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
+    : "${APP_NAME:=pomo}"
     EFFECTIVE_STORAGE_DIR=$(util_resolve_storage) || true
     if [ -z "${EFFECTIVE_STORAGE_DIR}" ]; then
-        out_die "Cannot create storage directory. Next: mkdir -p \"\${PREFIX}/tmp\" or \"\${HOME}/.cache/${APP_NAME}\""
+        out_die "Cannot create cache folder"
     fi
-    export EFFECTIVE_STORAGE_DIR STORAGE_DIR
+    STORAGE_DIR=$(util_fallback_cache_dir)
+    PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage) || true
+    if [ -z "${PERSISTENT_STORAGE_DIR}" ]; then
+        out_die "Cannot create persistence storage ${HOME}/.local/${APP_NAME}"
+    fi
+    export EFFECTIVE_STORAGE_DIR STORAGE_DIR PERSISTENT_STORAGE_DIR
     export TMPDIR="${EFFECTIVE_STORAGE_DIR}"
 
     # Domain state for pomodoro commands (safe defaults under set -u)

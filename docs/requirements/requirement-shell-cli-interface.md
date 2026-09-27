@@ -126,7 +126,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `self-management` | Type 0 | `app_default` | TTY self-management board (ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo self-management` |
 | `self-install` | Type 0 | `inst_self_install` | Place binary for current privilege (root→global, user→local); idempotent unless force reinstall. `$0` is a shell (`curl \| sh`) → download + checksum. `$0` is this script → copy that file, no SHA-256. `install` is the same handler. |
 | `version` | Type 0 | `app_main` / `app_version` | Print local version; JSON object when `--json` |
-| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**; JSON when `--json` includes `target`, `normal_user_only`, `termux`, `user_bin`, `prefix`; **no `CHECKSUM` field** |
+| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**, cache folder, persistence; JSON when `--json` includes `target`, `normal_user_only`, `termux`, `user_bin`, `prefix`, `cache_used`, `cache_preferred`, `cache_fallback`, `cache_fallback_2`, `persistence_storage`, `effective_storage`, `storage_dir`; **no `CHECKSUM` field**. Human labels are Cache folder used / preferred / 1st fallback / 2nd fallback (omit when this host has none) / Persistence storage |
 | `version-check` | Type 0 | `ver_check` | Compare local vs remote `VERSION` from `SCRIPT_URL`; fail clearly if URL unset/unreachable |
 | `self-update` | Type 0 | `inst_self_update` | Fetch remote version; reinstall when policy allows; reuse install primitives |
 | `self-uninstall` | Type 0 | `inst_self_uninstall` | Remove managed binary; PATH cleanup only if `~/.local/bin` empty (user installs) |
@@ -251,13 +251,13 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | **`RQ-SHELL-MODULAR-FUNCTION-DESIGN`** (`requirement-shell-modular-function-design.md`) | Prefix ownership (`app_`, `inst_`, `out_*`, `pomo_*`) |
 | **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`) | Pomodoro domain semantics (state, phases, stats, themes) |
 | **`RQ-SHELL-GIT-BASH`** (`requirement-shell-git-bash.md`) | Dual mention: Git Bash detect `/c/`, default drive, Temp parent |
-| **`RQ-SHELL-CLI-STORAGE`** (`requirement-shell-cli-storage.md`) | Volatile/persistent roots |
+| **`RQ-SHELL-CLI-STORAGE`** (`requirement-shell-cli-storage.md`) | Cache folder, persistence, domain-volatile root; about cache lines |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./pomo` | Implementation under test |
 
 ---
 
-**Last Updated**: 2026-07-14
+**Last Updated**: 2026-09-27
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 2, 3, 4, 6, 9, 10, 16, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
 
@@ -273,7 +273,7 @@ This requirement is satisfied for the pomo shell CLI when all of the following h
 | **TP-CLI-02** version human + JSON | `tests/test_cli.sh` | have |
 | **TP-CLI-03** help Type 0 + domain rows | `tests/test_cli.sh` | have |
 | **TP-CLI-04** help/about JSON purity | `tests/test_cli.sh` | have |
-| **TP-CLI-05** about shell storage fields | n/a — domain owns storage | n/a |
+| **TP-CLI-05** about cache + persistence fields | `tests/test_cli.sh` | have |
 | **TP-CLI-06** unknown command | `tests/test_cli.sh` | have |
 | **TP-CLI-07** quiet / `-q` | `tests/test_cli.sh` | have |
 | **TP-CLI-08** / **TP-U-01** `env -u HOME` | `tests/test_cli.sh` | have |

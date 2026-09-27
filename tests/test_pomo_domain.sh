@@ -232,6 +232,9 @@ run_test_pomo_domain() {
     _ec=$?
     assert_eq "TP-STORAGE-02 persist start exit 0" 0 "$_ec"
     assert_contains "TP-STORAGE-02 persist start success" "$_out" "started"
+    _u=$(id -un 2>/dev/null || echo "unknown")
+    assert_file_exists "TP-STORAGE-02 persist file under ~/.local" \
+        "${CI_HOME}/.local/${APP_NAME}/${APP_NAME}_${_u}_persist-t"
 
     _out=$(_run status --persist persist-t 2>/dev/null)
     _ec=$?

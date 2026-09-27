@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-09-27
+
+### Changed
+- Scratch uses a per-process cache folder. Linux preferred leaf is `/dev/shm/cache/cache-pomo-<login>-<pid>`; a skipped tier is silent. `pomo about` prints Cache folder used, preferred, 1st fallback, and 2nd fallback when this host has one.
+- `--persist`, theme, and daily stats live under `~/.local/pomo`.
+- A named timer stays on the cross-process volatile root, so the next `pomo status` still finds it. That file is not inside the cache folder.
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.2.3 ship-unit bytes.
+- Cache leaves are mode **0700**. Shared parents `/dev/shm/cache` and `/tmp/cache` are created mode **1777** when this process creates them.
+
 ## [2.2.2] - 2026-09-27
 
 ### Changed

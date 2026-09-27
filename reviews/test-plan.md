@@ -47,7 +47,7 @@ Status: **have** = automated · **todo** = needed · **n/a** = not applicable ·
 | **TP-CLI-02** | Version human + JSON | **have** | version exit/app/version |
 | **TP-CLI-03** | Help Type 0 + domain surface | **have** | install/self-*; domain verbs; no CHECKSUM |
 | **TP-CLI-04** | Help/about JSON purity | **have** | help/about JSON; about no CHECKSUM |
-| **TP-CLI-05** | About storage resolve | **n/a** | No shell `storage_dir` about; domain **TP-STORAGE-*** |
+| **TP-CLI-05** | About cache + persistence | **have** | `cache_used` / preferred / fallbacks / `persistence_storage`; human Cache folder labels |
 | **TP-CLI-06** | Unknown command | **have** | human + JSON `out_error` |
 | **TP-CLI-07** | Quiet mode | **have** | `--quiet` and `-q` |
 | **TP-CLI-08** | `env -u HOME` under set -u | **have** | = **TP-U-01** |
@@ -175,8 +175,9 @@ Subject = `pomo` **ops/verbs**. **Not** portable **TP-DOM-***. Storage is **not*
 | TP-ID | Mold intent | Status | Evidence | Legacy (this product) |
 |-------|-------------|--------|----------|------------------------|
 | **TP-STORAGE-01** | Volatile storage path resolve | **have** | `/dev/shm\|/tmp/cache\|/tmp/${APP}_${USER}_${name}` | was TP-POMO-12 |
-| **TP-STORAGE-02** | `--persist` start/list/status/stop | **have** | isolated HOME | was TP-POMO-08 |
+| **TP-STORAGE-02** | `--persist` start/list/status/stop | **have** | isolated HOME `~/.local/${APP_NAME}` | was TP-POMO-08 |
 | **TP-STORAGE-03** | Corrupted state → `corrupted_data` | **have** | empty state file | was TP-POMO-13 |
+| **TP-STORAGE-04** | Cache leaf, silent skip, Git Bash, Mac | **have** | `tests/test_cli.sh`; `POMO_CACHE_HOST` / `POMO_CACHE_SKIP` | cache folder (not the timer file) |
 
 Cross-product legacy aliases: timer `TP-TIMER-08/09` → **02/01**; countdown `TP-COUNTDOWN-08/09/10` → **02/01/03**.
 

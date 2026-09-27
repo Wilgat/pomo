@@ -196,6 +196,10 @@ ci_cleanup_pomo_domain() {
         rm -f "${_base}/${APP_NAME}_${_u}"_* 2>/dev/null || true
         rm -rf "${_base}/${APP_NAME}-${_u}" 2>/dev/null || true
     done
+    for _leaf in /dev/shm/cache/cache-"${APP_NAME}"-* /tmp/cache/cache-"${APP_NAME}"-*; do
+        [ -e "${_leaf}" ] || continue
+        rm -rf "${_leaf}" 2>/dev/null || true
+    done
     if [ -n "${HOME-}" ] && [ -d "${HOME}/AppData/Local/Temp/cache" ]; then
         rm -f "${HOME}/AppData/Local/Temp/cache/${APP_NAME}_${_u}"_* 2>/dev/null || true
         rm -rf "${HOME}/AppData/Local/Temp/cache/${APP_NAME}-${_u}" 2>/dev/null || true

@@ -1,7 +1,7 @@
 # =============================================================================
 # tests/test_cli.sh — Type 0 CLI surface (PM-SHELL-CLI-TEST-PLAN / TP-CLI-*)
 # =============================================================================
-# Mold catalog TP-CLI-01..11 (Core). Product: sh -n not bash -n; TP-CLI-05/10 n/a;
+# Mold catalog TP-CLI-01..11 (Core). Product: sh -n not bash -n; TP-CLI-05 have (cache about); TP-CLI-10 n/a;
 # TP-CLI-12 product extension (out_json string-key). Cross: TP-CSUM-01/05, TP-U-01/02,
 # TP-POMO-01 (help domain verbs); TP-CLI-13 Git Bash/target; TP-CLI-16/17/29/30
 # TTY menu; TP-TX-01..05 + TP-TX-08 Termux this-login dest + $PREFIX/tmp;
@@ -87,10 +87,104 @@ run_test_cli() {
     assert_contains "TP-CLI-04 about --json target field" "$_out" '"target":'
     assert_not_contains "TP-CLI-04 TP-CSUM-05 about --json must not include CHECKSUM" "$_out" "CHECKSUM"
 
-    # --- TP-CLI-05: shell storage fields n/a (domain owns storage) ---
-    _out=$(sh "${SCRIPT}" --json about 2>/dev/null)
-    assert_contains "TP-CLI-05 about --json type present (shell storage n/a)" "$_out" '"type":"about"'
-    t_pass "TP-CLI-05 shell storage resolve n/a for pomo (see TP-STORAGE-*)"
+    # --- TP-CLI-05: about cache folder + persistence (RQ-SHELL-CLI-STORAGE) ---
+    ci_isolated_env
+    _out=$(HOME="${CI_HOME}" sh "${SCRIPT}" --json about 2>/dev/null)
+    assert_contains "TP-CLI-05 about --json type" "$_out" '"type":"about"'
+    assert_contains "TP-CLI-05 cache_used" "$_out" '"cache_used"'
+    assert_contains "TP-CLI-05 cache_preferred" "$_out" '"cache_preferred"'
+    assert_contains "TP-CLI-05 cache_fallback" "$_out" '"cache_fallback"'
+    assert_contains "TP-CLI-05 cache_fallback_2" "$_out" '"cache_fallback_2"'
+    assert_contains "TP-CLI-05 persistence_storage" "$_out" '"persistence_storage"'
+    assert_contains "TP-CLI-05 effective_storage" "$_out" '"effective_storage"'
+    _hum=$(HOME="${CI_HOME}" sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CLI-05 human Cache folder used" "$_hum" "Cache folder used:"
+    assert_contains "TP-CLI-05 human Cache folder preferred" "$_hum" "Cache folder (preferred):"
+    assert_contains "TP-CLI-05 human Cache folder 1st fallback" "$_hum" "Cache folder (1st fallback):"
+    assert_contains "TP-CLI-05 human Cache folder 2nd fallback" "$_hum" "Cache folder (2nd fallback):"
+    assert_contains "TP-CLI-05 human Persistence storage" "$_hum" "Persistence storage:"
+    assert_not_contains "TP-CLI-05 no Storage (effective) label" "$_hum" "Storage (effective)"
+    assert_not_contains "TP-CLI-05 no Storage (fallback) label" "$_hum" "Storage (fallback)"
+    ci_cleanup_env
+
+    # --- TP-STORAGE-04: cache leaf per login + process; silent skip; Git Bash; Mac ---
+    ci_isolated_env
+    _login=$(id -un 2>/dev/null || echo "unknown")
+    _out=$(HOME="${CI_HOME}" sh "${SCRIPT}" --json about 2>/dev/null)
+    assert_contains "TP-STORAGE-04 isolated about has app in cache" "$_out" "${APP_NAME}"
+    _pref=$(printf '%s' "$_out" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _pid="${_pref##*-}"
+    case "${_pref}" in
+        /dev/shm/cache/cache-"${APP_NAME}"-"${_login}"-[0-9]*)
+            t_pass "TP-STORAGE-04 cache_preferred is shm login process leaf"
+            ;;
+        *) t_fail "TP-STORAGE-04 cache_preferred unexpected: '${_pref:-empty}'" ;;
+    esac
+    _fb=$(printf '%s' "$_out" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 cache_fallback 1st" "/tmp/cache/cache-${APP_NAME}-${_login}-${_pid}" "${_fb}"
+    _fb2=$(printf '%s' "$_out" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 cache_fallback 2nd" "${CI_HOME}/.cache/cache-${APP_NAME}-${_pid}" "${_fb2}"
+    _used=$(printf '%s' "$_out" | sed -n 's/.*"cache_used":"\([^"]*\)".*/\1/p' | head -n1)
+    _eff=$(printf '%s' "$_out" | sed -n 's/.*"effective_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 cache_used matches effective" "${_eff}" "${_used}"
+    if [ -n "$_eff" ] && [ -d "$_eff" ]; then
+        t_pass "TP-STORAGE-04 effective cache directory exists"
+    else
+        t_fail "TP-STORAGE-04 effective cache missing: '${_eff:-empty}'"
+    fi
+    case "${_eff}" in
+        /dev/shm/"${APP_NAME}"|/dev/shm/"${APP_NAME}"-*)
+            t_fail "TP-STORAGE-04 effective cache must not be ram-drive project shape: '${_eff}'"
+            ;;
+        *) t_pass "TP-STORAGE-04 effective cache is not a ram-drive project shape" ;;
+    esac
+    _mode=$(stat -c %a "${_eff}" 2>/dev/null || echo "")
+    assert_eq "TP-STORAGE-04 effective cache mode 0700" "700" "${_mode}"
+    _err=$(HOME="${CI_HOME}" POMO_CACHE_SKIP=preferred sh "${SCRIPT}" about 2>&1 >/dev/null)
+    assert_not_contains "TP-STORAGE-04 silent cache fallback" "${_err}" "fallback"
+    assert_not_contains "TP-STORAGE-04 silent cache fallback error" "${_err}" "Cannot create cache"
+    _skip=$(HOME="${CI_HOME}" POMO_CACHE_SKIP=preferred sh "${SCRIPT}" --json about 2>/dev/null)
+    _skip_eff=$(printf '%s' "$_skip" | sed -n 's/.*"effective_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    _skip_fb=$(printf '%s' "$_skip" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 skipped preferred uses 1st fallback" "${_skip_fb}" "${_skip_eff}"
+    _gb=$(HOME="${CI_HOME}" POMO_CACHE_HOST=gitbash sh "${SCRIPT}" --json about 2>/dev/null)
+    _gb_pref=$(printf '%s' "$_gb" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _gb_pid="${_gb_pref##*-}"
+    assert_eq "TP-STORAGE-04 gitbash preferred" "/tmp/cache/cache-${APP_NAME}-${_login}-${_gb_pid}" "${_gb_pref}"
+    _gb_fb=$(printf '%s' "$_gb" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 gitbash 1st fallback" "${CI_HOME}/AppData/Local/Temp/cache-${APP_NAME}-${_gb_pid}" "${_gb_fb}"
+    _gb_fb2=$(printf '%s' "$_gb" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 gitbash no 2nd fallback" "" "${_gb_fb2}"
+    _mac=$(HOME="${CI_HOME}" POMO_CACHE_HOST=mac sh "${SCRIPT}" --json about 2>/dev/null)
+    _mac_pref=$(printf '%s' "$_mac" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _mac_pid="${_mac_pref##*-}"
+    assert_eq "TP-STORAGE-04 mac preferred" "/tmp/cache/cache-${APP_NAME}-${_login}-${_mac_pid}" "${_mac_pref}"
+    _mac_fb=$(printf '%s' "$_mac" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 mac 1st fallback" "${CI_HOME}/Library/Caches/cache-${APP_NAME}-${_mac_pid}" "${_mac_fb}"
+    _mac_fb2=$(printf '%s' "$_mac" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 mac 2nd fallback" "${CI_HOME}/cache/cache-${APP_NAME}-${_mac_pid}" "${_mac_fb2}"
+    _hum_l=$(HOME="${CI_HOME}" sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-STORAGE-04 linux about used" "${_hum_l}" "Cache folder used:"
+    assert_contains "TP-STORAGE-04 linux about preferred path" "${_hum_l}" "/dev/shm/cache/cache-${APP_NAME}-${_login}-"
+    assert_contains "TP-STORAGE-04 linux about 2nd path" "${_hum_l}" "/.cache/cache-${APP_NAME}-"
+    _hum_gb=$(HOME="${CI_HOME}" POMO_CACHE_HOST=gitbash sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-STORAGE-04 gitbash about 1st" "${_hum_gb}" "AppData/Local/Temp/cache-${APP_NAME}-"
+    assert_not_contains "TP-STORAGE-04 gitbash about omits 2nd" "${_hum_gb}" "Cache folder (2nd fallback)"
+    _hum_mac=$(HOME="${CI_HOME}" POMO_CACHE_HOST=mac sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-STORAGE-04 mac about 1st" "${_hum_mac}" "Library/Caches/cache-${APP_NAME}-"
+    assert_contains "TP-STORAGE-04 mac about 2nd path" "${_hum_mac}" "Cache folder (2nd fallback): ${CI_HOME}/cache/cache-${APP_NAME}-"
+    _persist=$(printf '%s' "$_out" | sed -n 's/.*"persistence_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-STORAGE-04 persistence_storage path" "${CI_HOME}/.local/${APP_NAME}" "$_persist"
+    if [ -n "$_persist" ] && [ -d "$_persist" ]; then
+        t_pass "TP-STORAGE-04 persistence storage directory exists"
+    else
+        t_fail "TP-STORAGE-04 persistence storage missing: '${_persist:-empty}'"
+    fi
+    case "${_persist}" in
+        */.local/bin|*/.local/bin/) t_fail "TP-STORAGE-04 persistence must not be USER_BIN: '${_persist}'" ;;
+        *) t_pass "TP-STORAGE-04 persistence is not the install bin directory" ;;
+    esac
+    ci_cleanup_env
 
     # --- TP-CLI-06: unknown command ---
     _err=$(sh "${SCRIPT}" no-such-command 2>&1 >/dev/null)

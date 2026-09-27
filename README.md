@@ -1,6 +1,6 @@
 # pomo - Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.2.2-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.2.3-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
@@ -19,7 +19,7 @@
 | Includes | Excludes |
 |----------|----------|
 | Named timers, work/break phases (minutes), themes, live watch, daily stats, JSON for status bars | Seconds as the user-facing unit; 0-minute work; hanging prompts inside `curl \| sh` |
-| Volatile RAM storage (default) or `--persist` under your cache | A second copy of the script under `src/` as the published install file |
+| Volatile RAM timers (default) or `--persist` under `~/.local/pomo` | A second copy of the script under `src/` as the published install file |
 | One-liner install that checks a SHA-256 companion by itself | Requiring you to paste a checksum into the environment for a normal install |
 
 | You do… | What it means | What you type |
@@ -40,10 +40,11 @@ This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**
 ## Features
 
 - **Named timers** (`default`, `focus`, `meeting`, `writing`, …) isolated per login
-- **Two storage modes**:
-  - **Volatile** (default): in-memory when `/dev/shm` is writable; Termux falls back to `$PREFIX/tmp`; Git Bash uses `$HOME/AppData/Local/Temp/cache` then `$TEMP/cache` then `/tmp/cache` (`mkdir` of `cache` does not abort)
-  - **Persistent** (`--persist`): survives reboot under `~/.cache/pomo/`
-- Fallbacks when `/dev/shm`, `$HOME`, Git Bash temp, or a container is missing or restricted (`mkdir` of `cache` does not abort)
+- **Timers and scratch are different folders**:
+  - **Volatile timer** (default): the next `pomo status` still finds the file. Linux uses `/dev/shm` when that mount is writable; Termux uses `$PREFIX/tmp`; Git Bash uses `$HOME/AppData/Local/Temp/cache` then `$TEMP/cache` then `/tmp/cache`
+  - **Persistent** (`--persist`, theme, daily stats): `~/.local/pomo`
+  - **Scratch cache** (this process only): `pomo about` shows Cache folder used, preferred, 1st fallback, and 2nd fallback when this host has one. A skipped tier is silent
+- Fallbacks when `/dev/shm`, `$HOME`, Git Bash temp, or a container is missing or restricted (`mkdir` of one cache leaf does not abort)
 - **Three themes** (`default`, `energetic`, `minimal`) with icons, colors, and UTF-8 progress bars
 - Automatic work → break transition with a terminal bell
 - `watch` for a live refreshing view (Ctrl+C to leave)
@@ -77,7 +78,7 @@ A system-wide copy must be **readable and executable** for every login (mode **0
 curl -fsSL https://raw.githubusercontent.com/Wilgat/pomo/main/pomo | sh
 ```
 
-On Termux the binary lands in `$PREFIX/bin` (already on `PATH`). Volatile timers use `$PREFIX/tmp` when `/dev/shm` is missing and Android `/tmp` is not writable. Git Bash and Windows cmd use the same this-login ceiling: no `sudo curl | sh`.
+On Termux the binary lands in `$PREFIX/bin` (already on `PATH`). Volatile timers use `$PREFIX/tmp` when `/dev/shm` is missing and Android `/tmp` is not writable. The scratch cache folder on Termux follows the Linux chain and is not a place to run a downloaded binary. Git Bash and Windows cmd use the same this-login ceiling: no `sudo curl | sh`.
 
 After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`) so `~/.local/bin` is on your `$PATH`.
 
@@ -147,7 +148,7 @@ pomo self-uninstall
 
 ### Options
 
-- `--persist`       Use persistent storage (`~/.cache/pomo/`)
+- `--persist`       Use persistent storage (`~/.local/pomo/`)
 - `--break N`       Custom break duration in minutes (only with `start`)
 - `--force`         Force actions (e.g. with `stop`/`kill`)
 - `--quiet`, `-q`   Suppress all non-error output
@@ -182,8 +183,8 @@ pomo theme set energetic
 | Platform              | Shell                | Status     | Notes                              |
 |-----------------------|----------------------|------------|------------------------------------|
 | Alpine Linux          | BusyBox ash          | Excellent  | Primary target for minimalism      |
-| Termux (Android)      | dash / bash          | Excellent  | This login only; `$PREFIX/bin`. `/dev/shm` usually missing; Android `/tmp` often read-only → `$PREFIX/tmp` then cache. |
-| Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | This login only; detect `/c/`; default drive `/c/`; `$HOME/AppData/Local/Temp/cache` or `/c/Users/<you>/AppData/Local/Temp/cache` |
+| Termux (Android)      | dash / bash          | Excellent  | This login only; `$PREFIX/bin`. `/dev/shm` usually missing; Android `/tmp` often read-only → timer files under `$PREFIX/tmp`. |
+| Git Bash (Windows)    | Bash (MSYS2)         | Excellent  | This login only; detect `/c/`; default drive `/c/`; timer files under `$HOME/AppData/Local/Temp/cache` or `/c/Users/<you>/AppData/Local/Temp/cache` |
 | Rocky / RHEL / CentOS | Bash                 | Excellent  | Enterprise environments            |
 | macOS                 | Bash / zsh           | Excellent  | Fully supported                    |
 | Debian / Ubuntu       | dash / bash          | Excellent  | Broad compatibility                |
@@ -208,7 +209,7 @@ All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
 - **[mariadb-galera](https://github.com/Wilgat/mariadb-galera)** — MariaDB Galera Cluster deployment scripts
 
-Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.2.2** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), `ver_gt` downgrade protection on `self-update`, and global dest mode **0755**.
+Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.2.3** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), `ver_gt` downgrade protection on `self-update`, global dest mode **0755**, and a per-process scratch cache separate from the timer file.
 
 ---
 
@@ -246,6 +247,6 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ## Last Update
 
-2026-09-27 — Place verb is **`self-install`**. A local script copies itself with no checksum; `curl | sh` still verifies the companion. Product version **2.2.2**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+2026-09-27 — Scratch cache is a per-process folder (`pomo about`). `--persist`, theme, and stats live under `~/.local/pomo`. A later command still finds the volatile timer. Product version **2.2.3**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
 
 **Made with care and a healthy dose of paranoia.** 🍅

@@ -1,6 +1,6 @@
 **file**: docs/requirements/requirement-shell-git-bash.md  
 **Requirement-ID**: `RQ-SHELL-GIT-BASH`  
-**Status**: Active (Version 1.0.0 – `/c/` detect; default drive `/c/`; Git Bash temp parent)  
+**Status**: Active (Version 1.1.0 – `/c/` detect; default drive `/c/`; domain-volatile temp parent)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose
@@ -11,7 +11,7 @@ It does **not** re-own the full volatile/persistent resolve chain (that is `requ
 
 ### 1.1 Human-facing
 
-**In one sentence:** On Git for Windows Bash, pomo treats the `C:` drive as `/c/` and writes short-lived timer files under your Windows user Temp `cache` folder — not under a Unix-style `~/.cache`.
+**In one sentence:** On Git for Windows Bash, pomo treats the `C:` drive as `/c/` and keeps a running timer under your Windows user Temp so the next command can open it — scratch uses the cache folder from shell storage, not `~/.cache`.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -22,7 +22,7 @@ It does **not** re-own the full volatile/persistent resolve chain (that is `requ
 | Includes | Excludes |
 |----------|----------|
 | Detect Git Bash when folder `/c/` (or `/c`) exists | Treating Git Bash as GitHub or a git repo |
-| Default drive `/c/`; Temp `cache` under AppData Local Temp | Persistent `--persist` XDG layout |
+| Default drive `/c/`; domain-volatile Temp parent under AppData Local Temp | Cache-folder chain and persistence `${HOME}/.local/${APP_NAME}` (storage REQ) |
 | This-login only; help must not recommend `sudo curl \| sh` | Termux `$PREFIX`; Windows `cmd.exe` detect body |
 
 | Surface | What you open | What for |
@@ -33,7 +33,7 @@ It does **not** re-own the full volatile/persistent resolve chain (that is `requ
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
 | Check the target | About names Git Bash when `/c/` is present (the Windows `C:` drive as Git Bash mounts it). | `pomo --json about` |
-| Start a timer | Volatile files go under `$HOME/AppData/Local/Temp/cache` or `/c/Users/<you>/AppData/Local/Temp/cache`, not `~/.cache`. | `pomo start` |
+| Start a timer | The timer file is found by the next command under `$HOME/AppData/Local/Temp/cache` or `/c/Users/<you>/AppData/Local/Temp/cache` when RAM is missing. It is not inside the per-process cache folder. | `pomo start` |
 
 ---
 
@@ -59,9 +59,13 @@ When Git Bash is detected:
 3. If `/c/` (or `/c`) exists, `GIT_BASH_DRIVE` **MUST** resolve to `/c` unless the operator already overrode it to another existing drive mount (`/d`, `/e`, …).  
 4. **MUST NOT** invent a drive letter. If the default `/c` directory is missing, skip drive-based path composition and continue the storage chain.
 
-### 2.3 Git Bash temp folder (MUST — aligns with shell storage)
+### 2.3 Git Bash temp folder (MUST — domain volatile parents)
 
-Git Bash **volatile** scratch **MUST** use the Windows user temp **`cache`** leaf, not `$HOME/.cache`.
+This table is the **domain volatile** root (`util_resolve_volatile_root`): a later `pomo status` must still find the timer. It is **not** the per-process **cache folder**.
+
+The cache folder on Git Bash is owned by `requirement-shell-cli-storage.md`: preferred `/tmp/cache/cache-${APP_NAME}-${login}-$$`, then `${HOME}/AppData/Local/Temp/cache-${APP_NAME}-$$`, and **no** 2nd fallback. A skipped cache tier is silent.
+
+Domain volatile **MUST** use the Windows user temp **`cache`** parent below, not `$HOME/.cache`.
 
 **Parent candidates (first that exists):**
 
@@ -121,7 +125,7 @@ When `pomo` runs on Git Bash (this login only):
 | MUST | MUST NOT |
 |------|----------|
 | Detect `/c/` or `/c` as Git Bash; default drive `/c/` | Treat missing `/c/` as Linux `/dev/shm` without walking Git Bash temp |
-| Volatile temp: AppData Local Temp/`cache` then `/c/Users/<user>/AppData/Local/Temp/cache` | `$HOME/.cache` as volatile root when those parents exist |
+| Domain volatile: AppData Local Temp/`cache` then `/c/Users/<user>/AppData/Local/Temp/cache` | Put the timer file in the `$$` cache folder, or use `$HOME/.cache` as the volatile root when those parents exist |
 | `mkdir` of `cache` fail-soft; storage REQ owns the rest of the chain | `out_die` because one `mkdir` failed |
 
 **This requirement:** Git Bash detect, default drive, temp **parent**. Storage roots: `requirement-shell-cli-storage.md`. Dispatch/help: `requirement-shell-cli-interface.md`.
@@ -159,7 +163,7 @@ When `pomo` runs on Git Bash (this login only):
 
 | Artifact | Role |
 |----------|------|
-| **`RQ-SHELL-CLI-STORAGE`** (`requirement-shell-cli-storage.md`) | Volatile/persistent **root** chain; mkdir fail-soft |
+| **`RQ-SHELL-CLI-STORAGE`** (`requirement-shell-cli-storage.md`) | Cache folder; persistence `${HOME}/.local/${APP_NAME}`; consumes these parents for domain volatile only |
 | **`RQ-SHELL-CLI-INTERFACE`** (`requirement-shell-cli-interface.md`) | Dual mention: `about` / `help` / detect helpers |
 | **`RQ-DOMAIN-POMO`** (`requirement-domain-pomo.md`) | Timer file **leaf** under the resolved root |
 | **`RQ-SHELL-SELF-MANAGEMENT`** (`requirement-shell-self-management.md`) | This-login install; about baseline |
@@ -169,7 +173,7 @@ When `pomo` runs on Git Bash (this login only):
 
 ---
 
-**Last Updated**: 2026-09-10  
+**Last Updated**: 2026-09-27  
 **Owner**: pomo project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §5; CIAO Principles 1, 2, 3, 4, 11, 13, 19, 20 (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
 

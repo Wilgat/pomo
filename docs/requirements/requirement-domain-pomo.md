@@ -148,10 +148,11 @@ Routing ownership stays in `requirement-shell-cli-interface.md`; **this file** o
 
 | About surface | Rule |
 |---------------|------|
-| **Domain diagnostics** | **about: Type 0 only; no domain fields** for this product — `about` **MUST NOT** invent pomodoro state, themes, stats, or storage paths as required about fields |
+| **Domain diagnostics** | Domain law **MUST NOT** add pomodoro state, theme, or stats fields to `about` |
+| **Type 0 cache lines** | Cache folder and persistence lines are owned by **`RQ-SHELL-CLI-STORAGE`**. Domain law **MUST NOT** invent a second about storage story |
 | **Type 0 retained** | Install presence, paths, user, shell, TTY, version remain under Type 0 `about` law (`requirement-shell-self-management.md` / CLI interface) |
 | **Non-leak** | Domain law **MUST NOT** add `CHECKSUM` or secrets to about (peer automatic-checksum still applies) |
-| **JSON about** | No domain-only about keys are required; absence is intentional |
+| **JSON about** | No domain-only about keys are required; cache and persistence keys stay Type 0 |
 
 If future product claims domain about diagnostics, this pillar **MUST** be revised in the same change as implementation (no silent about fields).
 
@@ -169,14 +170,14 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 | **State file format** | `start_time target_time phase work_dur break_dur` (epoch seconds; phase `work`\|`break`; **stored** durations in seconds = minutes×60) |
 | **State path pattern** | `${base}/${APP_NAME}_${USERNAME}_${name}` |
 | **Volatile base** | Roots from **`RQ-SHELL-CLI-STORAGE`**. Git Bash Temp parent / default drive `/c/` from **`RQ-SHELL-GIT-BASH`**. Leaf: `${base}/${APP_NAME}_${USERNAME}_${name}`. **MUST NOT** write `/${APP_NAME}_*` at filesystem root. |
-| **Persistent base** | `${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}` (fallback under `/tmp/..._persistent`) |
+| **Persistent base** | `${HOME}/.local/${APP_NAME}` (fallback `$PREFIX/tmp/${APP_NAME}_${USERNAME}_persistent` then `/tmp/${APP_NAME}_${USERNAME}_persistent`). **MUST NOT** use `~/.cache/${APP_NAME}` |
 | **Stats path** | `${persistent_base}/stats_YYYY-MM-DD` (`count total_min`) |
 | **Theme path** | `${persistent_base}/theme` |
 | **Themes** | `default`, `energetic`, `minimal` |
 | **Bootstrap A (lineage)** | **countdown** architecture parent (A→B only; not domain law). In-tree `./countdown` **only if present on disk** — optional reference, never assumed |
 | **Domain oracle** | `./pomo-1.7.0-domain-ref` when present (behavior reference; not ship unit) |
 | **Help (domain)** | `app_help` must list domain verbs + `--persist` / `--break` (see §2.8); on Termux/Git Bash/Windows cmd help stays this-login and **MUST NOT** advertise `sudo curl \| sh` |
-| **About (domain)** | Type 0 only — no domain about fields (see §2.9) |
+| **About (domain)** | No domain timer, theme, or stats fields. Cache and persistence lines are Type 0 (`RQ-SHELL-CLI-STORAGE`) |
 | **Tests** | `tests/test_pomo_domain.sh` (+ CLI/help coverage in `tests/test_cli.sh`) |
 
 #### Command table (normative for this project)
@@ -224,7 +225,7 @@ If future product claims domain about diagnostics, this pillar **MUST** be revis
 11. Domain messages use `out_*` (bell / clear for watch UX only as non-message control).  
 12. Suite: `./tests/run.sh` domain section green (**TP-POMO-07** covers zero duration).  
 13. Human `help` lists all domain verbs and domain flags (§2.8), including start **minutes**.  
-14. `about` has no required domain fields (§2.9).
+14. `about` has no required domain timer, theme, or stats fields (§2.9). Cache and persistence lines follow `RQ-SHELL-CLI-STORAGE`.
 
 ### 2.11 Why This Requirement Exists (Direct CIAO Alignment)
 
@@ -235,7 +236,7 @@ Numbers match [cloudgen/ciao](https://github.com/cloudgen/ciao) **v2.10.2** / ha
 - **CIAO Principle 5 – Single Source of Output**: Domain uses `out_*`; no parallel product messaging stack.  
 - **CIAO Principle 17 – Encouraging User Help Functions**: Domain help items (§2.8) keep verbs/flags discoverable.  
 - **CIAO Principle 18 – Input Pattern Checking**: Path-safe names and duration/break validation.  
-- **CIAO Principle 19 – Defensive Storage Location Handling**: Resolve volatile/persistent paths; never hardcode only `~/.cache/pomo` without resolution.
+- **CIAO Principle 19 – Defensive Storage Location Handling**: Resolve the cross-process volatile timer root and persistence `${HOME}/.local/${APP_NAME}`. A named timer file stays out of the per-process cache folder.
 
 ---
 

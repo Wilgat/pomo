@@ -129,7 +129,7 @@ run_test_online_curl_install() {
     _out=$(
         env HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" \
         SCRIPT_URL="http://127.0.0.1:1/${APP_NAME}-unreachable" \
-        sh "${SCRIPT}" </dev/null 2>"${_errf}"
+        sh -s < "${SCRIPT}" 2>"${_errf}"
     )
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)

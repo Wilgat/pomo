@@ -48,7 +48,7 @@ Every CIAO-Lite shell CLI **MUST** expose a documented command set. Commands **M
 | Category | Privilege | Meaning | Portable examples |
 |----------|-----------|---------|-------------------|
 | **Type 0 – Self-management / CLI lifecycle** | Invoking user (no elevation required for user-owned install) | Manage the CLI binary and diagnostics | `version`, `about`, `help`, `version-check`, `self-update`, `self-uninstall` |
-| **Type 0 – Install CLI binary** | Invoking user (root → global path; non-root → user path) | First-time or explicit placement of the CLI | `install`; empty argv **Type O install-ensure** (not installed / local / global) — `requirement-shell-cli-zero-arguments.md` |
+| **Type 0 – Install CLI binary** | Invoking user (root → global path; non-root → user path) | First-time or explicit placement of the CLI | `self-install` (`install` is the same handler); empty argv **Type O install-ensure** (not installed / local / global) — `requirement-shell-cli-zero-arguments.md` |
 | **Type 0 – Product domain ops** | Invoking user | Product specialty beyond lifecycle | Pomodoro `start`/`status`/`watch`/… — semantics: `requirement-domain-pomo.md` |
 | **Type 1 – Host preparation** | Elevated (internal escalation when designed) | Host packages, system user create, Docker engine | *Not in scope for current product surface* |
 | **Type 2 – App ops under system user** | Dedicated least-privilege system user | App install/configure/runtime under app identity | *Not in scope for current product surface* |
@@ -124,7 +124,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `menu` / `main` | Type 0 | `app_default` | TTY **top** menu (1 timer, 8 self-management; ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo menu` |
 | `timer` | Type 0 | `app_default` | TTY timer board (ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo timer` |
 | `self-management` | Type 0 | `app_default` | TTY self-management board (ignore `--json`); off-TTY help. Dual mention: `requirement-shell-cli-default-interaction.md`. Sample: `pomo self-management` |
-| `install` | Type 0 | `inst_perform_install` | Install binary for current privilege (root→global, user→local); idempotent unless force reinstall |
+| `self-install` | Type 0 | `inst_self_install` | Place binary for current privilege (root→global, user→local); idempotent unless force reinstall. `$0` is a shell (`curl \| sh`) → download + checksum. `$0` is this script → copy that file, no SHA-256. `install` is the same handler. |
 | `version` | Type 0 | `app_main` / `app_version` | Print local version; JSON object when `--json` |
 | `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **target system**; JSON when `--json` includes `target`, `normal_user_only`, `termux`, `user_bin`, `prefix`; **no `CHECKSUM` field** |
 | `version-check` | Type 0 | `ver_check` | Compare local vs remote `VERSION` from `SCRIPT_URL`; fail clearly if URL unset/unreachable |

@@ -49,7 +49,7 @@ run_test_cli() {
     _out=$(sh "${SCRIPT}" help 2>/dev/null)
     _ec=$?
     assert_eq "TP-CLI-03 help exit 0" 0 "$_ec"
-    assert_contains "TP-CLI-03 help lists install" "$_out" "install"
+    assert_contains "TP-CLI-03 help lists self-install" "$_out" "self-install"
     assert_contains "TP-CLI-03 help lists version-check" "$_out" "version-check"
     assert_contains "TP-CLI-03 help lists self-update" "$_out" "self-update"
     assert_contains "TP-CLI-03 help lists self-uninstall" "$_out" "self-uninstall"
@@ -133,13 +133,13 @@ run_test_cli() {
     assert_eq "TP-CLI-08 TP-U-01 env -u HOME version exit 0" 0 "$_ec"
     assert_contains "TP-CLI-08 TP-U-01 env -u HOME version still reports version" "$_out" "${APP_VERSION}"
 
-    # --- TP-CLI-09 / TP-LC-09 / TP-U-02: zero-arg bad channel ---
+    # --- TP-CLI-09 / TP-LC-09 / TP-U-02: zero-arg bad channel (pipe: $0 is sh) ---
     ci_isolated_env
     _errf="${CI_HOME}/zero-arg-err.txt"
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" \
         SCRIPT_URL="http://127.0.0.1:1/${APP_NAME}-unreachable" \
-        sh "${SCRIPT}" </dev/null 2>"${_errf}"
+        sh -s < "${SCRIPT}" 2>"${_errf}"
     )
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)
@@ -284,7 +284,7 @@ run_test_cli() {
         assert_contains "TP-CLI-17 TTY empty argv timer first" "$_stripped" "1. timer:"
         assert_contains "TP-CLI-17 TTY empty argv self-management is 8" "$_stripped" "8. self-management:"
         assert_not_contains "TP-CLI-17 TTY empty argv no start row" "$_stripped" "11. start:"
-        assert_not_contains "TP-CLI-17 TTY empty argv no install row" "$_stripped" "81. install:"
+        assert_not_contains "TP-CLI-17 TTY empty argv no install row" "$_stripped" "81. self-install:"
         assert_not_contains "TP-CLI-17 TTY empty argv not help dump" "$_out" "Usage:"
         assert_contains "TP-CLI-17 TTY header bold APP_NAME" "$_out" "${_bold}"
         assert_contains "TP-CLI-17 TTY header italic VERSION" "$_out" "${_italic}"
@@ -298,7 +298,7 @@ run_test_cli() {
         assert_not_contains "TP-CLI-17 TTY timer board no Exit 99" "$_out" "99. Exit"
         _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" PTY_IN="8\\n0\\n9" ci_pty_capture "${SCRIPT}")
         _stripped=$(printf '%s' "$_out" | awk 'BEGIN{ORS=""} {gsub(/\033\[[0-9;]*m/,""); print}')
-        assert_contains "TP-CLI-17 TTY self-management install is 81" "$_stripped" "81. install:"
+        assert_contains "TP-CLI-17 TTY self-management self-install is 81" "$_stripped" "81. self-install:"
         assert_contains "TP-CLI-17 TTY self-management has self-update 83" "$_stripped" "83. self-update:"
         assert_not_contains "TP-CLI-17 TTY self-management no start row" "$_stripped" "11. start:"
         _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" PTY_IN="2\\n9" ci_pty_capture "${SCRIPT}")

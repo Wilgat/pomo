@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-09-27
+
+### Changed
+- Place verb is **`self-install`** (`install` still calls the same handler).
+- When `$0` is this script, `self-install` copies that file to `/usr/local/bin` (root) or `~/.local/bin` (this login) and does **not** check SHA-256.
+- When `$0` is a shell (`curl | sh`), place still downloads from `SCRIPT_URL` and checks the companion. `self-update` always uses that download path.
+
+### Security
+- Companion `pomo.sha256` regenerated for 2.2.2 ship-unit bytes.
+
 ## [2.2.1] - 2026-09-15
 
 ### Added

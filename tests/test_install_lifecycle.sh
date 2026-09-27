@@ -60,6 +60,25 @@ run_test_install_lifecycle() {
     _mode=$(python3 -c "import os,sys; print('%04o' % (os.stat(sys.argv[1]).st_mode & 0o777))" "${_app_bin}")
     assert_eq "TP-LC-23 dest mode 0755 after atomic install" "0755" "${_mode}"
 
+    # --- local $0 copy: script path, no companion fetch ---
+    _marked="${CI_HOME}/marked-pomo"
+    cp "${SCRIPT}" "${_marked}"
+    printf '\n# local-copy-marker\n' >> "${_marked}"
+    rm -f "${_app_bin}"
+    _out=$(
+        HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
+        sh "${_marked}" --force self-install 2>"${_errf}"
+    )
+    _ec=$?
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    assert_eq "TP-LC-12b local self-install exit 0" 0 "$_ec"
+    assert_contains "TP-LC-12b local self-install says no SHA-256" "$_out" "no SHA-256"
+    assert_not_contains "TP-LC-12b local self-install skips companion" "$_out$_err" "Companion link:"
+    assert_contains "TP-LC-12b dest is the local file" "$(cat "${_app_bin}")" "local-copy-marker"
+    rm -f "${_app_bin}" "${_marked}"
+    HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
+        sh "${SCRIPT}" --json self-install >/dev/null 2>&1 || true
+
     # --- TP-LC-10: idempotent re-install (no --force) ---
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
@@ -181,7 +200,7 @@ run_test_install_lifecycle() {
     # --- TP-LC-06 / TP-CSUM-02: human --force install transparency ---
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
-        sh "${SCRIPT}" --force install 2>"${_errf}"
+        sh -s -- --force self-install < "${SCRIPT}" 2>"${_errf}"
     )
     _ec=$?
     assert_eq "TP-LC-06 TP-CSUM-02 human --force install exit 0" 0 "$_ec"
@@ -233,7 +252,7 @@ run_test_install_lifecycle() {
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
         CHECKSUM="0000000000000000000000000000000000000000000000000000000000000000" \
-        sh "${SCRIPT}" --json install 2>"${_errf}"
+        sh -s -- --json self-install < "${SCRIPT}" 2>"${_errf}"
     )
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)
@@ -246,7 +265,7 @@ run_test_install_lifecycle() {
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
         CHECKSUM="${_good}" \
-        sh "${SCRIPT}" --json install 2>"${_errf}"
+        sh -s -- --json self-install < "${SCRIPT}" 2>"${_errf}"
     )
     _ec=$?
     _err=$(cat "${_errf}" 2>/dev/null || true)

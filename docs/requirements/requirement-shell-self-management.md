@@ -56,7 +56,7 @@ User-facing names **MUST** be stable unless this requirement is explicitly revis
 
 Shell implementation **SHOULD** use `inst_*` helpers for install/lifecycle and `app_*` for help/about/dispatch; **MUST NOT** bury binary lifecycle under domain product prefixes without a specialized requirement.
 
-Related Type 0 commands (`version`, `install`, `help`) are owned by `requirement-shell-cli-interface.md` but **MUST** stay consistent with this lifecycle model.
+Related Type 0 commands (`version`, `self-install`, `help`) are owned by `requirement-shell-cli-interface.md` but **MUST** stay consistent with this lifecycle model. `self-install` copies `$0` when `$0` is this script (no SHA-256) and downloads when `$0` is a shell. `self-update` always downloads.
 
 ### 2.2 Self-update (normative)
 

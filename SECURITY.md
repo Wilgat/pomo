@@ -4,10 +4,11 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.2.1 (current) | Yes |
-| 2.2.0 | Yes (please upgrade to **2.2.1** for global dest **0755** on self-update) |
-| 2.1.x | Yes (please upgrade to **2.2.1+** when possible) |
-| 2.0.x | Yes (please upgrade to **2.2.1+** when possible) |
+| 2.2.2 (current) | Yes |
+| 2.2.1 | Yes (please upgrade to **2.2.2** for the `self-install` place verb) |
+| 2.2.0 | Yes (please upgrade to **2.2.2**; **2.2.1** fixed global dest **0755** on self-update) |
+| 2.1.x | Yes (please upgrade to **2.2.2+** when possible) |
+| 2.0.x | Yes (please upgrade to **2.2.2+** when possible) |
 | 1.x releases | Best-effort only; please upgrade to **2.0.x+** when possible |
 
 ## Reporting a Vulnerability
@@ -49,6 +50,7 @@ This section describes **design posture**. It is **not** a claim of third-party 
 | **Missing sidecar** | **Warn and continue** install (best-effort). Do **not** claim “always verified” when the companion is absent. |
 | **Optional pin** | Process-env `CHECKSUM` is **secondary** (CI / out-of-band freeze). Same-origin pin fetch is **not** stronger than automatic mode. Not advertised in `help` / `about`. |
 | **Trust bound** | Same-channel SHA-256 proves **byte consistency** (wrong blob / bit-flip / stale companion vs artifact). It is **not** independent authenticity (signing / separate trust root) by itself. |
+| **Local file place** | `self-install` copies `$0` with **no** SHA-256 check when `$0` is this script. `curl \| sh` and `self-update` still use the companion. |
 | **Forbidden pattern** | Embedding the expected digest of the installable file **inside** that same file as “self-verify.” |
 
 In-repo companion file: [`pomo.sha256`](./pomo.sha256) (published beside `./pomo` for the release channel).
@@ -77,4 +79,4 @@ Domain product law: `docs/requirements/requirement-domain-pomo.md` (when present
 
 ---
 
-*Last updated: 2026-09-15 (pomo 2.2.1 · CIAO v2.10.2).*
+*Last updated: 2026-09-27 (pomo 2.2.2 · CIAO v2.10.2).*

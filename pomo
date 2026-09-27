@@ -46,9 +46,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_NAME:=pomo}"
 : "${APP_DESC:=Simple & Beautiful Pomodoro Timer (volatile or persistent, themed)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
-: "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
+: "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: self-install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
 # Product version SSOT (specialized from countdown architecture + pomo 1.7.0 domain). Extractors use: grep '^VERSION="'
-VERSION="2.2.1"
+VERSION="2.2.2"
 : "${VERSION:=2.2.1}"
 
 # Runtime flags (safe defaults)
@@ -952,7 +952,66 @@ pomo_apply_target_paths
 #   - Preserved full original defensive header and only appended this Lessons Learned section.
 #
 # Last reviewed: 2026-06-26
+# 2026-09-27: self-install local file ($0 is this script) stages a copy and
+# skips SHA-256. curl | sh ($0 is a shell) keeps the download + checksum path.
+# self-update forces INST_LOCAL_COPY=0 so it always uses the channel.
 # =============================================================================
+
+# inst_self_install_via_shell() - 0 when $0 is an interpreter (curl | sh)
+inst_self_install_via_shell() {
+    _base="${0##*/}"
+    _base="${_base#-}"
+    case "${_base}" in
+        sh|bash|dash|ash|ksh|zsh|busybox|sh.exe|bash.exe)
+            unset _base
+            return 0
+            ;;
+    esac
+    unset _base
+    return 1
+}
+
+# inst_self_install_stage_local() - copy $0 into the staging file; no digest
+inst_self_install_stage_local() {
+    _stage="$1"
+    : "${JSON:=0}"
+    if [ ! -f "$0" ] || [ ! -r "$0" ]; then
+        if [ "${JSON}" -eq 1 ]; then
+            out_json_error "self-install local copy needs this script as \$0 (got: $0)" "io_error"
+        else
+            out_error "self-install local copy needs this script as \$0 (got: $0)."
+        fi
+        unset _stage
+        return 1
+    fi
+    if [ "${JSON}" -eq 0 ]; then
+        out_info "Local script (\$0 is not a shell) → copy $0 with no SHA-256 check."
+    fi
+    if ! cp -- "$0" "${_stage}" 2>/dev/null; then
+        if [ "${JSON}" -eq 1 ]; then
+            out_json_error "Failed to copy $0" "io_error"
+        else
+            out_error "Failed to copy $0"
+        fi
+        unset _stage
+        return 1
+    fi
+    unset _stage
+    return 0
+}
+
+# inst_self_install() - place verb. Shell $0 downloads; a script path copies.
+inst_self_install() {
+    if inst_self_install_via_shell; then
+        INST_LOCAL_COPY=0
+    else
+        INST_LOCAL_COPY=1
+    fi
+    inst_perform_install
+    _ec=$?
+    INST_LOCAL_COPY=0
+    return "${_ec}"
+}
 
 inst_perform_install() {
     # --- Safe Variable Defaults ---
@@ -1015,6 +1074,19 @@ inst_perform_install() {
 
     local downloaded_checksum_ok=0
     : "${INST_AUTO_CHECKSUM_OK:=0}"
+    : "${INST_LOCAL_COPY:=0}"
+
+    if [ "${INST_LOCAL_COPY}" -eq 1 ]; then
+        if ! inst_self_install_stage_local "${tmp_file}"; then
+            rm -f "${tmp_file}" 2>/dev/null || true
+            return 1
+        fi
+        if ! inst_perform_install_atomic_install "${tmp_file}" 0; then
+            rm -f "${tmp_file}" 2>/dev/null || true
+            return 1
+        fi
+        return 0
+    fi
 
     if [ -n "${CHECKSUM}" ]; then
         # Strict user/CI-provided checksum (highest security)
@@ -1460,7 +1532,7 @@ inst_maybe_install() {
 
     if [ "$should_install" = "true" ]; then
         # Propagate install failure (do not mask network/checksum/io errors as success).
-        inst_perform_install
+        inst_self_install
         return $?
     fi
     return 0
@@ -1578,6 +1650,7 @@ inst_self_update() {
     fi
 
     FORCE_REINSTALL=1
+    INST_LOCAL_COPY=0
     inst_perform_install
 }
 
@@ -3797,13 +3870,13 @@ app_version() {
 app_help() {
     : "${HOME:=/tmp}"
     : "${SHORT_DESCRIPTION:=${APP_DESC:-Simple & Beautiful Pomodoro Timer (volatile or persistent, themed)}}"
-    : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
+    : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: self-install, version-check, self-update, self-uninstall, about, plus pomodoro start/status/watch/skip/stop/list/stats/theme.}"
     pomo_apply_target_paths
 
     if [ "${JSON}" -eq 1 ]; then
         out_json "success" "Help text available in human-readable mode. Run without --json." \
             "command" "help" \
-            "note" "Use --json with version, about, version-check, install, self-update, self-uninstall."
+            "note" "Use --json with version, about, version-check, self-install, self-update, self-uninstall."
         return 0
     fi
 
@@ -3860,12 +3933,13 @@ app_help() {
 
     out_info "Self-management (this login):"
     if [ "${_help_target}" = "termux" ]; then
-        out_plain "  install              Install ${APP_NAME} for this login (\$PREFIX/bin)"
+        out_plain "  self-install         Place ${APP_NAME} for this login (\$PREFIX/bin)"
     elif pomo_is_normal_user_only_cli; then
-        out_plain "  install              Install ${APP_NAME} for this login (~/.local/bin)"
+        out_plain "  self-install         Place ${APP_NAME} for this login (~/.local/bin)"
     else
-        out_plain "  install              Install ${APP_NAME} (root→/usr/local/bin, user→~/.local/bin)"
+        out_plain "  self-install         Place ${APP_NAME} (root→/usr/local/bin, user→~/.local/bin)"
     fi
+    out_plain "                       Local file copies itself (no SHA-256). curl | sh downloads."
     out_plain "  version              Show current version"
     out_plain "  about                Show detailed diagnostics (includes target system)"
     out_plain "  version-check        Compare local vs remote version (needs SCRIPT_URL)"
@@ -3996,7 +4070,7 @@ app_default_print_selfmgmt() {
     : "${JSON:=0}"
     : "${QUIET:=0}"
     out_info "$(util_app_ident) — self-management"
-    out_menu_choice "81" "install" "Place the program for this login"
+    out_menu_choice "81" "self-install" "Place the program for this login"
     out_menu_choice "82" "version-check" "Compare local vs remote version"
     out_menu_choice "83" "self-update" "Update to a newer remote version"
     out_menu_choice "84" "self-uninstall" "Remove this program"
@@ -4086,7 +4160,7 @@ app_default_run_pick() {
 app_default_run_selfmgmt_pick() {
     _pick="${1-}"
     case "${_pick}" in
-        81|install)        inst_perform_install ;;
+        81|self-install|install) inst_self_install ;;
         82|version-check)  ver_check ;;
         83|self-update)    inst_self_update ;;
         84|self-uninstall) inst_self_uninstall ;;
@@ -4389,10 +4463,10 @@ inst_empty_argv_ensure() {
     : "${JSON:=0}"
     : "${QUIET:=0}"
     if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
-        inst_perform_install
+        inst_self_install
         return $?
     elif inst_is_installed; then
-        inst_perform_install
+        inst_self_install
         return $?
     else
         inst_maybe_install
@@ -4507,7 +4581,7 @@ app_main() {
                 POMO_CUSTOM_BREAK="$2"
                 shift
                 ;;
-            start|status|watch|skip|stop|kill|list|stats|theme|version|about|help|menu|main|timer|self-management|version-check|self-update|self-uninstall|install)
+            start|status|watch|skip|stop|kill|list|stats|theme|version|about|help|menu|main|timer|self-management|version-check|self-update|self-uninstall|self-install|install)
                 if [ "${COMMAND}" = "theme" ]; then
                     if [ -z "${POMO_THEME_SUB}" ]; then
                         POMO_THEME_SUB="$1"
@@ -4581,8 +4655,8 @@ app_main() {
         self-uninstall)
             inst_self_uninstall
             ;;
-        install)
-            inst_perform_install
+        self-install|install)
+            inst_self_install
             ;;
         menu|main|timer|self-management)
             app_default

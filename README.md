@@ -1,6 +1,6 @@
 # pomo - Simple & Beautiful Pomodoro Timer
 
-![Version](https://img.shields.io/badge/Version-2.2.1-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.2.2-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/Wilgat/pomo?style=flat-square)](https://github.com/Wilgat/pomo)
@@ -49,7 +49,7 @@ This project is built using [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**
 - `watch` for a live refreshing view (Ctrl+C to leave)
 - Daily statistics (completed pomodoros + total minutes today)
 - Strict `--json` for scripts and status bars (`watch --json` is refused)
-- One-liner install, self-update, self-uninstall, and `about` diagnostics
+- One-liner install, `self-install`, self-update, self-uninstall, and `about` diagnostics
 - On a real terminal, typing only `pomo` (or `pomo --debug`) opens a top menu (**1** timer, **8** self-management, Exit **9**); timer commands are **11…19**; `curl | sh` still installs
 - Worked on dash, BusyBox ash, Git Bash, Alpine, Termux, and containers
 
@@ -86,6 +86,7 @@ After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.
 > - **Match** → install continues.
 > - **Mismatch** → install **aborts** (no silent failure).
 > - **Missing companion** → **warn and continue** (best-effort). Do not treat this as a signed release.
+> - **`self-install` from a file you already have** (`./pomo self-install`, or `sudo ./pomo self-install` for `/usr/local/bin`) copies that file. `$0` is the script, so there is **no** SHA-256 check. `curl | sh` still downloads, because `$0` is the shell.
 > - In-repo companion: [`pomo.sha256`](./pomo.sha256) next to `./pomo`.
 > - **Optional pin (Advanced / CI only):** `CHECKSUM=…` set → strict verify against that digest. Same-origin pin is **not** higher assurance than automatic companion fetch. `help` / `about` do **not** list `CHECKSUM`.
 
@@ -136,6 +137,7 @@ pomo theme prev               # Cycle to previous theme
 
 ```sh
 pomo version
+pomo self-install             # Copy this file into the bin for this login (no checksum)
 pomo version-check            # Compare with latest release
 pomo self-update              # Update to latest version
 pomo about                    # Full system diagnostics
@@ -206,7 +208,7 @@ All projects below follow the same **CIAO** philosophy ([v2.10.2](https://github
 - **[certbot-nginx](https://github.com/Wilgat/certbot-nginx)** — Automated Let's Encrypt setup for Nginx
 - **[mariadb-galera](https://github.com/Wilgat/mariadb-galera)** — MariaDB Galera Cluster deployment scripts
 
-Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.2.1** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), `ver_gt` downgrade protection on `self-update`, and global dest mode **0755**.
+Historical endorsement of the v1.7.0 domain (April 2026): [`RECOMMENDATION.md`](./RECOMMENDATION.md). Current **v2.2.2** keeps that defensive spirit: centralized output, path-safe names, automatic companion SHA-256, Termux as a this-login target (`$PREFIX/bin` + `$PREFIX/tmp`), `ver_gt` downgrade protection on `self-update`, and global dest mode **0755**.
 
 ---
 
@@ -244,6 +246,6 @@ MIT License — see [`LICENSE.md`](./LICENSE.md) for details.
 
 ## Last Update
 
-2026-09-15 — Global install / `self-update` dest mode **0755** (shebang other-read). Product version **2.2.1**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
+2026-09-27 — Place verb is **`self-install`**. A local script copies itself with no checksum; `curl | sh` still verifies the companion. Product version **2.2.2**, aligned to [CIAO](https://github.com/cloudgen/ciao) **v2.10.2**.
 
 **Made with care and a healthy dose of paranoia.** 🍅
